@@ -49,9 +49,10 @@ class SiteTests(unittest.TestCase):
 
     def test_assets_exist_and_js_syntax_can_be_checked(self):
         self.assertIn("./app.js", self.parser.scripts)
-        self.assertIn("./styles.css", self.parser.stylesheets)
+        self.assertIn("./styles.css?v=20261123-editorial1", self.parser.stylesheets)
         for asset in self.parser.scripts + self.parser.stylesheets:
-            self.assertTrue((SITE / asset).is_file(), asset)
+            asset_path = asset.split("?", 1)[0]
+            self.assertTrue((SITE / asset_path).is_file(), asset)
 
     def test_external_links_protect_reverse_tab(self):
         for href, target, rel in self.parser.anchors:
@@ -113,6 +114,9 @@ class SiteTests(unittest.TestCase):
             self.assertIn(f'value="{key}"', lab)
         for text in ("--paper:", "--ink:", "focus-visible", "prefers-reduced-motion:reduce"):
             self.assertIn(text, css)
+        self.assertIn('href="./styles.css?v=20261123-editorial1"', home)
+        self.assertIn('href="./styles.css?v=20261123-editorial1"', lab)
+        self.assertIn('href="./play.css?v=20261123-editorial1"', lab)
         self.assertIn("@media(max-width:480px)", lab_css)
         self.assertNotIn("@import", css)
         self.assertNotIn("linear-gradient(", css)
