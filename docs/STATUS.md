@@ -9,7 +9,7 @@
 | Freestanding x86-64 object compilation | LOCAL PASS (baseline) | `build/kernel.o` was verified as ELF x86-64 relocatable object locally; CI also compiles sample |
 | Parser tests | LOCAL PASS / CI PASS (baseline) | Seven tests at initial public release; see exact CI revision for new claims |
 | Static website source | IMPLEMENTED (source only) | `site/`; no claim of real kernel demo |
-| Browser-based x86-64 emulator page | IMPLEMENTED (source, BROWSER BOOT NOT YET VERIFIED) | `site/play.html`, `site/play.js`; pinned v86_64 fork loads actual generated ISO and reads COM1; browser runtime must be separately verified |
+| Browser-based x86-64 emulator page | IMPLEMENTED (source, BROWSER BOOT NOT YET VERIFIED) | `site/play.html`, `site/play.js`; pinned v64 x86-64 WASM module is configured to load generated ISO and read COM1; browser runtime must be separately verified |
 | Linux userland program from shared HTML-like language | NOT IMPLEMENTED | Current emitted `outb` code is freestanding/QEMU-specific, not a Linux userspace executable |
 | Linker/bootloader integration | LOCAL PASS | `boot/`, `scripts/build_boot.py`; pinned Limine 12.11.1 and protocol header, generated ELF + hybrid bootable ISO |
 | QEMU kernel boot | LOCAL PASS (CI PENDING) | `scripts/test_boot.py` real QEMU x86_64 BIOS: original and changed HTML source both boot; debugcon output + exit code 33; negative output/invalid source controls pass. Local log in external HDD, to be verified on CI exact PR SHA |
