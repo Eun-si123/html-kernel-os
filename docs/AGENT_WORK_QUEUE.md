@@ -4,7 +4,7 @@ This small repository uses GitHub Issues and PRs as its **live** work queue. Thi
 
 ## Selection and priority
 
-1. Read current Issues, open PRs, branches, CI, and [STATUS.md](STATUS.md) before opening a new task.
+1. Read current Issues, open PRs, branches, CI, [STATUS.md](STATUS.md), and [ROADMAP.md](ROADMAP.md) before opening a new task. Use one stable M-ID and a pass/fail gate from that roadmap.
 2. Prefer verified release/boot blockers, then tested correctness/security defects, then bounded feature improvements, then speculative refactoring.
 3. Classify a proposed Issue using optional `priority:p0..p3` and `agent:agent-ready | needs-decision | needs-field-test | blocked | triage` labels when they exist. **Missing labels are untriaged**, not authorization to work.
 4. If an Issue has an active PR or another agent's visible claim, coordinate rather than duplicating it.

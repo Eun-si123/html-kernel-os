@@ -13,6 +13,7 @@ DOCS = [
     ".github/copilot-instructions.md",
     "docs/README.md", "docs/STATUS.md", "docs/VALIDATION.md",
     "docs/ARCHITECTURE.md", "docs/DECISIONS.md",
+    "docs/ROADMAP.md", "docs/LANGUAGE_DESIGN.md", "docs/PROJECT_RISKS.md",
     "docs/AGENT_GOVERNANCE.md", "docs/AGENT_WORK_QUEUE.md",
     "docs/AGENT_MEMORY.md", "docs/AGENT_COMMIT_IDENTITY.md",
     "agent-evals/README.md",

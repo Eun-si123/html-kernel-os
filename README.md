@@ -12,6 +12,10 @@ AI agents and external contributors: start at **[AGENTS.md](AGENTS.md)**, then f
 
 Read [actual implementation status](docs/STATUS.md) and [evidence criteria](docs/VALIDATION.md) before claiming native boot support. See [current decisions](docs/DECISIONS.md) for confirmed versus proposed scope.
 
+## Roadmap for people and agents / 개발 계획
+
+Start with the **[M0–M6 milestone roadmap](docs/ROADMAP.md)**: the next gate (M1) is a real headless-QEMU boot of code compiled from HTML. Read the [language design / Python ease comparison](docs/LANGUAGE_DESIGN.md) and [risk/assumption register](docs/PROJECT_RISKS.md) before proposing syntax or hardware changes. Milestones are *not* dates or release promises; [STATUS](docs/STATUS.md) owns observed progress. Agents can open milestone-scoped Issues with [this shared task template](.github/ISSUE_TEMPLATE/roadmap-task.md).
+
 ## Try the working prototype
 
 Requirements: Python 3.10+ and an x86-64 GCC cross/native compiler.

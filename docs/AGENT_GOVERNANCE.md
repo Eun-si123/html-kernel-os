@@ -5,7 +5,7 @@ Compatible with the **AGENTS.md → specialist guides → status/evidence → so
 ## Read / decide / write / verify / report
 
 1. Observe branch/HEAD, repository status, open PRs/Issues, existing CI and relevant code **before** choosing work. Memory and old chats are advisory only.
-2. Define one observable result, out-of-scope areas, trust boundaries and exact regression checks. A compiler change that silently broadens accepted HTML is a meaningful API/security change.
+2. Select the nearest evidence-supported milestone in [ROADMAP.md](ROADMAP.md) or a confirmed urgent defect; define one observable result, out-of-scope areas, trust boundaries and exact regression checks. A compiler change that silently broadens accepted HTML is a meaningful API/security change.
 3. Use a dedicated branch/PR for nontrivial or concurrent work. Recheck HEAD and overlapping open PRs before and after writing.
 4. Protect changes made by other people or agents. Never wipe, hard-reset, stash, rewrite, or force-push shared history to resolve a conflict. If source changed, read and reconcile rather than overwrite.
 5. Run local tests and document *which evidence class* actually passed. Validate docs links, feature map, generated object and exact-head CI when relevant.

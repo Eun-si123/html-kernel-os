@@ -28,7 +28,7 @@ These are not interchangeable. CI can verify code generation without proving a k
 
 ## Next acceptance gate
 
-Build a **bootable x86-64 kernel image** from the HTML-derived code through a pinned and verifiable bootloader/linker arrangement. Require an automated QEMU boot log and deterministic, checkable output before marking this gate complete.
+**Milestone M1 ([ROADMAP.md](ROADMAP.md)):** Build a **bootable x86-64 kernel image** from the HTML-derived code through a pinned and verifiable bootloader/linker arrangement. Require an automated QEMU boot log and deterministic, checkable output before marking this gate complete. [LANGUAGE_DESIGN.md](LANGUAGE_DESIGN.md) holds proposed Python-like language ergonomics; [PROJECT_RISKS.md](PROJECT_RISKS.md) holds risks, neither counts as implementation evidence.
 
 This gate does not imply that memory management, a scheduler, applications, or a full OS already exist.
 

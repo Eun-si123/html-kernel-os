@@ -5,6 +5,9 @@ Locate the smallest source and test surface. This is a navigation index, **not e
 | Question | Source of truth | Verification / review |
 | --- | --- | --- |
 | What is released, planned, or blocked? | [docs/STATUS.md](docs/STATUS.md) | [docs/VALIDATION.md](docs/VALIDATION.md), live CI |
+| Which milestone should a human/agent do next? | [docs/ROADMAP.md](docs/ROADMAP.md) | `python3 scripts/roadmap.py --json` (plan only); live Status/Issues |
+| How easy can the HTML dialect become? | [docs/LANGUAGE_DESIGN.md](docs/LANGUAGE_DESIGN.md) | grammar, examples, usability studies not yet run |
+| What may break or invalidate a claim? | [docs/PROJECT_RISKS.md](docs/PROJECT_RISKS.md) | risk IDs and disconfirming tests |
 | What is the compiler grammar? | [compiler/htmlk.py](compiler/htmlk.py) | [tests/test_compiler.py](tests/test_compiler.py) |
 | What example is accepted? | [examples/kernel.html](examples/kernel.html) | Compiler CLI / object compilation |
 | Where does the generated C come from? | [compiler/htmlk.py](compiler/htmlk.py) | `build/kernel.c` generated, not committed |

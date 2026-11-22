@@ -5,6 +5,9 @@ Start with [AGENTS.md](../AGENTS.md) for AI collaborators and [README.md](../REA
 | Question | Canonical document |
 | --- | --- |
 | What is actually implemented and tested? | [STATUS.md](STATUS.md) |
+| **What to build next, with clear pass/fail gates?** | [ROADMAP.md](ROADMAP.md) |
+| How can an HTML-based language be easy like Python? | [LANGUAGE_DESIGN.md](LANGUAGE_DESIGN.md) |
+| Which assumptions, hazards and unknowns matter? | [PROJECT_RISKS.md](PROJECT_RISKS.md) |
 | Which test/evidence class is required? | [VALIDATION.md](VALIDATION.md) |
 | How does compilation work, and what does not work? | [ARCHITECTURE.md](ARCHITECTURE.md) |
 | What has been decided versus proposed? | [DECISIONS.md](DECISIONS.md) |
@@ -25,4 +28,4 @@ Start with [AGENTS.md](../AGENTS.md) for AI collaborators and [README.md](../REA
 - [AGENT_MEMORY.md](AGENT_MEMORY.md) stores only reusable cross-session lessons not already owned elsewhere.
 - GitHub Issues and PRs own the live work backlog and review discussion.
 
-When a feature changes, update the **one authoritative** owner, then fix any contradictory status references. Historical snapshots must stay historical. Run `python3 scripts/check_docs.py` after documentation edits.
+When a feature changes, update the **one authoritative** owner, then fix any contradictory status references. Historical snapshots must stay historical. Run `python3 scripts/check_docs.py` and `python3 scripts/roadmap.py --check` after roadmap/documentation edits. Agents can request a read-only plan via `python3 scripts/roadmap.py --json`.

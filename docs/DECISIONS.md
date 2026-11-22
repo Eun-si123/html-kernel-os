@@ -12,7 +12,9 @@ Only user-confirmed decisions belong under **Confirmed**. Proposals are not blan
 
 ## Proposals / not yet authorizations
 
-- Exact bootloader/version and final compiler backend (C-as-IR versus LLVM/native code generation).
+- Exact bootloader/version and final compiler backend (C-as-IR versus LLVM/native code generation). See [ROADMAP.md](ROADMAP.md) M1; Limine is a candidate, not a pinned implementation yet.
+- Exact language grammar and Python-level usability target: syntax rules, error behavior, expressions, type/ownership/unsafe contract, safe kernel libraries, and required novice comparison. See [LANGUAGE_DESIGN.md](LANGUAGE_DESIGN.md); example proposed tags are **not implemented**.
+- Timeline and resource commitment of M1–M6; the roadmap sets **dependencies and acceptance criteria**, not agreed delivery dates or guaranteed feasibility.
 - Hosting a live preview via GitHub Pages: the user has discussed using `github.io` for testing, but a Pages activation is a distinct repository-setting/deployment change. Check current explicit authorization and impact before enabling.
 - Operating-system scope beyond a bootable demonstrator (hardware targets, driver scope and API contracts).
 - Open-source license selection, release publishing, package distribution, third-party contributions and security policy.

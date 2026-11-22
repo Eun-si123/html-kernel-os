@@ -24,6 +24,9 @@ This is a **PUBLIC experimental repository**. Read this file first, then only th
 | Question / task | Canonical owner |
 | --- | --- |
 | Product concept and usage | [README.md](README.md), [docs/DECISIONS.md](docs/DECISIONS.md) |
+| **Human + agent milestones, acceptance and priority** | [docs/ROADMAP.md](docs/ROADMAP.md) |
+| Python-like readability, proposed syntax and language trade-offs | [docs/LANGUAGE_DESIGN.md](docs/LANGUAGE_DESIGN.md) |
+| Architectural assumptions, identified limitations and future risks | [docs/PROJECT_RISKS.md](docs/PROJECT_RISKS.md) |
 | What's actually implemented, pending, blocked? | [docs/STATUS.md](docs/STATUS.md) |
 | Source area and tests by question | [CODEMAP.md](CODEMAP.md) |
 | Document ownership / validation instructions | [docs/README.md](docs/README.md), [docs/VALIDATION.md](docs/VALIDATION.md) |
@@ -50,6 +53,7 @@ This is a **PUBLIC experimental repository**. Read this file first, then only th
 python3 -m unittest discover -s tests -v
 python3 -m unittest discover -s scripts -p 'test_*.py' -v
 python3 scripts/agent_feature_map.py validate
+python3 scripts/roadmap.py --check  # validate stable M-IDs, dependency ordering, acceptance gates
 python3 scripts/check_docs.py
 python3 compiler/htmlk.py examples/kernel.html --out build/kernel.c
 gcc -std=c11 -ffreestanding -fno-stack-protector -fno-pie -Wall -Wextra -Werror -c build/kernel.c -o build/kernel.o

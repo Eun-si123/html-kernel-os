@@ -8,6 +8,7 @@ Prefer realistic negative tests and observable results over adding success-looki
 python3 -m unittest discover -s tests -v
 python3 -m unittest discover -s scripts -p 'test_*.py' -v
 python3 scripts/agent_feature_map.py validate
+python3 scripts/roadmap.py --check
 python3 scripts/check_docs.py
 python3 compiler/htmlk.py examples/kernel.html --out build/kernel.c
 gcc -std=c11 -ffreestanding -fno-stack-protector -fno-pie -Wall -Wextra -Werror -c build/kernel.c -o build/kernel.o
@@ -25,6 +26,10 @@ A feature map's `impact` report only suggests regression files; it never runs th
 | QEMU boot | Bootable image, pinned bootloader version, exact QEMU invocation, captured console/debugcon bytes and automated pass/fail |
 | Real hardware boot | Hardware/firmware details, reproducible local steps, on-device observations, recovery strategy |
 | Driver/memory/scheduling support | Implementation, negative-path and regression tests, observed effect under appropriate execution environment |
+
+## Milestone acceptance and language usability
+
+The [ROADMAP.md](ROADMAP.md) IDs M0–M6 define feature gates; actual status lives in [STATUS.md](STATUS.md). [PROJECT_RISKS.md](PROJECT_RISKS.md) distinguishes observed limits from hypotheses. The [LANGUAGE_DESIGN.md](LANGUAGE_DESIGN.md) Python-comparison protocol is **NOT RUN** until a sufficiently complete, runnable language core exists.
 
 ## Critical failure cases
 
