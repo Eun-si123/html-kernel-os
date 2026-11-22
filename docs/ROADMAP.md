@@ -3,7 +3,7 @@
 **Audience:** human contributors, beginner programmers, coding agents, reviewers.
 **Project goal:** express increasingly capable **native OS/kernel logic** in an HTML-like systems language, while retaining a reproducible boot chain and honest execution evidence.
 
-> **한국어 요약:** 지금은 `kernel.html → C 코드 → x86-64 오브젝트` 생성까지만 검증했어. 다음 목표는 이 오브젝트를 부트로더와 연결해 **QEMU에서 실제 커널로 부팅**하는 것(M1). 이후 언어 기능(M2), 메모리/인터럽트(M3), 작업/보호(M4), 최소 사용자 환경(M5), 실기기 검증(M6) 순으로 진행해. 단순한 웹 데스크톱은 목표가 아니야.
+> **한국어 요약:** 지금은 `kernel.html → C 코드 → x86-64 오브젝트` 생성까지만 검증했어. 다음 목표는 이 오브젝트를 부트로더와 연결해 **QEMU에서 실제 커널로 부팅**하는 것(M1). 이후 언어 기능(M2), 메모리/인터럽트(M3), 작업/보호(M4), 최소 사용자 환경(M5), 실기기 검증(M6) 순으로 진행해. 실제 커널 부팅이 첫 성취 목표이며, **Linux 기반 시제품과 브라우저에서 체험하는 경로**도 장기 목표로 추가됐어. 브라우저 UI 시뮬레이션은 커널 부팅 증거가 아니야. 구체적인 병행 계획은 [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)를 참고해.
 
 ## How to read this / 읽는 방법
 
@@ -13,6 +13,12 @@
 - **Current truth** lives in [STATUS.md](STATUS.md), actual source/tests, and GitHub CI. The roadmap describes goals and requirements; it is **not** an implementation scoreboard.
 - Work on the **nearest unmet, unblocked milestone**, except for a confirmed high-priority correctness/security/privacy issue. Separate exploratory design from verified implementation.
 - Each task needs a measurable outcome, a negative test/failure case, and explicit NOT RUN evidence classes. See [VALIDATION.md](VALIDATION.md).
+
+## Founder interview Q1–Q20 and parallel delivery plan
+
+The completed [founder interview](INTERVIEW_DECISIONS.md) confirms **D + E** success criteria: prove actual source-derived kernel boot first, then expand real HTML-language kernel functions and practical use; adjust later gates only with observed evidence. The [implementation plan](IMPLEMENTATION_PLAN.md) maps work into **P0–P5 execution slices**: language-core reliability, M1 boot, minimal Linux userspace target, language usability, browser/Windows demos, and existing M3–M6 kernel capabilities. **P-slices are planning workstreams, not replacement M-milestones or shipped features.**
+
+The Linux and web delivery tracks do not remove QEMU M1 as the next native **boot** gate. Shared compiler semantics can be developed alongside boot integration. Any website/browser UI simulation must be labeled separately from real boot emulation.
 
 ## Milestone overview
 
