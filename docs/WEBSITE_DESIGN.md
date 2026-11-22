@@ -27,3 +27,7 @@ Structure: goal, genuine HTML-to-ISO process, observed evidence, readable approa
 - Physical PC, memory management and interrupts remain unverified / unimplemented.
 
 Do not confuse a visual preview with execution evidence.
+
+## CSS deployment cache
+
+Both pages pin a versioned CSS URL to prevent previously cached pre-redesign assets from styling newly deployed HTML. Update the version string when changing the CSS on subsequent releases. Tests resolve the local asset path before the query.
