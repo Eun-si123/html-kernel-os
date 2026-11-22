@@ -15,6 +15,7 @@
 | Physical PC boot | NOT RUN | No tested machine image |
 | Memory, interrupts, tasks, filesystems, drivers | NOT IMPLEMENTED | Architecture-level ambitions only |
 | GitHub Pages deployment | NOT VERIFIED / NOT AUTHORIZED BY DEFAULT | `site/` is deployment-ready source, not proof of a publicly running Pages site |
+| C++/Rust-class native performance | GOAL / NOT BENCHMARKED | See [PERFORMANCE.md](PERFORMANCE.md); no comparable workloads or reproducible timing evidence yet |
 
 ## Evidence classes
 

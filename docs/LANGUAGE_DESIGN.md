@@ -11,6 +11,7 @@ The only **implemented** grammar remains in [compiler/htmlk.py](../compiler/html
 - 하지만 매번 태그를 열고 닫아야 하므로 복잡한 코드에서 Python보다 **읽기 어렵고 길어질 위험**이 있어.
 - 커널 구현은 메모리, 인터럽트, 동시성, 권한과 같은 어려운 개념을 필요로 해. **문법이 쉽다고 OS 개발도 쉬워지는 건 아니야.**
 - 목표는 **"Python-like ergonomics for common tasks, with explicit safe/unsafe low-level controls"**이지 Python 호환성이나 Python 런타임 채택이 아니야.
+- **추가 성능 목표:** 런타임에 브라우저·Python 인터프리터 없이 최적화된 네이티브 코드로 실행해 C++/Rust와 비슷한 속도를 지향해. **현재 비교 측정은 수행하지 않았어.** 검증 방식은 [PERFORMANCE.md](PERFORMANCE.md) 참조.
 
 ## The syntax trade-off
 

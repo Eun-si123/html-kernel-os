@@ -14,6 +14,7 @@ This is a **risk register, not a report of observed defects**. Labels: **CONFIRM
 | **R8** | **NEEDS VERIFICATION:** external artifacts and build tool versions change | Non-reproducible or compromised builds | Pin/check upstream boot assets and tool versions, least-privilege CI, inspect licenses | M1–M6 |
 | **R9** | **NEEDS VERIFICATION:** premature real-PC experimentation | Data loss, unusable boot path, host damage | No production disk writes or firmware flashing; disposable QEMU then spare hardware, recovery media, explicit field approval | M6 |
 | **R10** | **CONFIRMED LIMITATION:** no OSS license selected | Outside contributors lack clear reuse permissions | Choose license with owner before accepting derivative contribution or implying Open Source license grants | Governance |
+| **R11** | **NEEDS VERIFICATION:** the new language's codegen/runtime may add CPU, allocation or bounds-check overhead | Underperformance despite native compilation | Equivalent checked-output C++/Rust workloads, compiler/codegen profiling, repeatable same-hardware measures; see [PERFORMANCE.md](PERFORMANCE.md) | M2–M6 |
 
 ## Assumptions to falsify early
 

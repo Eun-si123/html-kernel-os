@@ -26,6 +26,7 @@ This is a **PUBLIC experimental repository**. Read this file first, then only th
 | Product concept and usage | [README.md](README.md), [docs/DECISIONS.md](docs/DECISIONS.md) |
 | **Human + agent milestones, acceptance and priority** | [docs/ROADMAP.md](docs/ROADMAP.md) |
 | Python-like readability, proposed syntax and language trade-offs | [docs/LANGUAGE_DESIGN.md](docs/LANGUAGE_DESIGN.md) |
+| **C++/Rust-class performance goal, fair benchmarking and pitfalls** | [docs/PERFORMANCE.md](docs/PERFORMANCE.md) |
 | Architectural assumptions, identified limitations and future risks | [docs/PROJECT_RISKS.md](docs/PROJECT_RISKS.md) |
 | What's actually implemented, pending, blocked? | [docs/STATUS.md](docs/STATUS.md) |
 | Source area and tests by question | [CODEMAP.md](CODEMAP.md) |

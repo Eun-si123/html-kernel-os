@@ -54,6 +54,7 @@
 4. Add actionable errors with filename, line/column, invalid construct and suggestion.
 5. Validate five beginner exercises, error paths and kernel/boot integration using the M1 harness.
 6. Compare readability with Python based on real examples; do **not** claim "Python-level ease" without measured user tasks.
+7. Set up fair, correctness-checked **C++/Rust native baseline comparisons** once representative CPU/memory constructs run; see [PERFORMANCE.md](PERFORMANCE.md). Do not claim speed parity from a generated object or QEMU boot alone.
 
 **Gate:** every supported construct has a formal example, diagnostics, positive/negative tests and observed native execution through the M1 image.
 **Not included:** pretending the language is standard HTML, automatic pointer safety without a proof, full Python compatibility, unplanned dynamic runtime/GC.
@@ -92,7 +93,7 @@
 | **DX / accessibility** | Human-readable examples, beginner quickstart, non-jargon error messages, CI log reproduction |
 | **Evidence / quality** | Parser invalid cases, regression map, property/fuzz inputs where justified, QEMU and physical claims kept separate |
 | **Safety / security** | Strict input grammar, checked memory ranges, unsafe boundaries, sandboxed QEMU, supply-chain pins and license review |
-| **Performance** | Baselines on comparable hardware and versions; no claims from one run or invented completion percentages |
+| **Performance** | Native AOT execution without a mandatory browser/VM; use [PERFORMANCE.md](PERFORMANCE.md) for fair C++/Rust baselines, runtime overhead, code size and regression evidence; no unsupported speed claims |
 | **Integration / release** | Reproducible builds, deterministic artifacts, public-safe agent identity, no unapproved Pages/release deployment |
 
 ## Risk register and stopping conditions
