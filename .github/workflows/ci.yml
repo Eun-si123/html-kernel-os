@@ -52,6 +52,8 @@ jobs:
         run: python scripts/test_u32.py
       - name: Verify signed integers, safe bitwise and break/continue in Linux and native QEMU
         run: python scripts/test_signed_bits.py
+      - name: Verify bounded condition-driven loops in Linux and real QEMU
+        run: python scripts/test_while.py
       - name: Assemble standalone, non-test boot images
         run: |
           python scripts/build_boot.py --out build/html-kernel.iso
@@ -61,6 +63,7 @@ jobs:
           python scripts/build_boot.py --source examples/else-kernel.html --out build/html-kernel-else.iso
           python scripts/build_boot.py --source examples/u32-kernel.html --out build/html-kernel-u32.iso
           python scripts/build_boot.py --source examples/signed-bits-kernel.html --out build/html-kernel-signed.iso
+          python scripts/build_boot.py --source examples/while-kernel.html --out build/html-kernel-while.iso
       - uses: actions/upload-artifact@v4
         with:
           name: html-kernel-os-native-iso
@@ -79,3 +82,5 @@ jobs:
             build/html-kernel-u32.elf
             build/html-kernel-signed.iso
             build/html-kernel-signed.elf
+            build/html-kernel-while.iso
+            build/html-kernel-while.elf
