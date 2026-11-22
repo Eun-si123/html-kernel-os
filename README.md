@@ -4,7 +4,7 @@
 
 HTML is normally a document language. This repository explores a dedicated compiler that interprets a restricted set of HTML-style elements as *systems-programming instructions*. The long-term goal is a self-booting OS whose kernel logic is written in that language.
 
-> **Current status (prototype 0.1): NOT A BOOTABLE OS.** The proof of concept converts a tiny HTML dialect to freestanding x86-64 C source. GCC can compile this source to an object file. It has **not** been linked to a bootloader or executed as a kernel. There is no memory manager, filesystem, scheduler, or hardware driver implementation.
+> **Current status: BOOTABLE DEMO KERNEL (local QEMU BIOS PASS), NOT A USABLE OS.** A restricted HTML dialect compiles to freestanding x86-64 C; Limine hands off to the generated kernel. Real QEMU output and source-change/negative controls passed locally. GitHub CI, UEFI, browser emulator, and physical hardware require separate observed evidence. No memory manager, filesystem, scheduler or general hardware drivers.
 
 ## Agent and contributor entry points
 
@@ -14,7 +14,7 @@ Read [actual implementation status](docs/STATUS.md) and [evidence criteria](docs
 
 ## Roadmap for people and agents / 개발 계획
 
-Start with the **[M0–M6 milestone roadmap](docs/ROADMAP.md)**: the next gate (M1) is a real headless-QEMU boot of code compiled from HTML. Read the [language design / Python ease comparison](docs/LANGUAGE_DESIGN.md), [C++/Rust-class performance goal and measurement contract](docs/PERFORMANCE.md), and [risk/assumption register](docs/PROJECT_RISKS.md) before proposing syntax or hardware changes. Milestones are *not* dates or release promises; [STATUS](docs/STATUS.md) owns observed progress. Agents can open milestone-scoped Issues with [this shared task template](.github/ISSUE_TEMPLATE/roadmap-task.md).
+Start with the **[M0–M6 milestone roadmap](docs/ROADMAP.md)**: M1 actual QEMU BIOS boot passed locally and needs independent PR CI evidence before claiming repository-wide completion. Read the [language design / Python ease comparison](docs/LANGUAGE_DESIGN.md), [C++/Rust-class performance goal and measurement contract](docs/PERFORMANCE.md), and [risk/assumption register](docs/PROJECT_RISKS.md) before proposing syntax or hardware changes. Milestones are *not* dates or release promises; [STATUS](docs/STATUS.md) owns observed progress. Agents can open milestone-scoped Issues with [this shared task template](.github/ISSUE_TEMPLATE/roadmap-task.md).
 
 ## Try the working prototype
 
@@ -61,7 +61,7 @@ Generated C implements a function named kernel_main(). It uses the **QEMU debugc
 
 ## Website / GitHub Pages
 
-The files under site/ are ready for **local preview only**. No GitHub Pages domain, existing username.github.io repository, Pages configuration, or deployment workflow is used. GitHub Pages may be configured separately for testing in the future.
+The user requested a **project-specific static GitHub Pages browser boot lab**, separate from the existing personal github.io homepage. After the Pages workflow succeeds, visit https://eun-si123.github.io/html-kernel-os/play.html to boot the generated ISO in a WebAssembly x86-64 emulator. The host is static: JavaScript runs the emulator on the visitor's machine, not on GitHub's servers. Actual browser boot success must be confirmed independently of the QEMU tests. The workflow builds and uploads the ISO and checksum-pinned third-party emulator assets; no heavyweight binaries are stored in Git source. Browser emulator license in `site/v86-LICENSE.txt`.
 
 Local preview:
 

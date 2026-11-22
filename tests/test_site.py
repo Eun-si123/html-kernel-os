@@ -60,11 +60,23 @@ class SiteTests(unittest.TestCase):
                 self.assertIn("noopener", rel.split())
                 self.assertIn("noreferrer", rel.split())
 
-    def test_the_site_does_not_claim_boot_completed(self):
-        self.assertIn("커널 부팅 미구현", self.html)
+    def test_the_site_reports_tested_boot_and_limits(self):
+        self.assertIn("QEMU 로컬 검증 성공", self.html)
         self.assertIn("READ-ONLY PREVIEW", self.html)
-        self.assertIn("GitHub", self.html)
+        self.assertIn("./play.html", self.html)
+        self.assertIn("아직 미구현/미검증", self.html)
         self.assertRegex(self.html, r'<html lang="ko">')
+
+    def test_browser_laboratory_has_static_assets_and_truthful_status(self):
+        html = (SITE / "play.html").read_text(encoding="utf-8")
+        script = (SITE / "play.js").read_text(encoding="utf-8")
+        self.assertTrue((SITE / "play.css").is_file())
+        self.assertIn('id="boot-output"', html)
+        self.assertIn('id="boot-start"', html)
+        self.assertIn("serial0-output-byte", script)
+        self.assertIn("./html-kernel.iso", script)
+        self.assertIn("./vendor/v86.wasm", script)
+        self.assertIn("아직 구현되지 않았어", html)
 
     def test_copy_button_and_tabs_have_handlers(self):
         js = (SITE / "app.js").read_text(encoding="utf-8")

@@ -19,7 +19,7 @@ Only user-confirmed decisions belong under **Confirmed**. Proposals are not blan
 - **Benchmark threshold and protocol specifics:** a numeric C++/Rust ratio, allowed toolchain versions and workloads require representative implemented constructs and measured baselines; nothing has yet been benchmarked.
 - Exact language grammar and Python-level usability target: syntax rules, error behavior, expressions, type/ownership/unsafe contract, safe kernel libraries, and required novice comparison. See [LANGUAGE_DESIGN.md](LANGUAGE_DESIGN.md); example proposed tags are **not implemented**.
 - Timeline and resource commitment of M1–M6; the roadmap sets **dependencies and acceptance criteria**, not agreed delivery dates or guaranteed feasibility.
-- Hosting a live preview via GitHub Pages: the user has discussed using `github.io` for testing, but a Pages activation is a distinct repository-setting/deployment change. Check current explicit authorization and impact before enabling.
+- GitHub Pages deployment details beyond the user-authorized project-scoped `/html-kernel-os/` website (for example private hosting, domain changes, billing, or replacement of existing personal `github.io` homepage). Project Pages activation for this public repository is user-requested.
 - Operating-system scope beyond a bootable demonstrator (hardware targets, driver scope and API contracts).
 - Open-source license selection, release publishing, package distribution, third-party contributions and security policy.
 
