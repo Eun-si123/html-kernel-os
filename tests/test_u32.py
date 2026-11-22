@@ -169,7 +169,7 @@ class U32Tests(unittest.TestCase):
         self.assertIn('return htmlk_local_shadow_0;', code)
 
     def test_unsupported_types_and_cast_arguments_rejected(self):
-        self.rejected('<let name="x" type="i32" value="1"/>',
+        self.rejected('<let name="x" type="i16" value="1"/>',
                       'only type=')
         self.rejected('<print value="u32(1,2)"/>',
                       'conversion expects exactly 1 argument')

@@ -7,9 +7,20 @@ from html.parser import HTMLParser
 import keyword
 import re
 
+if __package__:
+    from .numeric_types import (
+        INTEGER_TYPE_SET, SIGNED_TYPES, UNSIGNED_TYPES,
+        width, c_type, literal_macro,
+    )
+else:
+    from numeric_types import (
+        INTEGER_TYPE_SET, SIGNED_TYPES, UNSIGNED_TYPES,
+        width, c_type, literal_macro,
+    )
+
 UINT64_MAX = (1 << 64) - 1
 UINT32_MAX = (1 << 32) - 1
-INT_TYPES = {"u32", "u64"}
+INT_TYPES = INTEGER_TYPE_SET
 MAX_SOURCE_BYTES = 131072
 MAX_NODES = 1024
 MAX_OUTPUT_BYTES = 16384
@@ -28,12 +39,14 @@ CHILDREN = {"kernel": {None}, "onboot": {"kernel"},
             "halt": {"onboot"},
             "function": {"kernel"},
             "return": {"function", "if", "repeat", "else"},
-            "else": {"if"}}
+            "else": {"if"},
+            "break": {"repeat", "if", "else"},
+            "continue": {"repeat", "if", "else"}}
 ALLOWED = {"kernel": {"arch"}, "onboot": set(), "print": {"value"},
            "let": {"name", "type", "value"}, "set": {"name", "value"},
            "if": {"test"}, "repeat": {"times"}, "halt": set(),
            "function": {"name", "params", "returns"}, "return": {"value"},
-           "else": set()}
+           "else": set(), "break": set(), "continue": set()}
 REQUIRED = {"let": {"name", "type", "value"}, "set": {"name", "value"},
             "if": {"test"}, "repeat": {"times"},
             "function": {"name", "params", "returns"}, "return": {"value"}}
@@ -106,6 +119,8 @@ class KernelParser(HTMLParser):
             fail(node, "no statements are allowed after <halt/>")
         if tag == "return" and not inside_function:
             fail(node, "<return> is only allowed inside a <function>")
+        if tag in {"break", "continue"} and not any(item.tag == "repeat" for item in self.stack):
+            fail(node, f"<{tag}> requires an enclosing <repeat>")
         if tag == "let" and parent in {"if", "repeat", "else"} and not inside_function:
             fail(node, "block-scoped <let> is only supported inside functions")
         if len(pairs) != len(attrs):
@@ -124,13 +139,13 @@ class KernelParser(HTMLParser):
             self.boot_seen = True
         elif tag == "function":
             if validate_name(node) in INT_TYPES:
-                fail(node, "u32 and u64 are reserved numeric conversion functions")
+                fail(node, "integer type names are reserved numeric conversion functions")
             if pairs["returns"] not in INT_TYPES:
-                fail(node, 'only returns="u32" or returns="u64" is implemented')
+                fail(node, "only returns=u32/u64/i32/i64 is implemented")
         elif tag == "let":
             validate_name(node)
             if pairs["type"] not in INT_TYPES:
-                fail(node, 'only type="u32" or type="u64" is implemented')
+                fail(node, "only type=u32/u64/i32/i64 is implemented")
         elif tag == "set":
             validate_name(node)
         elif tag == "repeat":
@@ -249,7 +264,7 @@ class KernelParser(HTMLParser):
             for part in parts:
                 bits = [bit.strip() for bit in part.split(":")]
                 if len(bits) != 2 or bits[1] not in INT_TYPES or not NAME.fullmatch(bits[0]) or keyword.iskeyword(bits[0]):
-                    fail(fn, f"bad typed parameter {part!r}; expected name:u32 or name:u64")
+                    fail(fn, f"bad typed parameter {part!r}; expected name:u32/u64/i32/i64")
                 if bits[0] in params:
                     fail(fn, f"duplicate parameter {bits[0]!r}")
                 params.append(bits[0])
@@ -263,8 +278,8 @@ class KernelParser(HTMLParser):
                 has_else = bool(nodes and nodes[-1].tag == "else")
                 branch = nodes[:-1] if has_else else nodes
                 for index, item in enumerate(branch):
-                    if item.tag == "return" and index + 1 != len(branch):
-                        fail(item, "statements after <return> are unreachable")
+                    if item.tag in {"return", "break", "continue"} and index + 1 != len(branch):
+                        fail(item, f"statements after <{item.tag}> are unreachable")
                     if item.tag in {"if", "repeat"}:
                         check_return_order(item.children)
                 if has_else:
@@ -290,12 +305,13 @@ def expression(source: str, node: Node, variables: set[str] | dict[str, str],
                functions: dict[str, FunctionDef] | None = None,
                calls: list[str] | None = None,
                variable_types: dict[str, str] | None = None,
-               expected_type: str | None = None) -> str:
-    """Emit C from typed expressions, rejecting implicit u32/u64 mixing.
+               expected_type: str | None = None,
+               type_out: list[str] | None = None) -> str:
+    """Typecheck/emit arithmetic as C11 without overflowing signed C integers.
 
-    Literal-only expressions inherit an expected integer type, otherwise u64.
-    u32(x) narrows modulo 2**32; u64(x) explicitly widens u32.
-    Legacy u64 expressions preserve their original generated C spelling.
+    Unsigned values use modulo-2**width; signed i32/i64 arithmetic uses the
+    same bit-pattern wrap with explicit signed interpretation. Conversions
+    between all four widths require i32(...), i64(...), u32(...) or u64(...).
     """
     if not source or len(source.encode("utf-8")) > 256:
         fail(node, "expression must contain 1..256 UTF-8 bytes")
@@ -309,13 +325,18 @@ def expression(source: str, node: Node, variables: set[str] | dict[str, str],
         fail(node, f"unsupported expression type {expected_type!r}")
     types = variable_types or {}
     funcs = functions or {}
+    literals = {"literal", "negative_literal"}
+    signed = {"i32", "i64"}
+    unsigned = {"u32", "u64"}
 
-    def numeric(a: str, b: str, *, operation: str) -> str:
+    def require_pair(a: str, b: str, operation: str) -> str:
         if a == "boolean" or b == "boolean":
-            fail(node, f"{operation} operands must be u64 or u32")
-        if a != "literal" and b != "literal" and a != b:
-            fail(node, f"cannot mix {a} and {b} without explicit u32(...) or u64(...) conversion")
-        return a if a != "literal" else b
+            fail(node, f"{operation} operands must be integers, not boolean")
+        if a not in literals and b not in literals and a != b:
+            fail(node, f"cannot mix {a} and {b} without an explicit conversion")
+        if a in literals and b in literals:
+            return "negative_literal" if "negative_literal" in (a, b) else "literal"
+        return a if a not in literals else b
 
     def kind(item: ast.AST) -> str:
         if isinstance(item, ast.Constant) and type(item.value) is int:
@@ -328,7 +349,7 @@ def expression(source: str, node: Node, variables: set[str] | dict[str, str],
             return types.get(item.id, "u64")
         if isinstance(item, ast.Call):
             if not isinstance(item.func, ast.Name) or item.keywords:
-                fail(node, "unsupported function call; expected a plain name and positional u64 arguments")
+                fail(node, "unsupported function call; expected a plain name and positional integer arguments")
             name = item.func.id
             if name in INT_TYPES:
                 if len(item.args) != 1:
@@ -342,20 +363,44 @@ def expression(source: str, node: Node, variables: set[str] | dict[str, str],
             if len(item.args) != len(func.params):
                 fail(node, f"function {name!r} expects {len(func.params)} arguments; got {len(item.args)}")
             for arg, param in zip(item.args, func.params):
-                arg_type = kind(arg)
-                param_type = func.param_types.get(param, "u64")
-                if arg_type == "boolean":
-                    fail(node, f"function arguments must be {param_type}")
-                if arg_type not in ("literal", param_type):
-                    fail(node, f"function {name!r} parameter {param!r} requires {param_type}; "
-                         f"use explicit u32(...) or u64(...) conversion")
+                actual = kind(arg)
+                required = func.param_types.get(param, "u64")
+                if actual == "boolean":
+                    fail(node, f"function arguments must be {required}")
+                if actual not in literals and actual != required:
+                    fail(node, f"function {name!r} parameter {param!r} requires {required}; use explicit {required}(...) conversion")
             return func.return_type
-        if isinstance(item, ast.BinOp) and type(item.op) in (ast.Add, ast.Sub, ast.Mult):
-            return numeric(kind(item.left), kind(item.right), operation="arithmetic")
+        if isinstance(item, ast.UnaryOp) and isinstance(item.op, ast.USub):
+            inner = kind(item.operand)
+            if inner == "literal":
+                return "negative_literal"
+            if inner in signed:
+                return inner
+            fail(node, "unary minus requires a signed i32/i64 value or literal")
+        if isinstance(item, ast.UnaryOp) and isinstance(item.op, ast.UAdd):
+            inner = kind(item.operand)
+            if inner == "boolean":
+                fail(node, "unary plus requires an integer")
+            return inner
+        if isinstance(item, ast.UnaryOp) and isinstance(item.op, ast.Invert):
+            inner = kind(item.operand)
+            if inner not in unsigned and inner != "literal":
+                fail(node, "bitwise NOT requires an unsigned integer; cast using u32(...) or u64(...)")
+            return inner
+        if isinstance(item, ast.BinOp):
+            op = type(item.op)
+            if op not in (ast.Add, ast.Sub, ast.Mult, ast.BitAnd,
+                          ast.BitOr, ast.BitXor, ast.LShift, ast.RShift):
+                fail(node, "unsupported binary operator")
+            result = require_pair(kind(item.left), kind(item.right), "arithmetic")
+            if op in (ast.BitAnd, ast.BitOr, ast.BitXor, ast.LShift, ast.RShift):
+                if result in signed or result == "negative_literal":
+                    fail(node, "bitwise operations require unsigned integers; cast using u32(...) or u64(...)")
+            return result
         if isinstance(item, ast.Compare) and len(item.ops) == 1:
-            left, right = kind(item.left), kind(item.comparators[0])
-            numeric(left, right, operation="comparison")
-            if type(item.ops[0]) not in (ast.Eq, ast.NotEq, ast.Lt, ast.LtE, ast.Gt, ast.GtE):
+            require_pair(kind(item.left), kind(item.comparators[0]), "comparison")
+            if type(item.ops[0]) not in (ast.Eq, ast.NotEq, ast.Lt, ast.LtE,
+                                         ast.Gt, ast.GtE):
                 fail(node, "comparison operator is not supported")
             return "boolean"
         if isinstance(item, ast.BoolOp) and type(item.op) in (ast.And, ast.Or):
@@ -369,51 +414,94 @@ def expression(source: str, node: Node, variables: set[str] | dict[str, str],
         fail(node, f"unsupported expression syntax: {type(item).__name__}")
 
     root_kind = kind(tree.body)
+    actual_type = (root_kind if root_kind not in literals
+                   else expected_type or ("i64" if root_kind == "negative_literal" else "u64"))
     if boolean:
         if root_kind != "boolean":
-            fail(node, f"expected boolean expression, got {'number' if root_kind != 'boolean' else root_kind}")
+            fail(node, "expected boolean expression, got number")
     elif root_kind == "boolean":
         fail(node, "expected number expression, got boolean")
-    elif expected_type is not None and root_kind not in ("literal", expected_type):
-        fail(node, f"expected {expected_type} expression but got {root_kind}; "
-             f"use explicit {expected_type}(...) conversion")
+    elif expected_type is not None and root_kind not in literals and root_kind != expected_type:
+        fail(node, f"expected {expected_type} expression but got {root_kind}; use explicit {expected_type}(...) conversion")
 
     def emit(item: ast.AST, preferred: str | None = None) -> str:
         inferred = kind(item)
-        if inferred not in ("literal", "boolean") and preferred not in (None, inferred):
-            fail(node, f"expected {preferred} expression but got {inferred}; "
-                 f"use explicit {preferred}(...) conversion")
+        if inferred not in literals | {"boolean"} and preferred not in (None, inferred):
+            fail(node, f"expected {preferred} expression but got {inferred}; use explicit {preferred}(...) conversion")
         if isinstance(item, ast.Constant) and type(item.value) is int:
             resolved = preferred or "u64"
-            if resolved == "u32":
-                if item.value > UINT32_MAX:
-                    fail(node, f"integer literal {item.value} outside u32 range; use u32(...) to truncate explicitly")
-                return f"UINT32_C({item.value})"
-            return f"UINT64_C({item.value})"
+            limit = (1 << (width(resolved) - (1 if resolved in signed else 0))) - 1
+            if item.value > limit:
+                fail(node, f"integer literal {item.value} outside {resolved} range; use an explicit numeric conversion")
+            return f"{literal_macro(resolved)}({item.value})"
         if isinstance(item, ast.Name):
             return variables[item.id] if isinstance(variables, dict) else "htmlk_" + item.id
+        if isinstance(item, ast.UnaryOp):
+            if isinstance(item.op, ast.USub):
+                resolved = inferred if inferred not in literals else (preferred or "i64")
+                if resolved not in signed:
+                    fail(node, "negative literal requires signed i32/i64 type or an explicit conversion")
+                if isinstance(item.operand, ast.Constant) and type(item.operand.value) is int:
+                    value = item.operand.value
+                    limit = 1 << (width(resolved) - 1)
+                    if value > limit:
+                        fail(node, f"negative integer literal -{value} outside {resolved} range")
+                    # -INT{width}_MIN cannot be represented as a positive C literal.
+                    if value == limit:
+                        largest = limit - 1
+                        macro = literal_macro(resolved)
+                        return f"(-{macro}({largest}) - {macro}(1))"
+                    return f"(-{literal_macro(resolved)}({value}))"
+                if inferred not in signed:
+                    fail(node, "unary minus requires signed type")
+                return f"htmlk_neg_{resolved}({emit(item.operand, resolved)})"
+            if isinstance(item.op, ast.UAdd):
+                return emit(item.operand, preferred)
+            if isinstance(item.op, ast.Invert):
+                resolved = inferred if inferred not in literals else (preferred or "u64")
+                if resolved not in unsigned:
+                    fail(node, "bitwise NOT requires unsigned u32/u64")
+                return f"(({c_type(resolved)})(~{emit(item.operand, resolved)}))"
         if isinstance(item, ast.Call):
             name = item.func.id
             if name in INT_TYPES:
-                # Conversion is explicit: narrowing is modulo 2**32.
-                value = emit(item.args[0], None)
-                return f"(({ 'uint32_t' if name == 'u32' else 'uint64_t' })({value}))"
+                argument = emit(item.args[0], None)
+                if name in signed:
+                    return f"htmlk_from_bits_{name}((uint{width(name)}_t)({argument}))"
+                # Keep legacy u32/u64 codegen shape stable.
+                return f"(({c_type(name)})({argument}))"
             func = funcs[name]
-            arguments = [emit(arg, func.param_types.get(param, "u64"))
-                         for arg, param in zip(item.args, func.params)]
+            args = [emit(arg, func.param_types.get(param, "u64"))
+                    for arg, param in zip(item.args, func.params)]
             if calls is not None:
                 calls.append(name)
-            return f"htmlk_fn_{name}(" + ", ".join(arguments) + ")"
+            return f"htmlk_fn_{name}(" + ", ".join(args) + ")"
         if isinstance(item, ast.BinOp):
-            result_type = inferred if inferred != "literal" else (preferred or "u64")
-            left = emit(item.left, result_type)
-            right = emit(item.right, result_type)
-            op = {ast.Add: "+", ast.Sub: "-", ast.Mult: "*"}[type(item.op)]
-            return f"(({ 'uint32_t' if result_type == 'u32' else 'uint64_t' })({left} {op} {right}))"
+            resolved = inferred if inferred not in literals else (
+                preferred or ("i64" if inferred == "negative_literal" else "u64")
+            )
+            left = emit(item.left, resolved)
+            right = emit(item.right, resolved)
+            operator = type(item.op)
+            if operator in (ast.Add, ast.Sub, ast.Mult):
+                op = {ast.Add: "+", ast.Sub: "-", ast.Mult: "*"}[operator]
+                if resolved in signed:
+                    helper = {ast.Add: "add", ast.Sub: "sub", ast.Mult: "mul"}[operator]
+                    return f"htmlk_{helper}_{resolved}({left}, {right})"
+                return f"(({c_type(resolved)})({left} {op} {right}))"
+            if resolved not in unsigned:
+                fail(node, "bitwise operations require u32/u64; use an explicit conversion")
+            op = {ast.BitAnd: "&", ast.BitOr: "|", ast.BitXor: "^"}.get(operator)
+            if op is not None:
+                return f"(({c_type(resolved)})({left} {op} {right}))"
+            helper = "shl" if operator == ast.LShift else "shr"
+            return f"htmlk_{helper}_{resolved}({left}, {right})"
         if isinstance(item, ast.Compare):
-            operand_type = numeric(kind(item.left), kind(item.comparators[0]),
-                                   operation="comparison")
-            operand_type = operand_type if operand_type != "literal" else "u64"
+            inferred_operand = require_pair(kind(item.left),
+                                            kind(item.comparators[0]), "comparison")
+            operand_type = inferred_operand if inferred_operand not in literals else (
+                "i64" if inferred_operand == "negative_literal" else "u64"
+            )
             left = emit(item.left, operand_type)
             right = emit(item.comparators[0], operand_type)
             ops = {ast.Eq: "==", ast.NotEq: "!=", ast.Lt: "<",
@@ -426,4 +514,7 @@ def expression(source: str, node: Node, variables: set[str] | dict[str, str],
             return f"(!{emit(item.operand)})"
         fail(node, f"unsupported expression syntax: {type(item).__name__}")
 
-    return emit(tree.body, expected_type)
+    output = emit(tree.body, expected_type)
+    if type_out is not None:
+        type_out.append(actual_type)
+    return output

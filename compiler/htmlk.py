@@ -8,9 +8,11 @@ from pathlib import Path
 if __package__:
     from .language import CompileError, MAX_RUNTIME_STEPS, Node, expression, fail, parse, validate_name
     from .function_codegen import compile_functions
+    from .numeric_types import c_type, c_helpers
 else:
     from language import CompileError, MAX_RUNTIME_STEPS, Node, expression, fail, parse, validate_name
     from function_codegen import compile_functions
+    from numeric_types import c_type, c_helpers
 
 
 def compile_html(source: str, *, target: str = "kernel") -> str:
@@ -57,6 +59,7 @@ def compile_html(source: str, *, target: str = "kernel") -> str:
             "  (void)putchar((int)v); /* Linux userspace stdout, NOT port I/O */",
             "}",
         ]
+    lines.extend(c_helpers())
     if contains_numeric_print:
         lines += [
             "static void htmlk_print_u64(uint64_t value) {",
@@ -68,6 +71,14 @@ def compile_html(source: str, *, target: str = "kernel") -> str:
             "  } while (value != 0);",
             "  while (count) outb(buffer[--count]);",
             "  outb(10);",
+            "}",
+            "static inline void htmlk_print_i64(int64_t value) {",
+            "  if (value < 0) {",
+            "    outb('-');",
+            "    htmlk_print_u64(UINT64_C(0) - (uint64_t)value);",
+            "  } else {",
+            "    htmlk_print_u64((uint64_t)value);",
+            "  }",
             "}",
         ]
     definitions, costs = compile_functions(functions)
@@ -90,20 +101,26 @@ def compile_html(source: str, *, target: str = "kernel") -> str:
             if work_done > MAX_RUNTIME_STEPS:
                 fail(node, "runtime statement budget exceeded")
             def checked(source: str, *, boolean: bool = False,
-                        expected_type: str | None = None) -> str:
+                        expected_type: str | None = None,
+                        type_out: list[str] | None = None) -> str:
                 nonlocal work_done
                 called: list[str] = []
                 result = expression(source, node, variables,
                                     boolean=boolean, functions=functions, calls=called,
-                                    variable_types=variable_types, expected_type=expected_type)
+                                    variable_types=variable_types, expected_type=expected_type,
+                                    type_out=type_out)
                 work_done += multiplier * sum(costs[name] for name in called)
                 if work_done > MAX_RUNTIME_STEPS:
                     fail(node, "expanded function work budget exceeded")
                 return result
             if tag == "print":
                 if "value" in node.attrs:
-                    value = checked(node.attrs["value"])
-                    lines.append(f"{pad}htmlk_print_u64({value});")
+                    detected: list[str] = []
+                    value = checked(node.attrs["value"], type_out=detected)
+                    if detected[0] in {"i32", "i64"}:
+                        lines.append(f"{pad}htmlk_print_i64((int64_t)({value}));")
+                    else:
+                        lines.append(f"{pad}htmlk_print_u64({value});")
                 else:
                     data = ", ".join(f"0x{b:02x}" for b in
                                      ("".join(node.text) + "\n").encode("utf-8"))
@@ -121,7 +138,7 @@ def compile_html(source: str, *, target: str = "kernel") -> str:
                 value = checked(node.attrs["value"], expected_type=typ)
                 variables.add(name)
                 variable_types[name] = typ
-                ctype = "uint32_t" if typ == "u32" else "uint64_t"
+                ctype = c_type(typ)
                 lines.append(f"{pad}{ctype} htmlk_{name} = {value};")
                 # An unused declaration is legal source, not a C -Werror failure.
                 lines.append(f"{pad}(void)htmlk_{name};")
@@ -150,6 +167,10 @@ def compile_html(source: str, *, target: str = "kernel") -> str:
                              f" {temp} < UINT64_C({count}); ++{temp}) {{")
                 statements(node.children, indent + 1, multiplier * count)
                 lines.append(f"{pad}}}")
+            elif tag == "break":
+                lines.append(f"{pad}break;")
+            elif tag == "continue":
+                lines.append(f"{pad}continue;")
             elif tag == "halt":
                 # The parser enforces that halt is the final top-level statement.
                 break

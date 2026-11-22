@@ -43,7 +43,7 @@ Generated C defines `kernel_main()`, writes to QEMU debugcon `0xE9` and COM1 ser
 
 ## Test real M2 language features
 
-The experimental language accepts typed unsigned 32-bit and 64-bit integers, arithmetic (+, -, *), bounded repeat, `if/else` conditionals and typed functions with 0–4 parameters. `u32` wraps modulo 2^32; `u64` wraps modulo 2^64. Cross-width conversions must be explicit (`u32(x)` truncates, `u64(x)` widens). For example, [math-kernel.html](examples/math-kernel.html) prints 14, 16, 18 from a native x86-64 kernel after compiling the HTML source. Typed u64 functions now support nested calls, lexical local variables, bounded loops, conditions and checked numeric returns, using the **same HTML language on native kernel and Linux targets**. Functions still cannot access hardware, perform I/O, use recursion or arbitrary dynamic loops; input and a full OS are pending. **M2 remains partially implemented.**
+The experimental language now supports **signed i32/i64 and unsigned u32/u64**, fixed-width wrapping arithmetic, explicit conversions, unsigned bitwise/shift operations, bounded repeat with `break`/`continue`, `if/else` and scoped typed functions (up to four parameters). The compiler's signed arithmetic avoids undefined C signed-overflow behavior. For example, [signed-bits-kernel.html](examples/signed-bits-kernel.html) prints the signed minimum values, safely wrapped results and loop-control output from an actual native kernel. The **same HTML source compiles to x86-64 kernel or an unprivileged Linux executable**. Neither functions nor ordinary source can directly access arbitrary hardware, I/O or memory; recursion and dynamic loops remain unavailable. **M2 is partially implemented, not a complete OS.**
 
 To verify this locally with GCC, QEMU and xorriso, run:
 
@@ -53,14 +53,17 @@ python3 scripts/test_functions.py
 python3 scripts/test_scoped_functions.py
 python3 scripts/test_else.py
 python3 scripts/test_u32.py
+python3 scripts/test_signed_bits.py
+python3 scripts/test_integer_oracle.py
 python3 scripts/build_boot.py --source examples/math-kernel.html --out build/html-kernel-math.iso
 python3 scripts/build_boot.py --source examples/functions-kernel.html --out build/html-kernel-functions.iso
 python3 scripts/build_boot.py --source examples/scoped-functions-kernel.html --out build/html-kernel-scoped.iso
 python3 scripts/build_boot.py --source examples/else-kernel.html --out build/html-kernel-else.iso
 python3 scripts/build_boot.py --source examples/u32-kernel.html --out build/html-kernel-u32.iso
+python3 scripts/build_boot.py --source examples/signed-bits-kernel.html --out build/html-kernel-signed.iso
 ~~~
 
-The [language contract](docs/M2_LANGUAGE_CONTRACT.md) documents syntax, safety bounds and unsupported expressions. The public [web boot lab](https://eun-si123.github.io/html-kernel-os/play.html) provides real x86-64 kernel examples for arithmetic, functions, scoped bodies, `if/else` branches and u32/u64 native types (each ISO is generated and validated independently).
+The [language contract](docs/M2_LANGUAGE_CONTRACT.md) documents syntax, safety bounds and unsupported expressions. The public [web boot lab](https://eun-si123.github.io/html-kernel-os/play.html) provides real x86-64 kernel examples for arithmetic, functions, scoped bodies, `if/else` branches u32/u64 native types and signed/bitwise/loop control (each ISO is generated and validated independently).
 
 ## Linux userspace target (P2: same language, no privileged I/O)
 

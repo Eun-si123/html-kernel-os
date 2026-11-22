@@ -89,7 +89,7 @@ class ScopedFunctionTests(unittest.TestCase):
 
     def test_returns_must_be_numeric_and_locals_typechecked(self):
         self.reject('<return value="n == 4"/>', "expected number")
-        self.reject('<let name="x" type="i32" value="2"/><return value="x"/>',
+        self.reject('<let name="x" type="i16" value="2"/><return value="x"/>',
                     'only type=')
         self.reject('<let name="x" type="u64" value="n == 2"/>'
                     '<return value="x"/>', "expected number")

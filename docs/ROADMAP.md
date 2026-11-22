@@ -54,7 +54,7 @@ M1 QEMU BIOS boot and one Chromium browser boot are verified; the next language 
 
 ### M2 — easy-to-read but systems-capable language
 
-**Partial implementation:** unsigned u64 variables, numeric expressions (+, -, *), bounded repeat, if comparisons, numeric print, and pure user-defined typed u64 functions (Linux + QEMU local and CI PASS, Chromium browser boot PASS), AST validation and initial line/column diagnostics. See [M2_LANGUAGE_CONTRACT.md](M2_LANGUAGE_CONTRACT.md). Scoped functions, if/else (QEMU + Linux + CI + Chromium PASS) and strict unsigned u32/u64 integer types with explicit conversions (real Linux + QEMU, GitHub CI and Chromium browser boot PASS) are implemented; signed/aggregate types, general I/O APIs, beginner exercises and benchmark gates remain OPEN.
+**Partial implementation:** u32/u64 arithmetic, scoped typed functions, if/else and bounded repeat are CI-verified with QEMU/Linux and a Chromium browser boot. New signed i32/i64, explicit width/signedness conversions, unsigned bitwise/shifts, and repeat break/continue have **local Linux + real QEMU PASS** (new CI/browser pending). Independent 464-case Python-vs-GCC (-O0/-O3 UBSan) arithmetic differential test passes locally. See [M2_LANGUAGE_CONTRACT.md](M2_LANGUAGE_CONTRACT.md). Dynamic loops, arrays/structs, memory-safe low-level APIs, modular compilation, novice evaluation and performance gates remain OPEN.
 
 1. Write a versioned [language design](LANGUAGE_DESIGN.md): grammar, nesting, attributes, names, expressions, whitespace, entities, Unicode, errors, versioning.
 2. Implement a typed AST/semantic validation (no silent HTML browser error-recovery); accept/reject fixtures before native codegen.

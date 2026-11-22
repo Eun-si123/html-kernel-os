@@ -83,6 +83,8 @@ class SiteTests(unittest.TestCase):
         self.assertIn("html-kernel-scoped.iso", script)
         self.assertIn("html-kernel-else.iso", script)
         self.assertIn("html-kernel-u32.iso", script)
+        self.assertIn("html-kernel-signed.iso", script)
+        self.assertIn('value="signed"', html)
         self.assertIn('value="u32"', html)
         self.assertIn('value="branches"', html)
         self.assertIn('value="scoped"', html)
