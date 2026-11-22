@@ -60,7 +60,7 @@
 
 ### P3. 편리한 시스템 언어 확장 (M2 연계)
 
-**진행 중:** u64 변수·계산·조건·제한된 반복문을 실제 QEMU 부팅에서 로컬 검증했어. 순수 u64 함수 호출은 GitHub CI·Chromium까지 검증했고, 함수 내부 지역변수·조건·반복·복수 반환 경로도 Linux/QEMU 로컬, GitHub CI와 Chromium 웹 체험실에서 검증했어(PR #23). 새 `if/else` 분기와 정상/잘못된 소스 처리는 Linux+QEMU, GitHub CI 및 Chromium 브라우저에서도 검증했어(PR #25). 고급 자료형, 실제 사용성 비교와 나머지 M2 완료 기준은 아직 미완료야. 구체적인 문법은 [M2_LANGUAGE_CONTRACT.md](M2_LANGUAGE_CONTRACT.md)에서 확인해.
+**진행 중:** u64 변수·계산·조건·제한된 반복문을 실제 QEMU 부팅에서 로컬 검증했어. 순수 u64 함수 호출은 GitHub CI·Chromium까지 검증했고, 함수 내부 지역변수·조건·반복·복수 반환 경로도 Linux/QEMU 로컬, GitHub CI와 Chromium 웹 체험실에서 검증했어(PR #23). 새 `if/else` 분기와 정상/잘못된 소스 처리는 Linux+QEMU, GitHub CI 및 Chromium 브라우저에서도 검증했어(PR #25). `u32`의 범위 검사·32비트 순환 연산·명시적 `u32(...)`/`u64(...)` 변환도 Linux/QEMU 로컬에서 검증했고 독립 CI·브라우저 확인은 대기 중이야. 부호 있는 정수·구조체·실제 사용성 비교와 나머지 M2 완료 기준은 아직 미완료야. 구체적인 문법은 [M2_LANGUAGE_CONTRACT.md](M2_LANGUAGE_CONTRACT.md)에서 확인해.
 
 - 변수·자료형·계산·조건문·반복문·함수·오류 위치·명시적 저수준 기능을 한 번에 다 넣지 않고 검증 가능한 단위로 구현한다.
 - 양쪽 환경에 적용 가능한 예제는 Linux와 QEMU에서 모두 시험한다. 권한 API는 무작정 섞지 않는다.

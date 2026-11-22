@@ -32,13 +32,16 @@ jobs:
         run: python scripts/test_scoped_functions.py
       - name: Verify if/else branch behavior in Linux and QEMU
         run: python scripts/test_else.py
-      - name: Build five non-test boot ISOs for visitors
+      - name: Verify typed u32/u64 native behavior
+        run: python scripts/test_u32.py
+      - name: Build six non-test boot ISOs for visitors
         run: |
           python scripts/build_boot.py --out build/html-kernel.iso
           python scripts/build_boot.py --source examples/math-kernel.html --out build/html-kernel-math.iso
           python scripts/build_boot.py --source examples/functions-kernel.html --out build/html-kernel-functions.iso
           python scripts/build_boot.py --source examples/scoped-functions-kernel.html --out build/html-kernel-scoped.iso
           python scripts/build_boot.py --source examples/else-kernel.html --out build/html-kernel-else.iso
+          python scripts/build_boot.py --source examples/u32-kernel.html --out build/html-kernel-u32.iso
       - name: Assemble static Pages bundle with pinned x86-64 WebAssembly emulator
         run: |
           mkdir -p public/vendor
@@ -49,6 +52,7 @@ jobs:
           cp build/html-kernel-functions.iso public/html-kernel-functions.iso
           cp build/html-kernel-scoped.iso public/html-kernel-scoped.iso
           cp build/html-kernel-else.iso public/html-kernel-else.iso
+          cp build/html-kernel-u32.iso public/html-kernel-u32.iso
           test -s public/index.html
           test -s public/play.html
           test -s public/html-kernel.iso
@@ -56,6 +60,7 @@ jobs:
           test -s public/html-kernel-functions.iso
           test -s public/html-kernel-scoped.iso
           test -s public/html-kernel-else.iso
+          test -s public/html-kernel-u32.iso
           test -s public/vendor/v86.wasm
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4

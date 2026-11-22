@@ -1,4 +1,4 @@
-"""Compile scoped, typed u64 function statements to native C.
+"""Compile scoped, typed u32/u64 function statements to native C.
 
 One checked AST drives both kernel and Linux targets. Functions cannot use
 global state or I/O; every variable binding resolves to a unique C local.
@@ -25,17 +25,28 @@ def compile_functions(functions: dict[str, FunctionDef]) -> tuple[list[str], dic
     edges: dict[str, Counter[str]] = {}
 
     for fn in functions.values():
-        params = ", ".join(f"uint64_t htmlk_{arg}" for arg in fn.params) or "void"
-        lines.append(f"uint64_t htmlk_fn_{fn.name}({params});")
+        params = ", ".join(
+            f"uint{'32' if fn.param_types.get(arg) == 'u32' else '64'}_t htmlk_{arg}"
+            for arg in fn.params
+        ) or "void"
+        result_type = "uint32_t" if fn.return_type == "u32" else "uint64_t"
+        lines.append(f"{result_type} htmlk_fn_{fn.name}({params});")
 
     for fn in functions.values():
-        params = ", ".join(f"uint64_t htmlk_{arg}" for arg in fn.params) or "void"
-        code = [f"uint64_t htmlk_fn_{fn.name}({params}) {{"]
+        params = ", ".join(
+            f"uint{'32' if fn.param_types.get(arg) == 'u32' else '64'}_t htmlk_{arg}"
+            for arg in fn.params
+        ) or "void"
+        result_type = "uint32_t" if fn.return_type == "u32" else "uint64_t"
+        code = [f"{result_type} htmlk_fn_{fn.name}({params}) {{"]
         # Unused parameters are legal, even when GCC uses -Wextra -Werror.
         for param in fn.params:
             code.append(f"  (void)htmlk_{param};")
         scopes: list[dict[str, str]] = [
             {arg: f"htmlk_{arg}" for arg in fn.params}
+        ]
+        type_scopes: list[dict[str, str]] = [
+            {arg: fn.param_types.get(arg, "u64") for arg in fn.params}
         ]
         counts: Counter[str] = Counter()
         referenced: set[str] = set()
@@ -49,6 +60,12 @@ def compile_functions(functions: dict[str, FunctionDef]) -> tuple[list[str], dic
                 merged.update(scope)
             return merged
 
+        def resolve_types() -> dict[str, str]:
+            merged = {}
+            for scope in type_scopes:
+                merged.update(scope)
+            return merged
+
         def emit(nodes: list, indent: int, weight: int) -> None:
             nonlocal bindings, loops, body_steps
             pad = "  " * indent
@@ -57,10 +74,13 @@ def compile_functions(functions: dict[str, FunctionDef]) -> tuple[list[str], dic
                 if body_steps > MAX_RUNTIME_STEPS:
                     fail(node, "function statement work budget exceeded")
 
-                def checked(expr: str, *, boolean: bool = False) -> str:
+                def checked(expr: str, *, boolean: bool = False,
+                            expected_type: str | None = None) -> str:
                     called: list[str] = []
                     value = expression(expr, node, resolve(), boolean=boolean,
-                                       functions=functions, calls=called)
+                                       functions=functions, calls=called,
+                                       variable_types=resolve_types(),
+                                       expected_type=expected_type)
                     for callee in called:
                         counts[callee] += weight
                         referenced.add(callee)
@@ -70,18 +90,22 @@ def compile_functions(functions: dict[str, FunctionDef]) -> tuple[list[str], dic
                     name = validate_name(node)
                     if name in scopes[-1]:
                         fail(node, f"variable {name!r} already declared in this scope")
-                    value = checked(node.attrs["value"])  # resolve before binding
+                    typ = node.attrs["type"]
+                    value = checked(node.attrs["value"], expected_type=typ)  # before binding
                     symbol = f"htmlk_local_{fn.name}_{bindings}"
                     bindings += 1
                     scopes[-1][name] = symbol
-                    code.extend((f"{pad}uint64_t {symbol} = {value};",
+                    type_scopes[-1][name] = typ
+                    ctype = "uint32_t" if typ == "u32" else "uint64_t"
+                    code.extend((f"{pad}{ctype} {symbol} = {value};",
                                  f"{pad}(void){symbol};"))
                 elif node.tag == "set":
                     name = validate_name(node)
                     variables = resolve()
                     if name not in variables:
                         fail(node, f"undefined variable {name!r}")
-                    code.append(f"{pad}{variables[name]} = {checked(node.attrs['value'])};")
+                    code.append(f"{pad}{variables[name]} = "
+                                f"{checked(node.attrs['value'], expected_type=resolve_types()[name])};")
                 elif node.tag == "if":
                     condition = checked(node.attrs["test"], boolean=True)
                     alternate = (node.children[-1] if node.children and
@@ -89,13 +113,17 @@ def compile_functions(functions: dict[str, FunctionDef]) -> tuple[list[str], dic
                     true_body = node.children[:-1] if alternate else node.children
                     code.append(f"{pad}if ({condition}) {{")
                     scopes.append({})
+                    type_scopes.append({})
                     emit(true_body, indent + 1, weight)
                     scopes.pop()
+                    type_scopes.pop()
                     if alternate is not None:
                         code.append(f"{pad}}} else {{")
                         scopes.append({})
+                        type_scopes.append({})
                         emit(alternate.children, indent + 1, weight)
                         scopes.pop()
+                        type_scopes.pop()
                     code.append(f"{pad}}}")
                 elif node.tag == "repeat":
                     count = int(node.attrs["times"])
@@ -104,11 +132,14 @@ def compile_functions(functions: dict[str, FunctionDef]) -> tuple[list[str], dic
                     code.append(f"{pad}for (uint64_t {loop} = 0;"
                                 f" {loop} < UINT64_C({count}); ++{loop}) {{")
                     scopes.append({})
+                    type_scopes.append({})
                     emit(node.children, indent + 1, weight * count)
                     scopes.pop()
+                    type_scopes.pop()
                     code.append(f"{pad}}}")
                 elif node.tag == "return":
-                    code.append(f"{pad}return {checked(node.attrs['value'])};")
+                    code.append(f"{pad}return "
+                                f"{checked(node.attrs['value'], expected_type=fn.return_type)};")
                 else:
                     fail(node, f"unsupported statement <{node.tag}> inside function")
         emit(fn.body, 1, 1)

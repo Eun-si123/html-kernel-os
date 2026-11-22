@@ -1,12 +1,12 @@
 # M2 HTML Kernel language — implemented subset (2026-11-22)
 
-**Status:** source-to-native-C for both kernel and unprivileged Linux process. Existing M1/M2 baseline verified by CI, pure user-defined function extension verified locally and in GitHub CI on x86-64 QEMU BIOS and Linux, plus one Chromium browser run. Overall M2 remains **IN PROGRESS**: pure u64 expression functions now work, but general function statements, additional types, modules and broader diagnostics are not implemented. See [STATUS.md](STATUS.md) for current CI evidence.
+**Status:** source-to-native-C for both kernel and unprivileged Linux process. Existing M1/M2 baseline verified by CI, pure user-defined function extension verified locally and in GitHub CI on x86-64 QEMU BIOS and Linux, plus one Chromium browser run. Overall M2 remains **IN PROGRESS**: u32/u64 typed variables and functions, scoped local statements, if/else and bounded repeats work; modules, safe memory APIs, signed types and wider diagnostics remain unimplemented. See [STATUS.md](STATUS.md) for current CI evidence.
 
 This is an **HTML-shaped programming language**, not general HTML. Build-time Python parses and validates a small grammar; it never evaluates source expressions as Python code.
 
 ## Runnable example
 
-Four runnable examples are [math-kernel.html](../examples/math-kernel.html), [functions-kernel.html](../examples/functions-kernel.html), [scoped-functions-kernel.html](../examples/scoped-functions-kernel.html) and [else-kernel.html](../examples/else-kernel.html).
+Five runnable M2 examples are [math-kernel.html](../examples/math-kernel.html), [functions-kernel.html](../examples/functions-kernel.html), [scoped-functions-kernel.html](../examples/scoped-functions-kernel.html), [else-kernel.html](../examples/else-kernel.html) and [u32-kernel.html](../examples/u32-kernel.html).
 
 ~~~html
 <kernel arch="x86_64">
@@ -28,13 +28,13 @@ The example prints 14, 16, 18 and "condition PASS" in actual QEMU boot. The full
 
 - **Root:** one kernel element with optional arch=x86_64 attribute and exactly one onboot.
 - **Text:** print literal UTF-8 content emits a newline to QEMU debugcon and COM1.
-- **Numeric output:** print with value attribute emits a unsigned decimal number and newline; combining the value attribute with text is invalid.
-- **Variables and scopes:** onboot supports top-level `let` and `set` as before. Inside functions, typed u64 `<let>` and `<set>` also work in the function body and nested `<if>`/`<else>`/`<repeat>`. An `if` or `repeat` opens a lexical scope; locals disappear when that scope ends. Inner scopes may shadow outer names; `set` updates the nearest visible binding. Redeclaring a name in the same scope, accessing an out-of-scope name, or reading an undeclared variable fails at compile time. Parameters start in function scope.
-- **Numeric expressions:** 0 through 2^64-1 integer literals, previously declared variable names, parentheses and +, -, *. Arithmetic is **unsigned modulo 2^64**. Division, shifts, signed numbers, indexing and arbitrary C/Python expressions are rejected; only validated user-defined u64 function calls are allowed.
+- **Numeric output:** print with value attribute emits an unsigned u32/u64 decimal number and newline (both widths use the shared decimal-output routine); combining the value attribute with text is invalid.
+- **Variables and scopes:** onboot supports typed `let` and `set`. Inside functions, typed u32/u64 `<let>` and `<set>` also work in the body and nested `<if>`/`<else>`/`<repeat>`. An `if` or `repeat` opens a lexical scope; locals disappear when that scope ends. Inner scopes may shadow outer names; `set` updates the nearest visible binding. Redeclaring a name in the same scope, accessing an out-of-scope name, or reading an undeclared variable fails at compile time. Parameters start in function scope.
+- **Numeric expressions / widths:** unsigned `u32` (0..2^32-1) and `u64` (0..2^64-1) literals, typed variables, `+`, `-`, `*` and parentheses. Arithmetic wraps **modulo 2^32 for u32** or **modulo 2^64 for u64**. Literal-only expressions adopt a declared/parameter/return width; bare numeric output defaults to u64. Mixing u32 and u64 is a compile error: explicitly use `u32(x)` to truncate modulo 2^32 or `u64(x)` to zero-extend u32. These conversions accept exactly one numeric argument; truncation is intentional, never silent. A literal exceeding a u32 context is rejected unless explicitly wrapped with `u32(...)`. Division, shifts, signed numbers, indexing and arbitrary C/Python expressions are rejected; validated user-defined typed function calls are supported.
 - **Conditional / else:** `<if test="score &gt; 10">...<else>...</else></if>` tests a comparison. `else` is optional, must be the **final direct child** of `if`, may occur only once and cannot have attributes. When the condition is false, only the else branch executes. Nested `if/else` is supported in onboot and typed functions. Comparisons `==`, `!=`, `<`, `<=`, `>`, `>=` and boolean `and`/`or`/`not` are accepted; in attributes use `&lt;`/`&gt;` for angles. A branch in a function creates its own lexical scope; declarations do not leak between branches. A `return` can be the final statement of either branch, but a final unconditional function return is still required.
 - **Repeat:** a literal decimal times count from 0 to 64. Nesting is bounded. Within `onboot`, a repeat can print, set and use nested control flow. Within a function, it additionally allows lexical locals and early returns.
 - **Typed functions:** `<function name="double" params="x:u64" returns="u64"><return value="x * 2"/></function>` remains valid as a sibling of `<onboot>`. A function body may now contain typed local declarations, assignment, nested bounded repetition and conditional branches plus numeric returns. A final unconditional top-level `<return value="..."/>` is **mandatory**; additional early returns may appear as final statements in nested `if`, `else` or `repeat` blocks. Statements following a return in the same block are rejected as unreachable. This conservative rule avoids missing returns on a false branch or zero-trip loop. Functions remain externally side-effect-free: no `<print>`, hardware access, mutable global state or arbitrary runtime calls inside them.
-- **Function limits:** at most 32 functions, 4 typed u64 positional parameters, maximum call-chain depth 8, no direct/indirect recursion. Expanded function work counts toward the 20,000-step program limit. Invalid signatures, arities, unknown functions and non-number arguments are rejected.
+- **Function limits:** at most 32 functions, 4 typed u32/u64 positional parameters, u32/u64 return values, maximum call-chain depth 8, no direct/indirect recursion. Expanded function work counts toward the 20,000-step program limit. Invalid signatures, arities, unknown functions and non-number arguments are rejected.
 - **Halt:** optional final top-level halt; no statements may follow it.
 - **Identifiers:** ASCII letters or underscore followed by letters, digits or underscores; Python keywords are disallowed.
 - **Limits:** source at most 128 KiB, 1024 elements, 16 nesting levels; text prints at most 4096 bytes; expressions at most 256 UTF-8 bytes and 64 AST nodes; estimated output at most 16 KiB and execution at most 20,000 statement steps.
@@ -49,6 +49,7 @@ python3 scripts/test_language_boot.py
 python3 scripts/test_functions.py
 python3 scripts/test_scoped_functions.py
 python3 scripts/test_else.py
+python3 scripts/test_u32.py
 python3 scripts/build_boot.py --source examples/math-kernel.html --out build/html-kernel-math.iso
 ~~~
 

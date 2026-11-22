@@ -71,7 +71,7 @@ class FunctionTests(unittest.TestCase):
         self.invalid(fn(params="x:u64,x:u64"), '<print>ok</print>', "duplicate parameter")
         self.invalid(fn(params="x:u64,y:u64,z:u64,v:u64,w:u64"),
                      '<print>ok</print>', "parameters exceed limit")
-        self.invalid(fn(returns="void"), '<print>ok</print>', 'only returns="u64"')
+        self.invalid(fn(returns="void"), '<print>ok</print>', 'only returns=')
         self.invalid(fn()+fn(), '<print value="f(1)"/>', "already defined")
         self.invalid(fn(name="for"), '<print>ok</print>', "invalid variable name")
 
