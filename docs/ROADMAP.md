@@ -3,7 +3,7 @@
 **Audience:** human contributors, beginner programmers, coding agents, reviewers.
 **Project goal:** express increasingly capable **native OS/kernel logic** in an HTML-like systems language, while retaining a reproducible boot chain and honest execution evidence.
 
-> **한국어 요약:** 지금은 `kernel.html → C 코드 → x86-64 오브젝트` 생성까지만 검증했어. 다음 목표는 이 오브젝트를 부트로더와 연결해 **QEMU에서 실제 커널로 부팅**하는 것(M1). 이후 언어 기능(M2), 메모리/인터럽트(M3), 작업/보호(M4), 최소 사용자 환경(M5), 실기기 검증(M6) 순으로 진행해. 실제 커널 부팅이 첫 성취 목표이며, **Linux 기반 시제품과 브라우저에서 체험하는 경로**도 장기 목표로 추가됐어. 브라우저 UI 시뮬레이션은 커널 부팅 증거가 아니야. 구체적인 병행 계획은 [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)를 참고해.
+> **한국어 요약:** `kernel.html → C → x86-64 커널 이미지 → 실제 QEMU BIOS 부팅`이 로컬 및 GitHub CI에서 검증됐어(M1). 이제 **변수·타입·제어 흐름·함수** 구현이 다음 목표야(M2). 이후 메모리/인터럽트(M3), 작업/보호(M4), 최소 사용자 환경(M5), 실기기 검증(M6) 순으로 진행해. 실제 커널 부팅은 첫 성취로 검증됐고, **브라우저 체험도 한 Chromium 환경에서 동작을 확인**했어. Linux 사용자 프로그램과 실제 PC는 추후 목표야. 브라우저 UI 시뮬레이션은 커널 부팅 증거가 아니야. 구체적인 병행 계획은 [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)를 참고해.
 
 ## How to read this / 읽는 방법
 
@@ -18,15 +18,15 @@
 
 The completed [founder interview](INTERVIEW_DECISIONS.md) confirms **D + E** success criteria: prove actual source-derived kernel boot first, then expand real HTML-language kernel functions and practical use; adjust later gates only with observed evidence. The [implementation plan](IMPLEMENTATION_PLAN.md) maps work into **P0–P5 execution slices**: language-core reliability, M1 boot, minimal Linux userspace target, language usability, browser/Windows demos, and existing M3–M6 kernel capabilities. **P-slices are planning workstreams, not replacement M-milestones or shipped features.**
 
-The Linux and web delivery tracks do not remove QEMU M1 as the next native **boot** gate. Shared compiler semantics can be developed alongside boot integration. Any website/browser UI simulation must be labeled separately from real boot emulation.
+M1 QEMU BIOS boot and one Chromium browser boot are verified; the next language gate is **M2**, while Linux-native compilation remains an unimplemented parallel track. Continue developing reusable compiler semantics and target-specific execution support. Any website/browser UI simulation must be labeled separately from real boot emulation.
 
 ## Milestone overview
 
 | ID | Goal | Depends on | Acceptance gate / 완료 기준 |
 | --- | --- | --- | --- |
 | **M0** | HTML → freestanding native object | — | Parser tests + generated C + x86-64 object from the same source (baseline achieved; see STATUS) |
-| **M1 — NEXT** | **Boot HTML-derived code in QEMU** | M0 | Reproducible x86-64 boot image; headless QEMU emits exact expected message from `kernel.html`; bounded automated PASS and negative FAIL |
-| **M2** | Readable core programming language | M0; M1 for OS-integrated gate (design work can start earlier) | Variables, types, arithmetic, branches, loops, functions + safe diagnostics; representative source examples compile and run in the boot environment |
+| **M1** | **Boot HTML-derived code in QEMU** | M0 | Reproducible x86-64 boot image; headless QEMU emits exact expected message from `kernel.html`; bounded automated PASS and negative FAIL |
+| **M2 — NEXT** | Readable core programming language | M0; M1 for OS-integrated gate (design work can start earlier) | Variables, types, arithmetic, branches, loops, functions + safe diagnostics; representative source examples compile and run in the boot environment |
 | **M3** | Memory and fault handling | M1, relevant M2 primitives | Memory map, bounded physical allocator and virtual mapping, deliberate fault evidence, repeatable QEMU tests |
 | **M4** | Scheduling and privilege separation | M3 | Two distinct tasks execute deterministically; user/kernel isolation and bad-access rejection are demonstrable |
 | **M5** | Minimal useful operating environment | M4 | Console input, small read-only initial filesystem, independent user program execution and reproducible tests |
@@ -39,7 +39,7 @@ The Linux and web delivery tracks do not remove QEMU M1 as the next native **boo
 - **Does not prove:** bootloader linkage, QEMU execution, actual physical I/O, an OS, or general Python-level language features.
 - References: [CODEMAP](../CODEMAP.md), [STATUS](STATUS.md).
 
-### M1 — first *real* boot (highest engineering priority)
+### M1 — first *real* boot (verified; see STATUS/CI)
 
 1. Choose/pin a verified **Limine** version and boot protocol; document artifact provenance and build prerequisites.
 2. Define the correct kernel entry/linker layout; reuse the **HTML-generated `kernel_main`** and a minimal auditable handoff shim if required.

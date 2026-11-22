@@ -4,7 +4,7 @@ This is a **PUBLIC experimental repository**. Read this file first, then only th
 
 ## First: verified state, not ambition
 
-- On the initial public prototype, `compiler/htmlk.py` transforms a restricted HTML dialect into freestanding C; GCC can compile an x86-64 relocatable object. **That M0 stage alone was not bootable.** The new `boot/` and `scripts/test_boot.py` have locally verified a real QEMU BIOS boot; this remains a minimal demo kernel, not a full OS, and requires CI evidence for the exact PR.
+- On the initial public prototype, `compiler/htmlk.py` transforms a restricted HTML dialect into freestanding C; GCC can compile an x86-64 relocatable object. **That M0 stage alone was not bootable.** `boot/` and `scripts/test_boot.py` have verified real QEMU BIOS boot locally and in GitHub CI (PR #13); one live Chromium browser boot also passed. This remains a minimal demo kernel, not a full OS. See exact evidence in [docs/STATUS.md](docs/STATUS.md).
 - Runtime-independent generated machine code is not evidence of boot handoff. Claim boot, kernel, real hardware, or release readiness only after matching evidence described by [docs/STATUS.md](docs/STATUS.md) and [docs/VALIDATION.md](docs/VALIDATION.md).
 - Existing `site/` files are a static project website. **Do not enable, alter, or deploy GitHub Pages, change an existing `github.io` site, publish releases, or provision external infrastructure without specific authorization.**
 

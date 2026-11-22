@@ -25,6 +25,11 @@ python3 scripts/build_boot.py --out build/html-kernel.iso  # normal, non-test im
 
 Requires QEMU x86-64, GCC, make, xorriso, Python 3.12+; pinned Limine dependencies are SHA-256 checked. A QEMU test image exits with status 33 after verified serial/debugcon output; a normal boot image halts. Browser emulation and physical-machine tests are separate evidence classes. See [STATUS.md](STATUS.md) for observed current results and the exact CI run.
 
+## Observed QEMU and browser boot results (2026-11-22)
+
+- Real x86-64 BIOS QEMU, source alteration and negative controls **PASS**, PR #13 CI run `45027891902`, main run `45029073618`.
+- Public GitHub Pages run `45029073658` **SUCCESS**. Connected Chromium/Playwright navigated to the published `/play.html`, clicked **브라우저에서 부팅하기**, then read exact COM1 text `Hello from HTML Kernel!\nNative code, not a browser.\n` and 0 console errors. This is one browser/runtime observation; other browsers/mobile devices and physical machines remain unverified.
+
 ## What counts as proof
 
 | Claim | Required independently inspectable evidence |
