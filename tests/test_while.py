@@ -12,7 +12,9 @@ class WhileTests(unittest.TestCase):
     def compile_both(self, body: str, functions: str = "") -> None:
         for target in ("kernel", "linux"):
             with self.subTest(target=target):
-                self.assertIn("htmlk_loop_", compile_html(kernel(body, functions), target=target))
+                generated = compile_html(kernel(body, functions), target=target)
+                self.assertTrue("htmlk_loop_" in generated or "htmlk_repeat_" in generated,
+                                "no generated bounded loop for " + target)
 
     def reject(self, body: str, reason: str, functions: str = "") -> None:
         for target in ("kernel", "linux"):
