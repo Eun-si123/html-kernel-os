@@ -1,0 +1,28 @@
+<kernel arch="x86_64">
+  <function name="advance" params="seed:u32" returns="u32">
+    <let name="value" type="u32" value="seed"/>
+    <while test="value &lt; 5" max="4">
+      <set name="value" value="value + 1"/>
+    </while>
+    <return value="value"/>
+  </function>
+  <onboot>
+    <print>Bounded while in HTML Kernel!</print>
+    <let name="n" type="u64" value="0"/>
+    <while test="n &lt; 3" max="5">
+      <print value="n"/>
+      <set name="n" value="n + 1"/>
+    </while>
+    <print value="n"/>
+    <print value="advance(u32(1))"/>
+    <let name="count" type="u64" value="0"/>
+    <while test="count &lt; 9" max="2">
+      <set name="count" value="count + 1"/>
+    </while>
+    <print value="count"/>
+    <if test="count == 2 and n == 3">
+      <print>while PASS</print>
+    </if>
+    <halt/>
+  </onboot>
+</kernel>
