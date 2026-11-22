@@ -1,6 +1,6 @@
 # M2 HTML Kernel language — implemented subset (2026-11-22)
 
-**Status:** source-to-native-C for both kernel and unprivileged Linux process. Existing M1/M2 baseline verified by CI, pure user-defined function extension verified locally in x86-64 QEMU BIOS and Linux. Overall M2 remains **IN PROGRESS**: pure u64 expression functions now work, but general function statements, additional types, modules and broader diagnostics are not implemented. See [STATUS.md](STATUS.md) for current CI evidence.
+**Status:** source-to-native-C for both kernel and unprivileged Linux process. Existing M1/M2 baseline verified by CI, pure user-defined function extension verified locally and in GitHub CI on x86-64 QEMU BIOS and Linux, plus one Chromium browser run. Overall M2 remains **IN PROGRESS**: pure u64 expression functions now work, but general function statements, additional types, modules and broader diagnostics are not implemented. See [STATUS.md](STATUS.md) for current CI evidence.
 
 This is an **HTML-shaped programming language**, not general HTML. Build-time Python parses and validates a small grammar; it never evaluates source expressions as Python code.
 
@@ -50,7 +50,7 @@ python3 scripts/test_functions.py
 python3 scripts/build_boot.py --source examples/math-kernel.html --out build/html-kernel-math.iso
 ~~~
 
-The arithmetic test runs QEMU for the original and changed expression. The function test compiles both native Linux and QEMU kernels from the same HTML source, verifies the modified function result, and rejects recursion and wrong-output cases. GitHub Actions will perform the same tests; Pages will provide separate ISO files for the basic boot and arithmetic demos.
+The arithmetic test runs QEMU for the original and changed expression. The function test compiles both native Linux and QEMU kernels from the same HTML source, verifies the modified function result, and rejects recursion and wrong-output cases. GitHub Actions has verified the same tests (PR #20); Pages now provides separate boot ISOs for M1 basic, M2 arithmetic, and M2 functions demos. A connected Chromium browser loaded the published functions ISO and received exact kernel COM1 output.
 
 ## Shared Linux process proof (P2)
 

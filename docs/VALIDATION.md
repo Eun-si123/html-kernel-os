@@ -38,6 +38,10 @@ Use scripts/test_language_boot.py with QEMU to verify the committed arithmetic e
 
 Run `python3 scripts/test_functions.py` to compile one HTML source into both a Linux executable and a real Limine/QEMU kernel. It checks original and modified function return expressions, exact output, conditional changes and rejects incorrect expected output and recursive calls. Run `python3 -m unittest discover -s tests -q` for malformed typed signatures, call arity, undefined functions, recursion, depth and work budgets. General function bodies and other data types remain unsupported.
 
+## M2 browser function demo (observed on public Pages, 2026-11-22)
+
+GitHub PR #20: [CI run 45035455198](https://github.com/Eun-si123/html-kernel-os/actions/runs/45035455198) PASS; main [CI run 45035522696](https://github.com/Eun-si123/html-kernel-os/actions/runs/45035522696) PASS. Public [Pages run 45035522693](https://github.com/Eun-si123/html-kernel-os/actions/runs/45035522693) completed build/deploy successfully. In connected Chromium/Playwright, navigated to `https://eun-si123.github.io/html-kernel-os/play.html?demo=functions-40756f`, selected `functions`, clicked `브라우저에서 부팅하기`, and observed status `선택한 HTML 커널의 실제 시리얼 출력 검증 성공!` and actual COM1 output `Functions in HTML Kernel!\n13\n17\nfunction PASS\n10\n12\n` with browser console 0 errors. One runtime proof is not proof of mobile browser, UEFI or physical machine support.
+
 ## P2 Linux userspace target — independent proof
 
 The same compiler front-end accepts the original kernel source and M2 arithmetic source with a Linux output backend. Run the following as an unprivileged x86-64 Linux user:

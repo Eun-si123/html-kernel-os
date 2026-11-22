@@ -54,7 +54,7 @@ python3 scripts/build_boot.py --source examples/math-kernel.html --out build/htm
 python3 scripts/build_boot.py --source examples/functions-kernel.html --out build/html-kernel-functions.iso
 ~~~
 
-The [language contract](docs/M2_LANGUAGE_CONTRACT.md) documents syntax, safety bounds and unsupported expressions. Once CI and Pages have passed, select the M2 arithmetic or typed-functions demo in the [web boot lab](https://eun-si123.github.io/html-kernel-os/play.html).
+The [language contract](docs/M2_LANGUAGE_CONTRACT.md) documents syntax, safety bounds and unsupported expressions. The verified public [web boot lab] supports both M2 arithmetic and typed-functions demos(https://eun-si123.github.io/html-kernel-os/play.html).
 
 ## Linux userspace target (P2: same language, no privileged I/O)
 
