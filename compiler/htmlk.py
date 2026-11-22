@@ -102,14 +102,15 @@ def compile_html(source: str, *, target: str = "kernel") -> str:
                 fail(node, "runtime statement budget exceeded")
             def checked(source: str, *, boolean: bool = False,
                         expected_type: str | None = None,
-                        type_out: list[str] | None = None) -> str:
+                        type_out: list[str] | None = None,
+                        evaluations: int = 1) -> str:
                 nonlocal work_done
                 called: list[str] = []
                 result = expression(source, node, variables,
                                     boolean=boolean, functions=functions, calls=called,
                                     variable_types=variable_types, expected_type=expected_type,
                                     type_out=type_out)
-                work_done += multiplier * sum(costs[name] for name in called)
+                work_done += multiplier * evaluations * sum(costs[name] for name in called)
                 if work_done > MAX_RUNTIME_STEPS:
                     fail(node, "expanded function work budget exceeded")
                 return result
@@ -165,6 +166,19 @@ def compile_html(source: str, *, target: str = "kernel") -> str:
                 loop_id += 1
                 lines.append(f"{pad}for (uint64_t {temp} = 0;"
                              f" {temp} < UINT64_C({count}); ++{temp}) {{")
+                statements(node.children, indent + 1, multiplier * count)
+                lines.append(f"{pad}}}")
+            elif tag == "while":
+                count = int(node.attrs["max"])
+                test = checked(node.attrs["test"], boolean=True, evaluations=count)
+                # Bound guard checks as well as statements, including early exit.
+                work_done += multiplier * count
+                if work_done > MAX_RUNTIME_STEPS:
+                    fail(node, "runtime statement budget exceeded")
+                temp = f"htmlk_loop_{loop_id}"
+                loop_id += 1
+                lines.append(f"{pad}for (uint64_t {temp} = 0;"
+                             f" {temp} < UINT64_C({count}) && ({test}); ++{temp}) {{")
                 statements(node.children, indent + 1, multiplier * count)
                 lines.append(f"{pad}}}")
             elif tag == "break":
