@@ -82,10 +82,20 @@ def compile_html(source: str) -> str:
         "#if !defined(__x86_64__)",
         '#error "x86_64 only"',
         "#endif",
+        "static inline void io_outb(unsigned short port, unsigned char v) {",
+        '  __asm__ volatile ("outb %0, %1" : : "a"(v), "Nd"(port));',
+        "}",
+        "static inline void serial_init(void) {",
+        "  io_outb(0x3f9, 0x00); io_outb(0x3fb, 0x80);",
+        "  io_outb(0x3f8, 0x03); io_outb(0x3f9, 0x00);",
+        "  io_outb(0x3fb, 0x03); io_outb(0x3fa, 0xc7); io_outb(0x3fc, 0x0b);",
+        "}",
         "static inline void outb(unsigned char v) {",
-        '  __asm__ volatile ("outb %0, %1" : : "a"(v), "Nd"((unsigned short)0xE9));',
+        "  io_outb(0xe9, v); /* QEMU debugcon */",
+        "  io_outb(0x3f8, v); /* COM1 for browser emulation */",
         "}",
         "void kernel_main(void) {",
+        "  serial_init();",
     ]
     for op, value in instructions:
         if op == "print":
@@ -100,6 +110,11 @@ def compile_html(source: str) -> str:
         elif op == "halt":
             break
     lines.extend([
+        "#ifdef HTMLK_QEMU_TEST_EXIT",
+        '  /* Success exit is only compiled into a dedicated QEMU test artifact. */',
+        '  __asm__ volatile ("outb %0, %1" : : "a"((unsigned char)0x10),',
+        '                    "Nd"((unsigned short)0xf4));',
+        "#endif",
         '  __asm__ volatile ("cli");',
         '  for (;;) __asm__ volatile ("hlt");',
         "}",

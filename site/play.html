@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#090f1b">
+<meta name="description" content="실제 HTML-derived x86-64 커널 ISO를 브라우저에서 부팅하는 체험실">
+<title>HTML Kernel OS — Native boot lab</title>
+<link rel="stylesheet" href="./styles.css">
+<link rel="stylesheet" href="./play.css">
+<script src="./vendor/v86_all.js" defer></script>
+<script src="./play.js" defer></script>
+</head>
+<body>
+<div class="shell">
+<header class="topbar"><a class="brand" href="./index.html"><span class="logo">&lt;/&gt;</span><span>HTML<span class="accent">KERNEL</span><small>BOOT LAB / x86-64</small></span></a><a class="top-cta" href="./index.html">프로젝트 홈</a></header>
+<main class="boot-lab">
+<p class="eyebrow"><span class="live-dot"></span> NATIVE BOOT EXPERIMENT • WASM x86-64</p>
+<h1>HTML에서 <span class="gradient">커널로.</span></h1>
+<p class="lede">아래 버튼을 누르면 브라우저에서 64비트 PC를 에뮬레이션하고, HTML 소스를 컴파일해 만든 <strong>진짜 x86-64 커널 ISO</strong>를 부팅해. 단순한 HTML 화면 재현이 아니야.</p>
+<div class="lab-controls">
+<button type="button" id="boot-start" class="btn primary">브라우저에서 부팅하기</button>
+<button type="button" id="boot-stop" class="btn secondary" disabled>정지</button>
+<a class="btn secondary" href="./html-kernel.iso" download>커널 ISO 받기</a>
+</div>
+<p id="boot-status" class="lab-status" role="status" aria-live="polite">준비됨 · 아직 가상머신을 시작하지 않았어.</p>
+<div class="lab-grid">
+<section class="lab-pane"><h2>PC 화면 <small>실제 가상 그래픽 출력</small></h2>
+<div id="screen_container" class="emulator-screen"><div style="white-space:pre;font:14px monospace;line-height:14px"></div><canvas style="display:none"></canvas></div></section>
+<section class="lab-pane"><h2>커널 출력 <small>COM1 시리얼 포트에서 직접 수신</small></h2>
+<pre id="boot-output" class="boot-output" role="log" aria-live="polite">부팅을 시작하면 HTML에서 생성한 커널의 시리얼 출력을 이곳에 표시해.</pre></section>
+</div>
+<p class="notice"><strong>정확한 범위:</strong> 현재 커널은 부팅 메시지 출력 후 정지하는 최소 프로토타입이야. 메모리 관리·데스크톱·키보드 입력 등은 아직 구현되지 않았어. 브라우저 에뮬레이션은 기기/브라우저에 따라 실패하거나 느릴 수 있어. QEMU에서의 실제 부팅과 브라우저에서의 호환성은 별도로 검증해.</p>
+<p class="lab-links"><a href="https://github.com/Eun-si123/html-kernel-os">GitHub 소스</a> · <a href="https://github.com/Eun-si123/html-kernel-os/blob/main/docs/VALIDATION.md">테스트 방법</a> · <a href="./v86-LICENSE.txt">브라우저 에뮬레이터 라이선스</a></p>
+</main>
+<footer><strong>HTML<span class="accent">KERNEL</span></strong><span>Client-side emulation · No server-side execution</span></footer>
+</div>
+</body></html>

@@ -16,6 +16,15 @@ gcc -std=c11 -ffreestanding -fno-stack-protector -fno-pie -Wall -Wextra -Werror 
 
 A feature map's `impact` report only suggests regression files; it never runs them.
 
+## Native boot evidence (new M1 pipeline)
+
+```sh
+python3 scripts/test_boot.py       # really boots original + changed HTML ISOs in headless QEMU
+python3 scripts/build_boot.py --out build/html-kernel.iso  # normal, non-test image
+```
+
+Requires QEMU x86-64, GCC, make, xorriso, Python 3.12+; pinned Limine dependencies are SHA-256 checked. A QEMU test image exits with status 33 after verified serial/debugcon output; a normal boot image halts. Browser emulation and physical-machine tests are separate evidence classes. See [STATUS.md](STATUS.md) for observed current results and the exact CI run.
+
 ## What counts as proof
 
 | Claim | Required independently inspectable evidence |

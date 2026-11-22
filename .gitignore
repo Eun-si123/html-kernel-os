@@ -4,3 +4,7 @@ build/
 *.o
 .env
 .DS_Store
+
+# Locally mounted browser emulator and verified ISO (deployed via CI)
+site/vendor
+site/html-kernel.iso

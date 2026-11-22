@@ -21,10 +21,26 @@ jobs:
           python scripts/roadmap.py --check
           python scripts/check_docs.py
       - name: Validate site JavaScript syntax
-        run: node --check site/app.js
+        run: |
+          node --check site/app.js
+          node --check site/play.js
       - name: Generate freestanding C
         run: python compiler/htmlk.py examples/kernel.html --out build/kernel.c
       - name: Compile x86-64 object (not a boot image)
         run: |
           gcc -std=c11 -ffreestanding -fno-stack-protector -fno-pie -Wall -Wextra -Werror -c build/kernel.c -o build/kernel.o
           gcc -std=c11 -O2 -ffreestanding -fno-stack-protector -fno-pie -Wall -Wextra -Werror -c build/kernel.c -o build/kernel.opt.o
+      - name: Install real x86 boot-test tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends qemu-system-x86 xorriso
+      - name: Boot and verify HTML-derived kernel in QEMU
+        run: python scripts/test_boot.py
+      - name: Assemble standalone, non-test boot image
+        run: python scripts/build_boot.py --out build/html-kernel.iso
+      - uses: actions/upload-artifact@v4
+        with:
+          name: html-kernel-os-native-iso
+          path: |
+            build/html-kernel.iso
+            build/html-kernel.elf

@@ -13,8 +13,8 @@ Write kernel *logic* in a constrained HTML-like language. Translate it ahead of 
    - optional halt;
    - no scripts, nested elements inside print, unknown attributes, or arbitrary HTML.
 2. Code generation emits freestanding C source with a kernel_main() function.
-3. Output sends bytes to x86 I/O port 0xE9. This is **QEMU debugcon**, not VGA, a serial interface, or a real graphics driver.
-4. The pipeline compiles only an object file. It does **not** generate an ELF kernel linked for booting or a bootable ISO.
+3. Generated code initializes and outputs to COM1 at 0x3f8 alongside QEMU debugcon port 0xE9. Both outputs were seen in local QEMU boot. This is not VGA/framebuffer or a general hardware driver.
+4. The original M0 pipeline compiles an object; the new `scripts/build_boot.py` links that object to the tiny Limine protocol handoff (`boot/kernel_entry.c`) using `boot/linker.ld` and packs a hybrid BIOS/UEFI ISO. Local BIOS x86-64 QEMU boot PASS with source provenance and negative controls; UEFI, web emulator and real PC boot are NOT yet verified.
 
 ## Boundaries
 
