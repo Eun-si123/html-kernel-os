@@ -73,6 +73,7 @@ class SiteTests(unittest.TestCase):
         self.assertTrue((SITE / "play.css").is_file())
         self.assertTrue((SITE / "vendor/libv86.mjs").is_file())
         self.assertTrue((SITE / "vendor/v86.wasm").is_file())
+        self.assertTrue((SITE / "vendor/v86-bochs-vga.js").is_file())
         self.assertIn('id="boot-output"', html)
         self.assertIn('id="boot-start"', html)
         self.assertIn("serial0-output-byte", script)
