@@ -14,6 +14,7 @@ BASE = "https://v64-2ys.pages.dev/"
 # reviewed 2026-11-22. Browser binaries are not checked into source control.
 ASSETS = {
     "libv86.mjs": ("build/libv86.mjs", "bcdae0093f81470a041039cedbc57704d32b88dc07561b6900b5dfd0444d0c97"),
+    "v86-bochs-vga.js": ("build/v86-bochs-vga.js", "ce8415006ca38dc53bd807323fc01fcfc47e9d3c31b7aad3934636e4408d1984"),
     "v86.wasm": ("build/v86.wasm", "7a5bf011bdb6e33d1801d6b07aceb50f54dfcc6f1d631565c65ed4ec48cd833e"),
     "seabios.bin": ("bios/seabios.bin", "73e3f359102e3a9982c35fce98eb7cd08f18303ac7f1ba6ebfbe6cdc1c244d98"),
     "vgabios.bin": ("bios/vgabios.bin", "a4bc0d80cc3ca028c73dafa8fee396b8d054ce87ebd8abfbd31b06b437607880"),

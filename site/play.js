@@ -18,6 +18,7 @@ import V86 from './vendor/libv86.mjs';
     try {
       machine = new V86({
         cpu_type: 'x86_64',
+        graphics_adapter: 'bochs_vga',
         wasm_path: './vendor/v86.wasm',
         memory_size: 128 * 1024 * 1024,
         vram_size: 2 * 1024 * 1024,
@@ -26,7 +27,8 @@ import V86 from './vendor/libv86.mjs';
         vga_bios: { url: './vendor/vgabios.bin' },
         cdrom: { url: './html-kernel.iso' },
         acpi: true,
-        net_device: null,
+        net_device: { type: 'none' },
+        audio_device: 'none',
         autostart: true
       });
       machine.add_listener('emulator-ready', () => setStatus('가상 PC 준비 완료. 부트로더를 시작하는 중...'));
