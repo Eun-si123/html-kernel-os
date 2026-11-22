@@ -10,7 +10,7 @@ HTML is normally a document language. This repository explores a dedicated compi
 
 AI agents and external contributors: start at **[AGENTS.md](AGENTS.md)**, then follow **[CODEMAP.md](CODEMAP.md)** and the [documentation hub](docs/README.md). The repository uses TeamForge/BetterNet-style instructions for task ownership, public-safe commit attribution, current status, durable memory and advisory [feature-to-regression mapping](agent-evals/README.md). The instructions do not start a background agent or imply automatic deployment.
 
-Read [actual implementation status](docs/STATUS.md) and [evidence criteria](docs/VALIDATION.md) before claiming native boot support. See [current decisions](docs/DECISIONS.md) for confirmed versus proposed scope. The [founder interview record](docs/INTERVIEW_DECISIONS.md) captures Q1–Q15: a shared HTML-like language, Linux-based practical prototype and separate independent-kernel track are goals, not shipped features.
+Read [actual implementation status](docs/STATUS.md) and [evidence criteria](docs/VALIDATION.md) before claiming native boot support. See [current decisions](docs/DECISIONS.md) for confirmed versus proposed scope. The [founder interview record](docs/INTERVIEW_DECISIONS.md) captures Q1–Q20: the shared HTML-like language, Linux-based prototype, independent kernel, and browser-accessible experience are goals, not shipped features. The [implementation plan](docs/IMPLEMENTATION_PLAN.md) prioritizes actual QEMU boot proof and a reusable language core.
 
 ## Roadmap for people and agents / 개발 계획
 

@@ -1,6 +1,6 @@
 # HTML Kernel OS — agent contract
 
-This is a **PUBLIC experimental repository**. Read this file first, then only the specialist document needed for the task. The purpose is to develop a source language with HTML-like syntax that can eventually compile to a **real bootable native kernel**, not a simulated desktop or a browser-hosted operating system.
+This is a **PUBLIC experimental repository**. Read this file first, then only the specialist document needed for the task. The purpose is to develop a source language with HTML-like syntax that can eventually compile to a **real bootable native kernel**, not merely a simulated desktop. A future **browser-hosted emulator** is a separate desired delivery path, and only a real booted artifact can satisfy the M1 gate; see [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md).
 
 ## First: verified state, not ambition
 
