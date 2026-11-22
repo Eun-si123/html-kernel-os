@@ -9,12 +9,17 @@ Write kernel *logic* in a constrained HTML-like language. Translate it ahead of 
 1. The Python stdlib HTMLParser validates a deliberately tiny grammar:
    - exactly one outer kernel element with x86_64 architecture;
    - one onboot block;
-   - one or more print nodes containing up to 4096 UTF-8 bytes each;
-   - optional halt;
+   - one or more print nodes (literal UTF-8 text up to 4096 bytes, or unsigned numeric output);
+   - unsigned 64-bit let/set, bounded repeat and comparison-based if blocks (M2 subset);
+   - optional final halt;
    - no scripts, nested elements inside print, unknown attributes, or arbitrary HTML.
 2. Code generation emits freestanding C source with a kernel_main() function.
 3. Generated code initializes and outputs to COM1 at 0x3f8 alongside QEMU debugcon port 0xE9. Both outputs were seen in local QEMU boot. This is not VGA/framebuffer or a general hardware driver.
 4. The original M0 pipeline compiles an object; the new `scripts/build_boot.py` links that object to the tiny Limine protocol handoff (`boot/kernel_entry.c`) using `boot/linker.ld` and packs a hybrid BIOS/UEFI ISO. BIOS x86-64 QEMU boot PASS locally and in GitHub CI with source provenance and negative controls. Live browser emulation PASS in one Chromium/Playwright session; UEFI and real PC boot are NOT yet verified.
+
+## M2 compiler architecture (partial)
+
+The new compiler/language.py performs strict HTML-shaped parsing into a small typed statement tree and validates expressions through a restricted Python AST (parsed but **never evaluated as Python code**). compiler/htmlk.py lowers accepted numeric and text operations to freestanding x86-64 C. u64 arithmetic wraps; repeat times are bounded at source level. This code runs inside the real M1 boot image, not in a browser/Python runtime. See [M2_LANGUAGE_CONTRACT.md](M2_LANGUAGE_CONTRACT.md).
 
 ## Boundaries
 

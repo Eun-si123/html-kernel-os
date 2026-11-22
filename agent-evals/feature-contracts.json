@@ -4,13 +4,17 @@
     {
       "id": "html-grammar-codegen",
       "source": [
-        "compiler/htmlk.py"
+        "compiler/htmlk.py",
+        "compiler/language.py"
       ],
       "regressions": [
-        "tests/test_compiler.py"
+        "tests/test_compiler.py",
+        "tests/test_language.py"
       ],
       "fieldEvidence": [
-        "docs/VALIDATION.md"
+        "docs/VALIDATION.md",
+        "docs/M2_LANGUAGE_CONTRACT.md",
+        "scripts/test_language_boot.py"
       ]
     },
     {
@@ -18,7 +22,10 @@
       "source": [
         "site/index.html",
         "site/styles.css",
-        "site/app.js"
+        "site/app.js",
+        "site/play.html",
+        "site/play.js",
+        "site/play.css"
       ],
       "regressions": [
         "tests/test_site.py"

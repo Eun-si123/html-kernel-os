@@ -41,6 +41,19 @@ Input:
 
 Generated C defines `kernel_main()`, writes to QEMU debugcon `0xE9` and COM1 serial, then halts. The [Limine boot build](scripts/build_boot.py) now links this function into a real **minimal bootable kernel**; it is not a general-purpose OS or proven portable across physical hardware. Python is needed only at build time, not by the running kernel.
 
+## Test real M2 language features
+
+The experimental language now accepts unsigned 64-bit variables, arithmetic (+, -, *), bounded repeat and if comparisons. For example, [math-kernel.html](examples/math-kernel.html) prints 14, 16, 18 from a native x86-64 kernel after compiling the HTML source. Functions, input and a full OS are still pending: **M2 is only partially implemented.**
+
+To verify this locally with GCC, QEMU and xorriso, run:
+
+~~~sh
+python3 scripts/test_language_boot.py
+python3 scripts/build_boot.py --source examples/math-kernel.html --out build/html-kernel-math.iso
+~~~
+
+The [language contract](docs/M2_LANGUAGE_CONTRACT.md) documents syntax, safety bounds and unsupported expressions. Once CI and Pages have passed, select the M2 arithmetic demo in the [web boot lab](https://eun-si123.github.io/html-kernel-os/play.html).
+
 ## Project layout
 
 - compiler/htmlk.py — strict experimental HTML dialect parser / C generator

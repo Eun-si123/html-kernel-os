@@ -7,3 +7,4 @@ build/
 
 # Locally mounted browser emulator and verified ISO (deployed via CI)
 site/html-kernel.iso
+site/html-kernel-math.iso

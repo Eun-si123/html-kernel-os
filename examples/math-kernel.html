@@ -1,0 +1,15 @@
+<kernel arch="x86_64">
+  <onboot>
+    <print>Arithmetic in HTML Kernel!</print>
+    <let name="score" type="u64" value="2 + 3 * 4"/>
+    <repeat times="3">
+      <print value="score"/>
+      <set name="score" value="score + 2"/>
+    </repeat>
+    <if test="score == 20">
+      <print>condition PASS</print>
+    </if>
+    <print value="0 - 1"/>
+    <halt/>
+  </onboot>
+</kernel>

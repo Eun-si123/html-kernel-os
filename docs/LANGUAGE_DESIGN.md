@@ -1,7 +1,7 @@
 # HTML Kernel language design — readable syntax, explicit systems semantics
 
 **Status: design discussion, not a finished language specification.**
-The only **implemented** grammar remains in [compiler/htmlk.py](../compiler/htmlk.py) and [STATUS.md](STATUS.md). Proposed examples in this document are **not executable** and must not be advertised as current features.
+The **implemented subset** lives in [compiler/language.py](../compiler/language.py), [compiler/htmlk.py](../compiler/htmlk.py) and [M2_LANGUAGE_CONTRACT.md](M2_LANGUAGE_CONTRACT.md). Other examples and general-purpose features remain proposals, not shipped behavior.
 
 ## 한국어 핵심
 
@@ -18,9 +18,9 @@ The only **implemented** grammar remains in [compiler/htmlk.py](../compiler/html
 | Task | Python (already works) | HTML Kernel dialect |
 | --- | --- | --- |
 | Print | `print("Hello!")` | `<print>Hello!</print>` **implemented** (debugcon output in native C) |
-| Variable | `count = 3` | **proposed**: `<let name="count" type="u32" value="3"/>` |
-| Repeat | `for i in range(3): ...` | **proposed**: `<repeat times="3">...</repeat>` |
-| Condition | `if count > 0: ...` | **proposed**, grammar undecided |
+| Variable | `count = 3` | **implemented, unsigned:** `<let name="count" type="u64" value="3"/>` |
+| Repeat | `for i in range(3): ...` | **implemented, bounded:** `<repeat times="3">...</repeat>` |
+| Condition | `if count > 0: ...` | **implemented, comparison only:** `<if test="count &gt; 0">...</if>` |
 | Function | `def hello(): ...` | **proposed**, grammar and call syntax undecided |
 
 ### Current working program
@@ -34,15 +34,15 @@ The only **implemented** grammar remains in [compiler/htmlk.py](../compiler/html
 </kernel>
 ```
 
-Currently the compiler transforms this into freestanding C and an x86-64 object. There is **no** standalone bootable system or general expression evaluation yet.
+This example compiles to a real Limine bootable image and runs under QEMU and a tested Chromium browser. An additional numeric expression/loop example is already runnable; see [M2 language contract](M2_LANGUAGE_CONTRACT.md).
 
-### Proposed only: beginner-friendly language sketch
+### Executable M2 subset: beginner-friendly example
 
 ```html
-<!-- NON-EXECUTABLE DESIGN SKETCH — not supported yet -->
+<!-- Supported M2 subset: u64 variable and bounded repeat -->
 <kernel arch="x86_64">
   <onboot>
-    <let name="count" type="u32" value="3"/>
+    <let name="count" type="u64" value="3"/>
     <repeat times="3">
       <print>Hello!</print>
     </repeat>
@@ -51,7 +51,7 @@ Currently the compiler transforms this into freestanding C and an x86-64 object.
 </kernel>
 ```
 
-Question to answer before committing: are literal attributes enough, or should the language have typed expression syntax? Adding expression strings inside attributes (e.g., `value="x + 1"`) creates a **second embedded language** and introduces quoting/debugging complications. Alternative approaches must be compared through real examples before standardizing.
+The first M2 slice uses typed expressions in quoted attributes. This remains a deliberately small subset, not a final language standard. Expression strings inside attributes (e.g., `value="x + 1"`) create a **second embedded language** and introduce quoting/debugging tradeoffs. The implementation restricts the expression grammar and errors explicitly; future alternatives should be compared using real beginner tasks.
 
 ## Design principles to review before M2
 

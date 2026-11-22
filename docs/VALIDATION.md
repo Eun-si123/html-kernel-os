@@ -30,6 +30,10 @@ Requires QEMU x86-64, GCC, make, xorriso, Python 3.12+; pinned Limine dependenci
 - Real x86-64 BIOS QEMU, source alteration and negative controls **PASS**, PR #13 CI run `45027891902`, main run `45029073618`.
 - Public GitHub Pages run `45029073658` **SUCCESS**. Connected Chromium/Playwright navigated to the published `/play.html`, clicked **브라우저에서 부팅하기**, then read exact COM1 text `Hello from HTML Kernel!\nNative code, not a browser.\n` and 0 console errors. This is one browser/runtime observation; other browsers/mobile devices and physical machines remain unverified.
 
+## M2 numeric source code acceptance (partial language implementation)
+
+Use scripts/test_language_boot.py with QEMU to verify the committed arithmetic example and a changed expression in a *second* independently built boot image. Assert exact decimal output, the conditional changing from true to false, and invalid-source rejection. See [M2_LANGUAGE_CONTRACT.md](M2_LANGUAGE_CONTRACT.md) for currently implemented syntax and unsigned 64-bit semantics.
+
 ## What counts as proof
 
 | Claim | Required independently inspectable evidence |

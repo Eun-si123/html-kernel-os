@@ -54,6 +54,8 @@ M1 QEMU BIOS boot and one Chromium browser boot are verified; the next language 
 
 ### M2 — easy-to-read but systems-capable language
 
+**Partial implementation (local QEMU PASS, CI pending):** unsigned u64 variables, numeric expressions (+, -, *), bounded repeat, if comparisons, numeric print, AST validation and initial line/column diagnostics. See [M2_LANGUAGE_CONTRACT.md](M2_LANGUAGE_CONTRACT.md). Functions, broader types, beginner exercises and benchmark gates remain OPEN.
+
 1. Write a versioned [language design](LANGUAGE_DESIGN.md): grammar, nesting, attributes, names, expressions, whitespace, entities, Unicode, errors, versioning.
 2. Implement a typed AST/semantic validation (no silent HTML browser error-recovery); accept/reject fixtures before native codegen.
 3. Implement a minimal **documented** set of variables/constants, integer types, arithmetic, boolean conditions, bounded loops and functions; distinguish `safe` and explicit `unsafe` operations.

@@ -36,11 +36,17 @@ jobs:
           sudo apt-get install -y --no-install-recommends qemu-system-x86 xorriso
       - name: Boot and verify HTML-derived kernel in QEMU
         run: python scripts/test_boot.py
-      - name: Assemble standalone, non-test boot image
-        run: python scripts/build_boot.py --out build/html-kernel.iso
+      - name: Verify M2 variables and control flow boot
+        run: python scripts/test_language_boot.py
+      - name: Assemble standalone, non-test boot images
+        run: |
+          python scripts/build_boot.py --out build/html-kernel.iso
+          python scripts/build_boot.py --source examples/math-kernel.html --out build/html-kernel-math.iso
       - uses: actions/upload-artifact@v4
         with:
           name: html-kernel-os-native-iso
           path: |
             build/html-kernel.iso
             build/html-kernel.elf
+            build/html-kernel-math.iso
+            build/html-kernel-math.elf
