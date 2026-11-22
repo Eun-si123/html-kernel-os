@@ -19,11 +19,13 @@ MAX_FUNCTION_DEPTH = 8
 NAME = re.compile(r"[a-zA-Z_][a-zA-Z_0-9]*\Z")
 CHILDREN = {"kernel": {None}, "onboot": {"kernel"},
             "print": {"onboot", "if", "repeat"},
-            "let": {"onboot"}, "set": {"onboot", "if", "repeat"},
-            "if": {"onboot", "if", "repeat"},
-            "repeat": {"onboot", "if", "repeat"},
+            "let": {"onboot", "function", "if", "repeat"},
+            "set": {"onboot", "function", "if", "repeat"},
+            "if": {"onboot", "function", "if", "repeat"},
+            "repeat": {"onboot", "function", "if", "repeat"},
             "halt": {"onboot"},
-            "function": {"kernel"}, "return": {"function"}}
+            "function": {"kernel"},
+            "return": {"function", "if", "repeat"}}
 ALLOWED = {"kernel": {"arch"}, "onboot": set(), "print": {"value"},
            "let": {"name", "type", "value"}, "set": {"name", "value"},
            "if": {"test"}, "repeat": {"times"}, "halt": set(),
@@ -64,6 +66,7 @@ class FunctionDef:
     params: tuple[str, ...]
     return_node: Node
     source_node: Node
+    body: list[Node]
 
 
 @dataclass
@@ -92,8 +95,13 @@ class KernelParser(HTMLParser):
         parent = self.stack[-1].tag if self.stack else None
         if tag not in CHILDREN or parent not in CHILDREN[tag]:
             fail(node, f"<{tag}> is not allowed under <{parent}>")
+        inside_function = any(item.tag == "function" for item in self.stack)
         if self.halted and any(item.tag == "onboot" for item in self.stack):
             fail(node, "no statements are allowed after <halt/>")
+        if tag == "return" and not inside_function:
+            fail(node, "<return> is only allowed inside a <function>")
+        if tag == "let" and parent in {"if", "repeat"} and not inside_function:
+            fail(node, "block-scoped <let> is only supported inside functions")
         if len(pairs) != len(attrs):
             fail(node, f"duplicate attributes on <{tag}>")
         unknown = set(pairs) - ALLOWED[tag]
@@ -151,8 +159,8 @@ class KernelParser(HTMLParser):
         if tag == "onboot":
             self.program = node.children
         elif tag == "function":
-            if len(node.children) != 1 or node.children[0].tag != "return":
-                fail(node, '<function> must contain exactly one <return value="..."/>')
+            if not node.children or node.children[-1].tag != "return":
+                fail(node, '<function> must end with a top-level <return value="..."/>')
             self.functions.append(node)
             if len(self.functions) > MAX_FUNCTIONS:
                 fail(node, f"at most {MAX_FUNCTIONS} functions are supported")
@@ -230,7 +238,17 @@ class KernelParser(HTMLParser):
                 if bits[0] in params:
                     fail(fn, f"duplicate parameter {bits[0]!r}")
                 params.append(bits[0])
-            funcs[name] = FunctionDef(name, tuple(params), fn.children[0], fn)
+            # A top-level final return guarantees a value even when earlier
+            # conditional branches or zero-iteration repeats do not execute.
+            def check_return_order(nodes: list[Node]) -> None:
+                for index, item in enumerate(nodes):
+                    if item.tag == "return" and index + 1 != len(nodes):
+                        fail(item, "statements after <return> are unreachable")
+                    if item.tag in {"if", "repeat"}:
+                        check_return_order(item.children)
+            check_return_order(fn.children)
+            funcs[name] = FunctionDef(name, tuple(params), fn.children[-1], fn,
+                                      fn.children)
         return Program(self.program, funcs)
 
 
@@ -244,7 +262,8 @@ def parse(source: str) -> Program:
     return parser.finish()
 
 
-def expression(source: str, node: Node, variables: set[str], *, boolean: bool = False,
+def expression(source: str, node: Node, variables: set[str] | dict[str, str],
+               *, boolean: bool = False,
                functions: dict[str, FunctionDef] | None = None,
                calls: list[str] | None = None) -> str:
     if not source or len(source.encode("utf-8")) > 256:
@@ -282,7 +301,8 @@ def expression(source: str, node: Node, variables: set[str], *, boolean: bool = 
         if isinstance(item, ast.Name):
             if item.id not in variables:
                 fail(node, f"undefined variable {item.id!r}")
-            return "htmlk_" + item.id, "number"
+            return ((variables[item.id] if isinstance(variables, dict)
+                     else "htmlk_" + item.id), "number")
         if isinstance(item, ast.BinOp) and type(item.op) in (ast.Add, ast.Sub, ast.Mult):
             left, lt = emit(item.left)
             right, rt = emit(item.right)

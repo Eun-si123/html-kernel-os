@@ -1,0 +1,24 @@
+<kernel arch="x86_64">
+  <function name="accumulate" params="start:u64" returns="u64">
+    <let name="sum" type="u64" value="0"/>
+    <repeat times="4">
+      <let name="step" type="u64" value="start"/>
+      <set name="sum" value="sum + step"/>
+      <set name="start" value="start + 1"/>
+    </repeat>
+    <if test="sum &gt; 20">
+      <let name="sum" type="u64" value="sum + 3"/>
+      <return value="sum"/>
+    </if>
+    <return value="sum"/>
+  </function>
+  <onboot>
+    <print>Scoped functions in HTML Kernel!</print>
+    <print value="accumulate(4)"/>
+    <print value="accumulate(1)"/>
+    <if test="accumulate(4) == 25">
+      <print>scoped function PASS</print>
+    </if>
+    <halt/>
+  </onboot>
+</kernel>

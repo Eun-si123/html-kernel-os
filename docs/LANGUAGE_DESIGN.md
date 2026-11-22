@@ -21,7 +21,7 @@ The **implemented subset** lives in [compiler/language.py](../compiler/language.
 | Variable | `count = 3` | **implemented, unsigned:** `<let name="count" type="u64" value="3"/>` |
 | Repeat | `for i in range(3): ...` | **implemented, bounded:** `<repeat times="3">...</repeat>` |
 | Condition | `if count > 0: ...` | **implemented, comparison only:** `<if test="count &gt; 0">...</if>` |
-| Function | `def double(x): return x*2` | **implemented (pure u64 subset):** `<function name="double" params="x:u64" returns="u64"><return value="x * 2"/></function>` |
+| Function | `def double(x): return x*2` | **implemented (typed u64, scoped blocks):** `<function name="double" params="x:u64" returns="u64"><return value="x * 2"/></function>`; `let`, `set`, `if`, `repeat` inside functions also supported |
 
 ### Current working program
 

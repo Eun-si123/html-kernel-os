@@ -77,10 +77,10 @@ class FunctionTests(unittest.TestCase):
 
     def test_function_body_is_exactly_one_pure_return(self):
         self.invalid('<function name="f" params="" returns="u64"/>',
-                     '<print>ok</print>', "exactly one")
+                     '<print>ok</print>', "must end with")
         self.invalid('<function name="f" params="" returns="u64">'
                      '<return value="1"/><return value="2"/></function>',
-                     '<print>ok</print>', "exactly one")
+                     '<print>ok</print>', "unreachable")
         self.invalid('<function name="f" params="" returns="u64">'
                      '<print>bad</print></function>', '<print>ok</print>', "not allowed")
         self.invalid('<function name="f" params="" returns="u64">'

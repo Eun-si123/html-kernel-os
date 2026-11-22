@@ -20,6 +20,10 @@ import V86 from './vendor/libv86.mjs';
     functions: {
       iso: 'html-kernel-functions.iso',
       expected: 'Functions in HTML Kernel!\n13\n17\nfunction PASS\n10\n12\n'
+    },
+    scoped: {
+      iso: 'html-kernel-scoped.iso',
+      expected: 'Scoped functions in HTML Kernel!\n25\n10\nscoped function PASS\n'
     }
   });
   selection.addEventListener('change', () => {
