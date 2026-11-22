@@ -8,7 +8,7 @@
 <title>HTML Kernel OS — Native boot lab</title>
 <link rel="stylesheet" href="./styles.css">
 <link rel="stylesheet" href="./play.css">
-<script type="module" src="./play.js?v=20261123-u32"></script>
+<script type="module" src="./play.js?v=20261123-signed"></script>
 </head>
 <body>
 <div class="shell">
@@ -26,6 +26,7 @@
 <option value="scoped">함수 내부 지역변수·반복·조건부 반환 (M2 확장)</option>
 <option value="branches">참·거짓 분기·중첩 조건문 (M2 if/else)</option>
 <option value="u32">u32·u64 자료형·32비트 순환 계산 (M2 타입)</option>
+<option value="signed">i32·i64 음수·비트연산·break/continue (M2 확장)</option>
 </select>
 </div>
 <div class="lab-controls">
@@ -40,7 +41,7 @@
 <section class="lab-pane"><h2>커널 출력 <small>COM1 시리얼 포트에서 직접 수신</small></h2>
 <pre id="boot-output" class="boot-output" role="log" aria-live="polite">부팅을 시작하면 HTML에서 생성한 커널의 시리얼 출력을 이곳에 표시해.</pre></section>
 </div>
-<p class="notice"><strong>정확한 범위:</strong> 기본 커널은 부팅 메시지를 출력하고 정지하며, M2 실험은 변수를 계산하고 조건문·반복문을 실행해. 함수 내부 지역변수·조건·반복·반환, if/else 분기와 u32/u64 자료형도 부분 구현했지만, 재귀 호출·외부 상태 변경·입출력은 함수에서 지원하지 않아. 메모리 관리·데스크톱·키보드 입력 등은 아직 구현되지 않았어. 브라우저 에뮬레이션은 기기/브라우저에 따라 실패하거나 느릴 수 있어. QEMU에서의 실제 부팅과 브라우저에서의 호환성은 별도로 검증해.</p>
+<p class="notice"><strong>정확한 범위:</strong> 기본 커널은 부팅 메시지를 출력하고 정지하며, M2 실험은 변수를 계산하고 조건문·반복문을 실행해. 함수 내부 지역변수·조건·반복·반환, if/else 분기와 u32/u64/i32/i64 자료형, 비트 연산 및 제한 반복문의 break/continue도 부분 구현했지만, 재귀 호출·외부 상태 변경·입출력은 함수에서 지원하지 않아. 메모리 관리·데스크톱·키보드 입력 등은 아직 구현되지 않았어. 브라우저 에뮬레이션은 기기/브라우저에 따라 실패하거나 느릴 수 있어. QEMU에서의 실제 부팅과 브라우저에서의 호환성은 별도로 검증해.</p>
 <p class="lab-links"><a href="https://github.com/Eun-si123/html-kernel-os">GitHub 소스</a> · <a href="https://github.com/Eun-si123/html-kernel-os/blob/main/docs/VALIDATION.md">테스트 방법</a> · <a href="./v86-LICENSE.txt">브라우저 에뮬레이터 라이선스</a></p>
 </main>
 <footer><strong>HTML<span class="accent">KERNEL</span></strong><span>Client-side emulation · No server-side execution</span></footer>

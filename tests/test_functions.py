@@ -66,7 +66,7 @@ class FunctionTests(unittest.TestCase):
                      "function arguments must be u64")
 
     def test_invalid_function_signatures_and_duplicates(self):
-        self.invalid(fn(params="z:i32"), '<print>ok</print>', "bad typed parameter")
+        self.invalid(fn(params="z:i16"), '<print>ok</print>', "bad typed parameter")
         self.invalid(fn(params="7x:u64"), '<print>ok</print>', "bad typed parameter")
         self.invalid(fn(params="x:u64,x:u64"), '<print>ok</print>', "duplicate parameter")
         self.invalid(fn(params="x:u64,y:u64,z:u64,v:u64,w:u64"),

@@ -12,11 +12,13 @@ if __package__:
         FunctionDef, MAX_FUNCTION_DEPTH, MAX_RUNTIME_STEPS,
         expression, fail, validate_name,
     )
+    from .numeric_types import c_type
 else:
     from language import (
         FunctionDef, MAX_FUNCTION_DEPTH, MAX_RUNTIME_STEPS,
         expression, fail, validate_name,
     )
+    from numeric_types import c_type
 
 
 def compile_functions(functions: dict[str, FunctionDef]) -> tuple[list[str], dict[str, int]]:
@@ -26,18 +28,18 @@ def compile_functions(functions: dict[str, FunctionDef]) -> tuple[list[str], dic
 
     for fn in functions.values():
         params = ", ".join(
-            f"uint{'32' if fn.param_types.get(arg) == 'u32' else '64'}_t htmlk_{arg}"
+            f"{c_type(fn.param_types.get(arg, 'u64'))} htmlk_{arg}"
             for arg in fn.params
         ) or "void"
-        result_type = "uint32_t" if fn.return_type == "u32" else "uint64_t"
+        result_type = c_type(fn.return_type)
         lines.append(f"{result_type} htmlk_fn_{fn.name}({params});")
 
     for fn in functions.values():
         params = ", ".join(
-            f"uint{'32' if fn.param_types.get(arg) == 'u32' else '64'}_t htmlk_{arg}"
+            f"{c_type(fn.param_types.get(arg, 'u64'))} htmlk_{arg}"
             for arg in fn.params
         ) or "void"
-        result_type = "uint32_t" if fn.return_type == "u32" else "uint64_t"
+        result_type = c_type(fn.return_type)
         code = [f"{result_type} htmlk_fn_{fn.name}({params}) {{"]
         # Unused parameters are legal, even when GCC uses -Wextra -Werror.
         for param in fn.params:
@@ -96,7 +98,7 @@ def compile_functions(functions: dict[str, FunctionDef]) -> tuple[list[str], dic
                     bindings += 1
                     scopes[-1][name] = symbol
                     type_scopes[-1][name] = typ
-                    ctype = "uint32_t" if typ == "u32" else "uint64_t"
+                    ctype = c_type(typ)
                     code.extend((f"{pad}{ctype} {symbol} = {value};",
                                  f"{pad}(void){symbol};"))
                 elif node.tag == "set":
@@ -140,6 +142,10 @@ def compile_functions(functions: dict[str, FunctionDef]) -> tuple[list[str], dic
                 elif node.tag == "return":
                     code.append(f"{pad}return "
                                 f"{checked(node.attrs['value'], expected_type=fn.return_type)};")
+                elif node.tag == "break":
+                    code.append(f"{pad}break;")
+                elif node.tag == "continue":
+                    code.append(f"{pad}continue;")
                 else:
                     fail(node, f"unsupported statement <{node.tag}> inside function")
         emit(fn.body, 1, 1)

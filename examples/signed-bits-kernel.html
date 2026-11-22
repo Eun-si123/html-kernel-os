@@ -1,0 +1,54 @@
+<kernel arch="x86_64">
+  <function name="step" params="n:i32" returns="i32">
+    <let name="total" type="i32" value="n"/>
+    <repeat times="3">
+      <set name="total" value="total + 1"/>
+      <if test="total == 0">
+        <continue/>
+      </if>
+      <if test="total == 2">
+        <break/>
+      </if>
+    </repeat>
+    <return value="total"/>
+  </function>
+  <function name="lowest" params="" returns="i64">
+    <return value="-9223372036854775808"/>
+  </function>
+  <function name="wrap64" params="n:i64" returns="i64">
+    <return value="n - 1"/>
+  </function>
+  <function name="bitops" params="x:u32" returns="u32">
+    <let name="mask" type="u32" value="(x &lt;&lt; 3) | 1"/>
+    <return value="mask ^ 2"/>
+  </function>
+  <onboot>
+    <print>Typed signed integers and bitwise kernel!</print>
+    <let name="minimum" type="i32" value="-2147483648"/>
+    <print value="minimum"/>
+    <print value="minimum - 1"/>
+    <print value="step(-2)"/>
+    <print value="step(0)"/>
+    <print value="lowest()"/>
+    <print value="wrap64(lowest())"/>
+    <print value="i32(u32(4294967295))"/>
+    <print value="u64(i64(-1))"/>
+    <print value="bitops(5)"/>
+    <print value="u32(1) &lt;&lt; 32"/>
+    <print value="~u32(0)"/>
+    <let name="counter" type="u32" value="0"/>
+    <repeat times="6">
+      <set name="counter" value="counter + 1"/>
+      <if test="counter == 2"><continue/></if>
+      <if test="counter == 4"><break/></if>
+      <print value="counter"/>
+    </repeat>
+    <if test="step(-2) == 1 and bitops(5) == 43">
+      <print>typed signed and loop PASS</print>
+      <else>
+        <print>typed signed and loop FAIL</print>
+      </else>
+    </if>
+    <halt/>
+  </onboot>
+</kernel>

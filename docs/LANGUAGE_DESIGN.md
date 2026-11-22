@@ -18,10 +18,10 @@ The **implemented subset** lives in [compiler/language.py](../compiler/language.
 | Task | Python (already works) | HTML Kernel dialect |
 | --- | --- | --- |
 | Print | `print("Hello!")` | `<print>Hello!</print>` **implemented** (debugcon output in native C) |
-| Variable | `count = 3` | **implemented, unsigned:** `<let name="count" type="u32" value="3"/>` or `type="u64"`; no implicit width conversion |
-| Repeat | `for i in range(3): ...` | **implemented, bounded:** `<repeat times="3">...</repeat>` |
+| Variable | `count = 3` | **implemented, fixed-width:** `<let name="count" type="i32" value="-3"/>`, or u32/u64/i64; conversion must be explicit |
+| Repeat | `for i in range(3): ...` | **implemented, bounded:** `<repeat times="3">...</repeat>` with optional `<break/>` / `<continue/>` |
 | Condition | `if count > 0: ... else: ...` | **implemented:** `<if test="count &gt; 0">...<else>...</else></if>` (one final `<else>`) |
-| Function | `def double(x): return x*2` | **implemented (typed u32/u64, scoped blocks):** `<function name="double" params="x:u64" returns="u64"><return value="x * 2"/></function>`; `let`, `set`, `if`, `repeat` inside functions also supported |
+| Function | `def double(x): return x*2` | **implemented (typed u32/u64/i32/i64, scoped blocks):** `<function name="double" params="x:u64" returns="u64"><return value="x * 2"/></function>`; `let`, `set`, `if`, `repeat` inside functions also supported |
 
 ### Current working program
 

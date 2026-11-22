@@ -6,7 +6,8 @@
       "source": [
         "compiler/htmlk.py",
         "compiler/language.py",
-        "compiler/function_codegen.py"
+        "compiler/function_codegen.py",
+        "compiler/numeric_types.py"
       ],
       "regressions": [
         "tests/test_compiler.py",
@@ -15,7 +16,10 @@
         "tests/test_functions.py",
         "tests/test_scoped_functions.py",
         "tests/test_else.py",
-        "tests/test_u32.py"
+        "tests/test_u32.py",
+        "tests/test_signed.py",
+        "tests/test_bitwise.py",
+        "tests/test_loop_control.py"
       ],
       "fieldEvidence": [
         "docs/VALIDATION.md",
@@ -25,7 +29,9 @@
         "scripts/test_functions.py",
         "scripts/test_scoped_functions.py",
         "scripts/test_else.py",
-        "scripts/test_u32.py"
+        "scripts/test_u32.py",
+        "scripts/test_signed_bits.py",
+        "scripts/test_integer_oracle.py"
       ]
     },
     {

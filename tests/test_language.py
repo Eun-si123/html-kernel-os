@@ -49,7 +49,7 @@ class LanguageTests(unittest.TestCase):
         self.assert_invalid('<let name="x" type="u64" value="x + 1"/><print>x</print>', "undefined variable")
 
     def test_reject_wrong_types_and_identifiers(self):
-        self.assert_invalid('<let name="x" type="i32" value="2"/><print>x</print>', "only type=")
+        self.assert_invalid('<let name="x" type="i16" value="2"/><print>x</print>', "only type=")
         for name in ("hello-world", "7x", "for", "x;evil", "한글"):
             with self.subTest(name=name):
                 self.assert_invalid(f'<let name="{name}" type="u64" value="2"/><print>x</print>',
@@ -60,7 +60,7 @@ class LanguageTests(unittest.TestCase):
 
     def test_reject_injected_and_unsupported_expressions(self):
         for expr in ("__import__('os').system('id')", "x[0]", "1 / 0",
-                     "1 << 60", "-1", "2 ** 2000", "True", "1 if 2 else 3",
+                     "1 << 1.5", "(1, 2)", "2 ** 2000", "True", "1 if 2 else 3",
                      "1 < 2 < 3"):
             with self.subTest(expr=expr):
                 self.assert_invalid(f'<print value="{expr}"/>',

@@ -32,6 +32,8 @@ jobs:
           gcc -std=c11 -O2 -ffreestanding -fno-stack-protector -fno-pie -Wall -Wextra -Werror -c build/kernel.c -o build/kernel.opt.o
       - name: Compile and actually execute HTML programs in Linux userspace
         run: python scripts/test_linux.py
+      - name: Differential test signed/unsigned arithmetic against Python (UBSan -O0/-O3)
+        run: python scripts/test_integer_oracle.py
       - name: Install real x86 boot-test tools
         run: |
           sudo apt-get update
@@ -48,6 +50,8 @@ jobs:
         run: python scripts/test_else.py
       - name: Verify typed u32/u64 semantics in Linux and native QEMU
         run: python scripts/test_u32.py
+      - name: Verify signed integers, safe bitwise and break/continue in Linux and native QEMU
+        run: python scripts/test_signed_bits.py
       - name: Assemble standalone, non-test boot images
         run: |
           python scripts/build_boot.py --out build/html-kernel.iso
@@ -56,6 +60,7 @@ jobs:
           python scripts/build_boot.py --source examples/scoped-functions-kernel.html --out build/html-kernel-scoped.iso
           python scripts/build_boot.py --source examples/else-kernel.html --out build/html-kernel-else.iso
           python scripts/build_boot.py --source examples/u32-kernel.html --out build/html-kernel-u32.iso
+          python scripts/build_boot.py --source examples/signed-bits-kernel.html --out build/html-kernel-signed.iso
       - uses: actions/upload-artifact@v4
         with:
           name: html-kernel-os-native-iso
@@ -72,3 +77,5 @@ jobs:
             build/html-kernel-else.elf
             build/html-kernel-u32.iso
             build/html-kernel-u32.elf
+            build/html-kernel-signed.iso
+            build/html-kernel-signed.elf

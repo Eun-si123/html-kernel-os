@@ -32,6 +32,10 @@ import V86 from './vendor/libv86.mjs';
     u32: {
       iso: 'html-kernel-u32.iso',
       expected: 'Native u32 types in HTML Kernel!\n4294967295\n0\n1\n4294967295\n4294967296\ntyped PASS\n'
+    },
+    signed: {
+      iso: 'html-kernel-signed.iso',
+      expected: 'Typed signed integers and bitwise kernel!\n-2147483648\n2147483647\n1\n2\n-9223372036854775808\n9223372036854775807\n-1\n18446744073709551615\n43\n0\n4294967295\n1\n3\ntyped signed and loop PASS\n'
     }
   });
   selection.addEventListener('change', () => {
