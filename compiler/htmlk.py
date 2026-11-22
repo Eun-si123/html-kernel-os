@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compile an HTML-shaped systems language to freestanding x86-64 C."""
+"""Compile an HTML-shaped systems language to x86-64 kernel or Linux C."""
 from __future__ import annotations
 
 import argparse
@@ -11,7 +11,9 @@ else:
     from language import CompileError, Node, expression, fail, parse, validate_name
 
 
-def compile_html(source: str) -> str:
+def compile_html(source: str, *, target: str = "kernel") -> str:
+    if target not in ("kernel", "linux"):
+        raise CompileError(f"unknown compiler target {target!r}")
     program = parse(source)
     contains_numeric_print = False
 
@@ -23,11 +25,14 @@ def compile_html(source: str) -> str:
     scan(program)
 
     lines = [
-        "/* Generated from HTML Kernel language. Freestanding x86-64 C. */",
+        "/* Generated from HTML Kernel language. x86-64 native C. */",
         "#include <stdint.h>",
         "#if !defined(__x86_64__)",
         '#error "x86_64 only"',
         "#endif",
+    ]
+    if target == "kernel":
+        lines += [
         "static inline void io_outb(unsigned short port, unsigned char v) {",
         '  __asm__ volatile ("outb %0, %1" : : "a"(v), "Nd"(port));',
         "}",
@@ -40,7 +45,14 @@ def compile_html(source: str) -> str:
         "  io_outb(0xe9, v); /* QEMU debugcon */",
         "  io_outb(0x3f8, v); /* COM1 */",
         "}",
-    ]
+        ]
+    else:
+        lines += [
+            "#include <stdio.h>",
+            "static inline void outb(unsigned char v) {",
+            "  (void)putchar((int)v); /* Linux userspace stdout, NOT port I/O */",
+            "}",
+        ]
     if contains_numeric_print:
         lines += [
             "static void htmlk_print_u64(uint64_t value) {",
@@ -54,7 +66,10 @@ def compile_html(source: str) -> str:
             "  outb(10);",
             "}",
         ]
-    lines += ["void kernel_main(void) {", "  serial_init();"]
+    lines.append("void kernel_main(void) {" if target == "kernel"
+                 else "int main(void) {")
+    if target == "kernel":
+        lines.append("  serial_init();")
     variables: set[str] = set()
     loop_id = 0
 
@@ -110,7 +125,8 @@ def compile_html(source: str) -> str:
             else:
                 fail(node, f"compiler does not implement <{tag}>")
     statements(program)
-    lines += [
+    if target == "kernel":
+        lines += [
         "#ifdef HTMLK_QEMU_TEST_EXIT",
         "  /* Only test kernels write deterministic QEMU success port. */",
         '  __asm__ volatile ("outb %0, %1" : : "a"((unsigned char)0x10),',
@@ -118,24 +134,28 @@ def compile_html(source: str) -> str:
         "#endif",
         '  __asm__ volatile ("cli");',
         '  for (;;) __asm__ volatile ("hlt");',
-        "}",
-        "",
-    ]
+        ]
+    else:
+        lines += ["  return fflush(stdout) == EOF || ferror(stdout) ? 1 : 0;"]
+    lines += ["}", ""]
     return "\n".join(lines)
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="Compile HTML Kernel source to native freestanding C")
+    ap = argparse.ArgumentParser(description="Compile HTML Kernel source to native kernel or Linux C")
     ap.add_argument("input", type=Path)
     ap.add_argument("--out", type=Path, required=True)
+    ap.add_argument("--target", choices=("kernel", "linux"), default="kernel",
+                    help="Kernel: privileged I/O and halt; Linux: stdout and normal exit")
     args = ap.parse_args()
     try:
-        generated = compile_html(args.input.read_text(encoding="utf-8"))
+        generated = compile_html(args.input.read_text(encoding="utf-8"),
+                                 target=args.target)
         args.out.parent.mkdir(parents=True, exist_ok=True)
         args.out.write_text(generated, encoding="utf-8")
     except (CompileError, OSError, UnicodeError) as exc:
         ap.error(str(exc))
-    print(f"Generated {args.out} (freestanding C; use scripts/build_boot.py for boot ISO)")
+    print(f"Generated {args.out} ({args.target} x86-64 C source)")
     return 0
 
 

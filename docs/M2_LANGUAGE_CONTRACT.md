@@ -49,6 +49,19 @@ python3 scripts/build_boot.py --source examples/math-kernel.html --out build/htm
 
 The language boot test launches QEMU for the example and for a changed source expression, checks the expected branch outcome and rejects deliberately wrong output and invalid source. GitHub Actions will perform the same tests; Pages will provide separate ISO files for the basic boot and arithmetic demos.
 
+## Shared Linux process proof (P2)
+
+The same compiler emits a Linux userspace C program using a different output adapter, reusing the exact AST and expression semantics without root access or direct hardware ports:
+
+~~~sh
+python3 compiler/htmlk.py examples/math-kernel.html --target linux --out build/math-linux.c
+gcc -std=c11 -O2 -Wall -Wextra -Werror build/math-linux.c -o build/math-linux
+./build/math-linux
+python3 scripts/test_linux.py
+~~~
+
+Outputs and branch results match the native QEMU kernel. On Linux the halt statement means *normal process exit*, not a CPU halt. Linux distribution or broad POSIX API support is not claimed.
+
 ## Limitations
 
 This is not a full language or operating system. Functions, signed types, input, memory management, user programs, file I/O, physical hardware support and comprehensive performance comparisons are **not implemented/verified**. Browser execution is an independent compatibility test, not automatically proven by QEMU.

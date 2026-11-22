@@ -34,6 +34,16 @@ Requires QEMU x86-64, GCC, make, xorriso, Python 3.12+; pinned Limine dependenci
 
 Use scripts/test_language_boot.py with QEMU to verify the committed arithmetic example and a changed expression in a *second* independently built boot image. Assert exact decimal output, the conditional changing from true to false, and invalid-source rejection. See [M2_LANGUAGE_CONTRACT.md](M2_LANGUAGE_CONTRACT.md) for currently implemented syntax and unsigned 64-bit semantics.
 
+## P2 Linux userspace target — independent proof
+
+The same compiler front-end accepts the original kernel source and M2 arithmetic source with a Linux output backend. Run the following as an unprivileged x86-64 Linux user:
+
+~~~sh
+python3 scripts/test_linux.py
+~~~
+
+The test compiles generated C with GCC and executes native Linux binaries. It checks exact stdout and clean exit, reruns a mutated HTML expression with changed branch output, and rejects an unsafe expression. It also checks that Linux output contains **no privileged port or CPU-halt assembly**. This is separate from the QEMU kernel test and does not constitute Linux distribution support.
+
 ## What counts as proof
 
 | Claim | Required independently inspectable evidence |

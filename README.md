@@ -54,9 +54,23 @@ python3 scripts/build_boot.py --source examples/math-kernel.html --out build/htm
 
 The [language contract](docs/M2_LANGUAGE_CONTRACT.md) documents syntax, safety bounds and unsupported expressions. Once CI and Pages have passed, select the M2 arithmetic demo in the [web boot lab](https://eun-si123.github.io/html-kernel-os/play.html).
 
+## Linux userspace target (P2: same language, no privileged I/O)
+
+The same HTML-shaped source now compiles to a **real unprivileged x86-64 Linux executable**, reusing the exact parser, expression semantics, variables, conditions and loop constructs used by the independent kernel. Linux uses the C standard output library; kernel mode uses debugcon and COM1. This is **not** a Linux distribution, a graphical desktop, or legacy application support.
+
+~~~sh
+python3 compiler/htmlk.py examples/math-kernel.html --target linux --out build/math-linux.c
+gcc -std=c11 -O2 -Wall -Wextra -Werror build/math-linux.c -o build/math-linux
+./build/math-linux
+python3 scripts/test_linux.py
+~~~
+
+The native Linux executable prints the same 14, 16, 18, condition PASS and u64 wraparound value as the QEMU kernel demo. A final halt tag becomes **normal process exit**, not a privileged CPU halt instruction.
+
 ## Project layout
 
-- compiler/htmlk.py — strict experimental HTML dialect parser / C generator
+- compiler/language.py — strict HTML AST and typed expression validation
+- compiler/htmlk.py — shared kernel/Linux native C code generator
 - examples/kernel.html — minimal source example
 - tests/ — parser/codegen unit tests
 - site/ — deployed [project-scoped GitHub Pages site](https://eun-si123.github.io/html-kernel-os/) and browser boot lab
