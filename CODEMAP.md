@@ -9,10 +9,10 @@ Locate the smallest source and test surface. This is a navigation index, **not e
 | How easy can the HTML dialect become? | [docs/LANGUAGE_DESIGN.md](docs/LANGUAGE_DESIGN.md) | grammar, examples, usability studies not yet run |
 | How is native execution speed evaluated? | [docs/PERFORMANCE.md](docs/PERFORMANCE.md) | no benchmarks yet; compile `-O2`, compare matched native workloads at M2+ |
 | What may break or invalidate a claim? | [docs/PROJECT_RISKS.md](docs/PROJECT_RISKS.md) | risk IDs and disconfirming tests |
-| What is the compiler grammar? | [compiler/htmlk.py](compiler/htmlk.py) | [tests/test_compiler.py](tests/test_compiler.py) |
+| What is the compiler grammar? | [compiler/language.py](compiler/language.py), [compiler/htmlk.py](compiler/htmlk.py) | [tests/test_compiler.py](tests/test_compiler.py), [tests/test_language.py](tests/test_language.py), [docs/M2_LANGUAGE_CONTRACT.md](docs/M2_LANGUAGE_CONTRACT.md) |
 | What example is accepted? | [examples/kernel.html](examples/kernel.html) | Compiler CLI / object compilation |
 | Where does the generated C come from? | [compiler/htmlk.py](compiler/htmlk.py) | `build/kernel.c` generated, not committed |
-| Is it actually bootable? | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/STATUS.md](docs/STATUS.md) | QEMU boot test **not yet implemented** |
+| Is it actually bootable? | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/STATUS.md](docs/STATUS.md) | QEMU BIOS boot verified; see [scripts/test_boot.py](scripts/test_boot.py) and [scripts/test_language_boot.py](scripts/test_language_boot.py) |
 | Where is the static site? | [site/index.html](site/index.html), [site/styles.css](site/styles.css), [site/app.js](site/app.js) | [tests/test_site.py](tests/test_site.py), browser checks if available |
 | What does CI verify? | [.github/workflows/ci.yml](.github/workflows/ci.yml) | Exact GitHub Actions run |
 | Which regressions map to changed source? | [agent-evals/feature-contracts.json](agent-evals/feature-contracts.json) | `python3 scripts/agent_feature_map.py impact ...` |

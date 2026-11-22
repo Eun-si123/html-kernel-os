@@ -6,6 +6,21 @@ import V86 from './vendor/libv86.mjs';
   const stop = document.getElementById('boot-stop');
   const status = document.getElementById('boot-status');
   const output = document.getElementById('boot-output');
+  const selection = document.getElementById('kernel-demo');
+  const download = document.getElementById('iso-download');
+  const demos = Object.freeze({
+    basic: {
+      iso: 'html-kernel.iso',
+      expected: 'Hello from HTML Kernel!\nNative code, not a browser.\n'
+    },
+    math: {
+      iso: 'html-kernel-math.iso',
+      expected: 'Arithmetic in HTML Kernel!\n14\n16\n18\ncondition PASS\n18446744073709551615\n'
+    }
+  });
+  selection.addEventListener('change', () => {
+    download.href = './' + demos[selection.value].iso;
+  });
   let machine = null;
   let bytesReceived = 0;
   const setStatus = message => { status.textContent = message; };
@@ -13,6 +28,8 @@ import V86 from './vendor/libv86.mjs';
   start.addEventListener('click', () => {
     if (machine) { window.location.reload(); return; }
     start.disabled = true;
+    selection.disabled = true;
+    const demo = demos[selection.value];
     output.textContent = '';
     setStatus('x86-64 WebAssembly 가상머신과 실제 커널 ISO를 불러오는 중...');
     try {
@@ -25,7 +42,7 @@ import V86 from './vendor/libv86.mjs';
         screen_container: document.getElementById('screen_container'),
         bios: { url: './vendor/seabios.bin' },
         vga_bios: { url: './vendor/vgabios.bin' },
-        cdrom: { url: './html-kernel.iso' },
+        cdrom: { url: './' + demo.iso },
         acpi: true,
         net_device: { type: 'none' },
         audio_device: 'none',
@@ -39,8 +56,10 @@ import V86 from './vendor/libv86.mjs';
       machine.add_listener('serial0-output-byte', byte => {
         if (bytesReceived++ > 12000) return;
         output.textContent += String.fromCharCode(byte);
-        if (output.textContent.includes('Native code, not a browser.')) {
-          setStatus('실제 HTML 파생 커널의 시리얼 출력 수신 성공!');
+        if (output.textContent === demo.expected) {
+          setStatus('선택한 HTML 커널의 실제 시리얼 출력 검증 성공!');
+        } else if (output.textContent.length >= demo.expected.length) {
+          setStatus('커널 출력이 기대값과 달라. 실행 로그를 확인해.');
         }
       });
       machine.add_listener('emulator-stopped', () => {
@@ -50,6 +69,7 @@ import V86 from './vendor/libv86.mjs';
     } catch (error) {
       machine = null;
       start.disabled = false;
+      selection.disabled = false;
       setStatus('가상 PC 시작 실패: ' + String(error?.message || error));
     }
   });
