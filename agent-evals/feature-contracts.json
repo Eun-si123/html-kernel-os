@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "features": [
+    {
+      "id": "html-grammar-codegen",
+      "source": [
+        "compiler/htmlk.py"
+      ],
+      "regressions": [
+        "tests/test_compiler.py"
+      ],
+      "fieldEvidence": [
+        "docs/VALIDATION.md"
+      ]
+    },
+    {
+      "id": "static-site",
+      "source": [
+        "site/index.html",
+        "site/styles.css",
+        "site/app.js"
+      ],
+      "regressions": [
+        "tests/test_site.py"
+      ],
+      "fieldEvidence": [
+        "docs/VALIDATION.md"
+      ]
+    }
+  ]
+}

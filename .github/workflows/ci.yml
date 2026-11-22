@@ -12,9 +12,16 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Python unit tests
+      - name: Python unit and static-site tests
         run: python -m unittest discover -s tests -v
+      - name: Agent and documentation checks
+        run: |
+          python -m unittest discover -s scripts -p 'test_*.py' -v
+          python scripts/agent_feature_map.py validate
+          python scripts/check_docs.py
+      - name: Validate site JavaScript syntax
+        run: node --check site/app.js
       - name: Generate freestanding C
         run: python compiler/htmlk.py examples/kernel.html --out build/kernel.c
-      - name: Compile x86-64 object
+      - name: Compile x86-64 object (not a boot image)
         run: gcc -std=c11 -ffreestanding -fno-stack-protector -fno-pie -Wall -Wextra -Werror -c build/kernel.c -o build/kernel.o

@@ -6,6 +6,12 @@ HTML is normally a document language. This repository explores a dedicated compi
 
 > **Current status (prototype 0.1): NOT A BOOTABLE OS.** The proof of concept converts a tiny HTML dialect to freestanding x86-64 C source. GCC can compile this source to an object file. It has **not** been linked to a bootloader or executed as a kernel. There is no memory manager, filesystem, scheduler, or hardware driver implementation.
 
+## Agent and contributor entry points
+
+AI agents and external contributors: start at **[AGENTS.md](AGENTS.md)**, then follow **[CODEMAP.md](CODEMAP.md)** and the [documentation hub](docs/README.md). The repository uses TeamForge/BetterNet-style instructions for task ownership, public-safe commit attribution, current status, durable memory and advisory [feature-to-regression mapping](agent-evals/README.md). The instructions do not start a background agent or imply automatic deployment.
+
+Read [actual implementation status](docs/STATUS.md) and [evidence criteria](docs/VALIDATION.md) before claiming native boot support. See [current decisions](docs/DECISIONS.md) for confirmed versus proposed scope.
+
 ## Try the working prototype
 
 Requirements: Python 3.10+ and an x86-64 GCC cross/native compiler.
