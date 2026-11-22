@@ -6,7 +6,7 @@ This is an **HTML-shaped programming language**, not general HTML. Build-time Py
 
 ## Runnable example
 
-Eight runnable M2 examples are [math-kernel.html](../examples/math-kernel.html), [functions-kernel.html](../examples/functions-kernel.html), [scoped-functions-kernel.html](../examples/scoped-functions-kernel.html), [else-kernel.html](../examples/else-kernel.html), [u32-kernel.html](../examples/u32-kernel.html) [signed-bits-kernel.html](../examples/signed-bits-kernel.html) and [while-kernel.html](../examples/while-kernel.html).
+Seven runnable M2 examples are [math-kernel.html](../examples/math-kernel.html), [functions-kernel.html](../examples/functions-kernel.html), [scoped-functions-kernel.html](../examples/scoped-functions-kernel.html), [else-kernel.html](../examples/else-kernel.html), [u32-kernel.html](../examples/u32-kernel.html) [signed-bits-kernel.html](../examples/signed-bits-kernel.html) and [while-kernel.html](../examples/while-kernel.html).
 
 ~~~html
 <kernel arch="x86_64">
