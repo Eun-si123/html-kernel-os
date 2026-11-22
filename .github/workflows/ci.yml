@@ -30,6 +30,8 @@ jobs:
         run: |
           gcc -std=c11 -ffreestanding -fno-stack-protector -fno-pie -Wall -Wextra -Werror -c build/kernel.c -o build/kernel.o
           gcc -std=c11 -O2 -ffreestanding -fno-stack-protector -fno-pie -Wall -Wextra -Werror -c build/kernel.c -o build/kernel.opt.o
+      - name: Compile and actually execute HTML programs in Linux userspace
+        run: python scripts/test_linux.py
       - name: Install real x86 boot-test tools
         run: |
           sudo apt-get update

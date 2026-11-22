@@ -21,6 +21,10 @@ Write kernel *logic* in a constrained HTML-like language. Translate it ahead of 
 
 The new compiler/language.py performs strict HTML-shaped parsing into a small typed statement tree and validates expressions through a restricted Python AST (parsed but **never evaluated as Python code**). compiler/htmlk.py lowers accepted numeric and text operations to freestanding x86-64 C. u64 arithmetic wraps; repeat times are bounded at source level. This code runs inside the real M1 boot image, not in a browser/Python runtime. See [M2_LANGUAGE_CONTRACT.md](M2_LANGUAGE_CONTRACT.md).
 
+## Linux userland backend (minimal P2, not a distribution)
+
+The same strict language parser and validated statement tree can generate either a freestanding x86-64 kernel entry or a Linux userspace main function. The Linux backend sends output bytes to standard C putchar and flushes stdout before returning a normal exit status, **never privileged port I/O / cli / hlt**. The kernel backend preserves Limine handoff and COM1/debugcon output. A shared source produces the same arithmetic and branch behavior on both targets. See [STATUS.md](STATUS.md) and [VALIDATION.md](VALIDATION.md).
+
 ## Boundaries
 
 - HTML is being used as **syntax**, not as the web platform. The meaning of each tag is custom.
