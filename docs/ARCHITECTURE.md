@@ -14,14 +14,14 @@ Write kernel *logic* in a constrained HTML-like language. Translate it ahead of 
    - no scripts, nested elements inside print, unknown attributes, or arbitrary HTML.
 2. Code generation emits freestanding C source with a kernel_main() function.
 3. Generated code initializes and outputs to COM1 at 0x3f8 alongside QEMU debugcon port 0xE9. Both outputs were seen in local QEMU boot. This is not VGA/framebuffer or a general hardware driver.
-4. The original M0 pipeline compiles an object; the new `scripts/build_boot.py` links that object to the tiny Limine protocol handoff (`boot/kernel_entry.c`) using `boot/linker.ld` and packs a hybrid BIOS/UEFI ISO. Local BIOS x86-64 QEMU boot PASS with source provenance and negative controls; UEFI, web emulator and real PC boot are NOT yet verified.
+4. The original M0 pipeline compiles an object; the new `scripts/build_boot.py` links that object to the tiny Limine protocol handoff (`boot/kernel_entry.c`) using `boot/linker.ld` and packs a hybrid BIOS/UEFI ISO. BIOS x86-64 QEMU boot PASS locally and in GitHub CI with source provenance and negative controls. Live browser emulation PASS in one Chromium/Playwright session; UEFI and real PC boot are NOT yet verified.
 
 ## Boundaries
 
 - HTML is being used as **syntax**, not as the web platform. The meaning of each tag is custom.
 - Python runs only at build time; the generated machine code does not depend on Python or JavaScript.
 - C currently acts as a portable intermediate representation. The objective is not to claim that C has disappeared from the build toolchain.
-- No known boot protocol or linker layout is assumed to work until tested in QEMU.
+- The pinned Limine protocol and linker layout are verified in BIOS QEMU, but not in UEFI or on physical hardware.
 - Native x86 instructions do not automatically make the result safe or portable to real machines.
 
 ## Risks and engineering decisions
@@ -30,10 +30,10 @@ Write kernel *logic* in a constrained HTML-like language. Translate it ahead of 
 - Freestanding compiler output is not itself a functional kernel; boot handoff, privilege state, interrupt state, and runtime support must be designed.
 - debugcon is a development-only output channel. Standard device support needs additional code.
 - Compiler validation must reject unsupported constructs predictably.
-- Add reproducible QEMU boot tests **before** claiming kernel execution.
+- Run reproducible QEMU boot tests in CI on every relevant change; only claim the exact platform tested.
 - Reevaluate syntax ergonomics before expanding the grammar; do not introduce faux-HTML tags without a clear low-level semantic contract.
 
-## Proposed next milestone: QEMU boot
+## M1 boot integration (implemented and verified; evidence in STATUS)
 
 - Pin a specific Limine release, with checksum/provenance.
 - Add correct Limine request structures and a linker script targeting x86_64.
