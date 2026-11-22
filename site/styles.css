@@ -199,3 +199,46 @@ footer span { display: block; font: 11px/1.8 var(--mono); color: var(--muted); }
   html { scroll-behavior: auto; }
   *,*::before,*::after { transition: none !important; animation: none !important; }
 }
+
+
+/* Device color scheme: follow OS/browser settings; shared by both pages. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --paper: #151a17;
+    --paper-bright: #1c231f;
+    --ink: #ecf0e9;
+    --ink-soft: #c3cfc4;
+    --muted: #a9b8aa;
+    --rule: #47534a;
+    --accent: #e8a581;
+    --accent-dark: #f5b48c;
+    --code-bg: #19231e;
+    --code-deep: #101813;
+    --code-ink: #ebf3e8;
+  }
+  .brand-mark { border-color: var(--ink); }
+  .topbar, .facts, .features, .milestones,
+  .closing, .editor, .workbench { border-color: #788778; }
+  .btn.primary { background: var(--ink); color: #15201a; }
+  .btn.primary:hover { background: var(--accent); color: #15201a; }
+  .btn.secondary { border-color: #adb9ac; }
+  .btn.secondary:hover { color: var(--accent-dark); }
+  .specimen, .editor { border-color: #6f8573; }
+  .specimen-code { background: #19231e; }
+  .specimen-result { background: #101813; }
+  .specimen-result code { color: #c7e5b7; }
+  .section-lede em, .features code { color: var(--accent); }
+  .workbench-head { background: var(--paper-bright); }
+  .session-controls { background: var(--paper); }
+  .demo-choice select {
+    background: var(--paper-bright);
+    color: var(--ink);
+    border-color: #87978a;
+  }
+  .lab-status-bar { background: #222b25; border-color: var(--rule); }
+  .lab-status { color: var(--ink-soft); }
+  .lab-grid { background: #56685b; }
+  .lab-context, .lab-explainer .notice, .notice { border-color: var(--rule); }
+  .lab-links a { border-color: var(--muted); }
+}

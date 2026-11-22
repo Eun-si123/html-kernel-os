@@ -49,7 +49,7 @@ class SiteTests(unittest.TestCase):
 
     def test_assets_exist_and_js_syntax_can_be_checked(self):
         self.assertIn("./app.js", self.parser.scripts)
-        self.assertIn("./styles.css?v=20261123-editorial1", self.parser.stylesheets)
+        self.assertIn("./styles.css?v=20261123-auto-theme2", self.parser.stylesheets)
         for asset in self.parser.scripts + self.parser.stylesheets:
             asset_path = asset.split("?", 1)[0]
             self.assertTrue((SITE / asset_path).is_file(), asset)
@@ -114,13 +114,26 @@ class SiteTests(unittest.TestCase):
             self.assertIn(f'value="{key}"', lab)
         for text in ("--paper:", "--ink:", "focus-visible", "prefers-reduced-motion:reduce"):
             self.assertIn(text, css)
-        self.assertIn('href="./styles.css?v=20261123-editorial1"', home)
-        self.assertIn('href="./styles.css?v=20261123-editorial1"', lab)
+        self.assertIn('href="./styles.css?v=20261123-auto-theme2"', home)
+        self.assertIn('href="./styles.css?v=20261123-auto-theme2"', lab)
         self.assertIn('href="./play.css?v=20261123-editorial1"', lab)
         self.assertIn("@media(max-width:480px)", lab_css)
         self.assertNotIn("@import", css)
         self.assertNotIn("linear-gradient(", css)
         self.assertNotIn("radial-gradient(", css)
+
+    def test_os_color_scheme_on_home_and_boot_lab(self):
+        home = (SITE / "index.html").read_text(encoding="utf-8")
+        lab = (SITE / "play.html").read_text(encoding="utf-8")
+        css = (SITE / "styles.css").read_text(encoding="utf-8")
+        for page in (home, lab):
+            self.assertIn('media="(prefers-color-scheme: light)"', page)
+            self.assertIn('media="(prefers-color-scheme: dark)"', page)
+        self.assertIn('color-scheme: light;', css)
+        self.assertIn('@media (prefers-color-scheme: dark)', css)
+        self.assertIn('color-scheme: dark;', css)
+        self.assertIn('--paper: #151a17;', css)
+        self.assertIn('.lab-status-bar', css)
 
     def test_copy_button_and_tabs_have_handlers(self):
         js = (SITE / "app.js").read_text(encoding="utf-8")
