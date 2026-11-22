@@ -67,3 +67,9 @@
   .lab-footnote { padding: 13px; }
   .lab-explainer h2 { font-size: 32px; }
 }
+
+/* Page CSS loads after shared tokens: keep dark status/output chrome here. */
+@media (prefers-color-scheme: dark) {
+  .lab-status-bar { background:#222b25; border-color:var(--rule); }
+  .lab-grid { background:#56685b; }
+}

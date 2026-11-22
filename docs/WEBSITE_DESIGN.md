@@ -35,3 +35,7 @@ Both pages pin a versioned CSS URL to prevent previously cached pre-redesign ass
 ## Automatic device light/dark theme (2026-11-23)
 
 Both routes follow the browser/OS prefers-color-scheme setting with CSS, including form controls and toolbar color. The existing warm paper palette remains light; dark uses charcoal and ink-friendly contrast. No local storage, JavaScript, tracking, or manual toggle. Cache-versioned shared CSS URL is incremented to avoid stale styles during Pages deployment.
+
+### Boot lab cascade follow-up
+
+Public Chromium verification found the dark theme shared stylesheet originally loaded before play.css, allowing the unversioned light status-bar rule to win. The page-level dark rule now lives in play.css, loaded last, and the page-specific stylesheet URL has a separate cache version. This was observed in a real browser and is tracked separately from compiler/boot proof.
