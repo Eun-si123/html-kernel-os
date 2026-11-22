@@ -28,6 +28,10 @@ import V86 from './vendor/libv86.mjs';
     branches: {
       iso: 'html-kernel-else.iso',
       expected: 'HTML if/else native!\nelse branch PASS\n8\n17\n222\nnested PASS\nnested PASS\n'
+    },
+    u32: {
+      iso: 'html-kernel-u32.iso',
+      expected: 'Native u32 types in HTML Kernel!\n4294967295\n0\n1\n4294967295\n4294967296\ntyped PASS\n'
     }
   });
   selection.addEventListener('change', () => {

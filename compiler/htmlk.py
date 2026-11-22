@@ -77,6 +77,7 @@ def compile_html(source: str, *, target: str = "kernel") -> str:
     if target == "kernel":
         lines.append("  serial_init();")
     variables: set[str] = set()
+    variable_types: dict[str, str] = {}
     loop_id = 0
     work_done = 0
 
@@ -88,11 +89,13 @@ def compile_html(source: str, *, target: str = "kernel") -> str:
             work_done += multiplier
             if work_done > MAX_RUNTIME_STEPS:
                 fail(node, "runtime statement budget exceeded")
-            def checked(source: str, *, boolean: bool = False) -> str:
+            def checked(source: str, *, boolean: bool = False,
+                        expected_type: str | None = None) -> str:
                 nonlocal work_done
                 called: list[str] = []
                 result = expression(source, node, variables,
-                                    boolean=boolean, functions=functions, calls=called)
+                                    boolean=boolean, functions=functions, calls=called,
+                                    variable_types=variable_types, expected_type=expected_type)
                 work_done += multiplier * sum(costs[name] for name in called)
                 if work_done > MAX_RUNTIME_STEPS:
                     fail(node, "expanded function work budget exceeded")
@@ -114,16 +117,19 @@ def compile_html(source: str, *, target: str = "kernel") -> str:
                 name = validate_name(node)
                 if name in variables:
                     fail(node, f"variable {name!r} is already declared")
-                value = checked(node.attrs["value"])
+                typ = node.attrs["type"]
+                value = checked(node.attrs["value"], expected_type=typ)
                 variables.add(name)
-                lines.append(f"{pad}uint64_t htmlk_{name} = {value};")
+                variable_types[name] = typ
+                ctype = "uint32_t" if typ == "u32" else "uint64_t"
+                lines.append(f"{pad}{ctype} htmlk_{name} = {value};")
                 # An unused declaration is legal source, not a C -Werror failure.
                 lines.append(f"{pad}(void)htmlk_{name};")
             elif tag == "set":
                 name = validate_name(node)
                 if name not in variables:
                     fail(node, f"undefined variable {name!r}")
-                value = checked(node.attrs["value"])
+                value = checked(node.attrs["value"], expected_type=variable_types[name])
                 lines.append(f"{pad}htmlk_{name} = {value};")
             elif tag == "if":
                 test = checked(node.attrs["test"], boolean=True)

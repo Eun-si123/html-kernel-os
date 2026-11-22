@@ -8,6 +8,8 @@ import keyword
 import re
 
 UINT64_MAX = (1 << 64) - 1
+UINT32_MAX = (1 << 32) - 1
+INT_TYPES = {"u32", "u64"}
 MAX_SOURCE_BYTES = 131072
 MAX_NODES = 1024
 MAX_OUTPUT_BYTES = 16384
@@ -69,6 +71,8 @@ class FunctionDef:
     return_node: Node
     source_node: Node
     body: list[Node]
+    param_types: dict[str, str] = field(default_factory=dict)
+    return_type: str = "u64"
 
 
 @dataclass
@@ -119,13 +123,14 @@ class KernelParser(HTMLParser):
                 fail(node, "only one <onboot> is allowed")
             self.boot_seen = True
         elif tag == "function":
-            validate_name(node)
-            if pairs["returns"] != "u64":
-                fail(node, 'only returns="u64" is implemented')
+            if validate_name(node) in INT_TYPES:
+                fail(node, "u32 and u64 are reserved numeric conversion functions")
+            if pairs["returns"] not in INT_TYPES:
+                fail(node, 'only returns="u32" or returns="u64" is implemented')
         elif tag == "let":
             validate_name(node)
-            if pairs["type"] != "u64":
-                fail(node, "only type=\"u64\" is implemented (unsigned 64-bit, wrapping arithmetic)")
+            if pairs["type"] not in INT_TYPES:
+                fail(node, 'only type="u32" or type="u64" is implemented')
         elif tag == "set":
             validate_name(node)
         elif tag == "repeat":
@@ -240,13 +245,15 @@ class KernelParser(HTMLParser):
             if len(parts) > MAX_FUNCTION_ARGS:
                 fail(fn, f"function parameters exceed limit of {MAX_FUNCTION_ARGS}")
             params: list[str] = []
+            types: dict[str, str] = {}
             for part in parts:
                 bits = [bit.strip() for bit in part.split(":")]
-                if len(bits) != 2 or bits[1] != "u64" or not NAME.fullmatch(bits[0]) or keyword.iskeyword(bits[0]):
-                    fail(fn, f"bad typed parameter {part!r}; expected name:u64")
+                if len(bits) != 2 or bits[1] not in INT_TYPES or not NAME.fullmatch(bits[0]) or keyword.iskeyword(bits[0]):
+                    fail(fn, f"bad typed parameter {part!r}; expected name:u32 or name:u64")
                 if bits[0] in params:
                     fail(fn, f"duplicate parameter {bits[0]!r}")
                 params.append(bits[0])
+                types[bits[0]] = bits[1]
             # A top-level final return guarantees a value even when earlier
             # conditional branches or zero-iteration repeats do not execute.
             def check_return_order(nodes: list[Node]) -> None:
@@ -264,7 +271,7 @@ class KernelParser(HTMLParser):
                     check_return_order(nodes[-1].children)
             check_return_order(fn.children)
             funcs[name] = FunctionDef(name, tuple(params), fn.children[-1], fn,
-                                      fn.children)
+                                      fn.children, types, fn.attrs["returns"])
         return Program(self.program, funcs)
 
 
@@ -281,7 +288,15 @@ def parse(source: str) -> Program:
 def expression(source: str, node: Node, variables: set[str] | dict[str, str],
                *, boolean: bool = False,
                functions: dict[str, FunctionDef] | None = None,
-               calls: list[str] | None = None) -> str:
+               calls: list[str] | None = None,
+               variable_types: dict[str, str] | None = None,
+               expected_type: str | None = None) -> str:
+    """Emit C from typed expressions, rejecting implicit u32/u64 mixing.
+
+    Literal-only expressions inherit an expected integer type, otherwise u64.
+    u32(x) narrows modulo 2**32; u64(x) explicitly widens u32.
+    Legacy u64 expressions preserve their original generated C spelling.
+    """
     if not source or len(source.encode("utf-8")) > 256:
         fail(node, "expression must contain 1..256 UTF-8 bytes")
     try:
@@ -290,68 +305,125 @@ def expression(source: str, node: Node, variables: set[str] | dict[str, str],
         fail(node, f"invalid expression {source!r}: {exc.msg}")
     if sum(1 for _ in ast.walk(tree)) > 64:
         fail(node, "expression too complex (over 64 AST nodes)")
+    if expected_type is not None and expected_type not in INT_TYPES:
+        fail(node, f"unsupported expression type {expected_type!r}")
+    types = variable_types or {}
+    funcs = functions or {}
 
-    def emit(item: ast.AST) -> tuple[str, str]:
+    def numeric(a: str, b: str, *, operation: str) -> str:
+        if a == "boolean" or b == "boolean":
+            fail(node, f"{operation} operands must be u64 or u32")
+        if a != "literal" and b != "literal" and a != b:
+            fail(node, f"cannot mix {a} and {b} without explicit u32(...) or u64(...) conversion")
+        return a if a != "literal" else b
+
+    def kind(item: ast.AST) -> str:
         if isinstance(item, ast.Constant) and type(item.value) is int:
             if not 0 <= item.value <= UINT64_MAX:
                 fail(node, "integer literal outside u64 range")
-            return f"UINT64_C({item.value})", "number"
+            return "literal"
+        if isinstance(item, ast.Name):
+            if item.id not in variables:
+                fail(node, f"undefined variable {item.id!r}")
+            return types.get(item.id, "u64")
         if isinstance(item, ast.Call):
             if not isinstance(item.func, ast.Name) or item.keywords:
                 fail(node, "unsupported function call; expected a plain name and positional u64 arguments")
             name = item.func.id
-            func = (functions or {}).get(name)
+            if name in INT_TYPES:
+                if len(item.args) != 1:
+                    fail(node, f"{name}(...) conversion expects exactly 1 argument")
+                if kind(item.args[0]) == "boolean":
+                    fail(node, f"{name}(...) conversion requires an integer")
+                return name
+            func = funcs.get(name)
             if func is None:
                 fail(node, f"undefined function {name!r}")
             if len(item.args) != len(func.params):
                 fail(node, f"function {name!r} expects {len(func.params)} arguments; got {len(item.args)}")
-            arguments = []
-            for arg in item.args:
-                part, kind = emit(arg)
-                if kind != "number":
-                    fail(node, "function arguments must be u64")
-                arguments.append(part)
-            if calls is not None:
-                calls.append(name)
-            return f"htmlk_fn_{name}(" + ", ".join(arguments) + ")", "number"
-        if isinstance(item, ast.Name):
-            if item.id not in variables:
-                fail(node, f"undefined variable {item.id!r}")
-            return ((variables[item.id] if isinstance(variables, dict)
-                     else "htmlk_" + item.id), "number")
+            for arg, param in zip(item.args, func.params):
+                arg_type = kind(arg)
+                param_type = func.param_types.get(param, "u64")
+                if arg_type == "boolean":
+                    fail(node, f"function arguments must be {param_type}")
+                if arg_type not in ("literal", param_type):
+                    fail(node, f"function {name!r} parameter {param!r} requires {param_type}; "
+                         f"use explicit u32(...) or u64(...) conversion")
+            return func.return_type
         if isinstance(item, ast.BinOp) and type(item.op) in (ast.Add, ast.Sub, ast.Mult):
-            left, lt = emit(item.left)
-            right, rt = emit(item.right)
-            if (lt, rt) != ("number", "number"):
-                fail(node, "arithmetic operands must be u64")
-            op = {ast.Add: "+", ast.Sub: "-", ast.Mult: "*"}[type(item.op)]
-            return f"((uint64_t)({left} {op} {right}))", "number"
+            return numeric(kind(item.left), kind(item.right), operation="arithmetic")
         if isinstance(item, ast.Compare) and len(item.ops) == 1:
-            left, lt = emit(item.left)
-            right, rt = emit(item.comparators[0])
-            if (lt, rt) != ("number", "number"):
-                fail(node, "comparison operands must be u64")
-            ops = {ast.Eq: "==", ast.NotEq: "!=", ast.Lt: "<",
-                   ast.LtE: "<=", ast.Gt: ">", ast.GtE: ">="}
-            op = ops.get(type(item.ops[0]))
-            if op is None:
+            left, right = kind(item.left), kind(item.comparators[0])
+            numeric(left, right, operation="comparison")
+            if type(item.ops[0]) not in (ast.Eq, ast.NotEq, ast.Lt, ast.LtE, ast.Gt, ast.GtE):
                 fail(node, "comparison operator is not supported")
-            return f"({left} {op} {right})", "boolean"
+            return "boolean"
         if isinstance(item, ast.BoolOp) and type(item.op) in (ast.And, ast.Or):
-            values = [emit(value) for value in item.values]
-            if any(kind != "boolean" for _, kind in values):
+            if any(kind(value) != "boolean" for value in item.values):
                 fail(node, "boolean operators require comparisons")
-            op = " && " if isinstance(item.op, ast.And) else " || "
-            return "(" + op.join(expr for expr, _ in values) + ")", "boolean"
+            return "boolean"
         if isinstance(item, ast.UnaryOp) and isinstance(item.op, ast.Not):
-            value, kind = emit(item.operand)
-            if kind != "boolean":
+            if kind(item.operand) != "boolean":
                 fail(node, "'not' requires a comparison")
-            return f"(!{value})", "boolean"
+            return "boolean"
         fail(node, f"unsupported expression syntax: {type(item).__name__}")
 
-    result, kind = emit(tree.body)
-    expected = "boolean" if boolean else "number"
-    if kind != expected:
-        fail(node, f"expected {expected} expression, got {kind}")
-    return result
+    root_kind = kind(tree.body)
+    if boolean:
+        if root_kind != "boolean":
+            fail(node, f"expected boolean expression, got {'number' if root_kind != 'boolean' else root_kind}")
+    elif root_kind == "boolean":
+        fail(node, "expected number expression, got boolean")
+    elif expected_type is not None and root_kind not in ("literal", expected_type):
+        fail(node, f"expected {expected_type} expression but got {root_kind}; "
+             f"use explicit {expected_type}(...) conversion")
+
+    def emit(item: ast.AST, preferred: str | None = None) -> str:
+        inferred = kind(item)
+        if inferred not in ("literal", "boolean") and preferred not in (None, inferred):
+            fail(node, f"expected {preferred} expression but got {inferred}; "
+                 f"use explicit {preferred}(...) conversion")
+        if isinstance(item, ast.Constant) and type(item.value) is int:
+            resolved = preferred or "u64"
+            if resolved == "u32":
+                if item.value > UINT32_MAX:
+                    fail(node, f"integer literal {item.value} outside u32 range; use u32(...) to truncate explicitly")
+                return f"UINT32_C({item.value})"
+            return f"UINT64_C({item.value})"
+        if isinstance(item, ast.Name):
+            return variables[item.id] if isinstance(variables, dict) else "htmlk_" + item.id
+        if isinstance(item, ast.Call):
+            name = item.func.id
+            if name in INT_TYPES:
+                # Conversion is explicit: narrowing is modulo 2**32.
+                value = emit(item.args[0], None)
+                return f"(({ 'uint32_t' if name == 'u32' else 'uint64_t' })({value}))"
+            func = funcs[name]
+            arguments = [emit(arg, func.param_types.get(param, "u64"))
+                         for arg, param in zip(item.args, func.params)]
+            if calls is not None:
+                calls.append(name)
+            return f"htmlk_fn_{name}(" + ", ".join(arguments) + ")"
+        if isinstance(item, ast.BinOp):
+            result_type = inferred if inferred != "literal" else (preferred or "u64")
+            left = emit(item.left, result_type)
+            right = emit(item.right, result_type)
+            op = {ast.Add: "+", ast.Sub: "-", ast.Mult: "*"}[type(item.op)]
+            return f"(({ 'uint32_t' if result_type == 'u32' else 'uint64_t' })({left} {op} {right}))"
+        if isinstance(item, ast.Compare):
+            operand_type = numeric(kind(item.left), kind(item.comparators[0]),
+                                   operation="comparison")
+            operand_type = operand_type if operand_type != "literal" else "u64"
+            left = emit(item.left, operand_type)
+            right = emit(item.comparators[0], operand_type)
+            ops = {ast.Eq: "==", ast.NotEq: "!=", ast.Lt: "<",
+                   ast.LtE: "<=", ast.Gt: ">", ast.GtE: ">="}
+            return f"({left} {ops[type(item.ops[0])]} {right})"
+        if isinstance(item, ast.BoolOp):
+            op = " && " if isinstance(item.op, ast.And) else " || "
+            return "(" + op.join(emit(value) for value in item.values) + ")"
+        if isinstance(item, ast.UnaryOp) and isinstance(item.op, ast.Not):
+            return f"(!{emit(item.operand)})"
+        fail(node, f"unsupported expression syntax: {type(item).__name__}")
+
+    return emit(tree.body, expected_type)

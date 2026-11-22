@@ -14,7 +14,8 @@
         "tests/test_targets.py",
         "tests/test_functions.py",
         "tests/test_scoped_functions.py",
-        "tests/test_else.py"
+        "tests/test_else.py",
+        "tests/test_u32.py"
       ],
       "fieldEvidence": [
         "docs/VALIDATION.md",
@@ -23,7 +24,8 @@
         "scripts/test_linux.py",
         "scripts/test_functions.py",
         "scripts/test_scoped_functions.py",
-        "scripts/test_else.py"
+        "scripts/test_else.py",
+        "scripts/test_u32.py"
       ]
     },
     {

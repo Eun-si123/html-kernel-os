@@ -1,0 +1,28 @@
+<kernel arch="x86_64">
+  <function name="increment32" params="x:u32" returns="u32">
+    <let name="counter" type="u32" value="x"/>
+    <set name="counter" value="counter + 1"/>
+    <return value="counter"/>
+  </function>
+  <function name="sum64" params="n:u64" returns="u64">
+    <return value="n + 1"/>
+  </function>
+  <onboot>
+    <print>Native u32 types in HTML Kernel!</print>
+    <let name="max" type="u32" value="4294967295"/>
+    <print value="max"/>
+    <print value="increment32(max)"/>
+    <let name="small" type="u32" value="increment32(max) + 1"/>
+    <print value="small"/>
+    <let name="wide" type="u64" value="4294967296"/>
+    <print value="u32(wide - 1)"/>
+    <print value="sum64(u64(max))"/>
+    <if test="increment32(max) == 0 and small == 1 and u32(wide) == 0">
+      <print>typed PASS</print>
+      <else>
+        <print>typed FAIL</print>
+      </else>
+    </if>
+    <halt/>
+  </onboot>
+</kernel>
