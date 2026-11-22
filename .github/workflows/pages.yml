@@ -30,7 +30,7 @@ jobs:
         run: |
           mkdir -p public/vendor
           cp -a site/. public/
-          python scripts/fetch_browser_assets.py --dest public/vendor
+          python scripts/fetch_browser_assets.py --cache-dir site/vendor --dest public/vendor
           cp build/html-kernel.iso public/html-kernel.iso
           test -s public/index.html
           test -s public/play.html
