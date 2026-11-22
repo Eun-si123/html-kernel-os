@@ -24,6 +24,10 @@ import V86 from './vendor/libv86.mjs';
     scoped: {
       iso: 'html-kernel-scoped.iso',
       expected: 'Scoped functions in HTML Kernel!\n25\n10\nscoped function PASS\n'
+    },
+    branches: {
+      iso: 'html-kernel-else.iso',
+      expected: 'HTML if/else native!\nelse branch PASS\n8\n17\n222\nnested PASS\nnested PASS\n'
     }
   });
   selection.addEventListener('change', () => {
