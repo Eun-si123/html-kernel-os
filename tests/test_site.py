@@ -94,6 +94,30 @@ class SiteTests(unittest.TestCase):
         self.assertIn("./vendor/v86.wasm", script)
         self.assertIn("아직 구현되지 않았어", html)
 
+    def test_editorial_layout_preserves_functionality_and_accessibility(self):
+        home = (SITE / "index.html").read_text(encoding="utf-8")
+        lab = (SITE / "play.html").read_text(encoding="utf-8")
+        css = (SITE / "styles.css").read_text(encoding="utf-8")
+        lab_css = (SITE / "play.css").read_text(encoding="utf-8")
+        for text in ('class="skip-link"', 'id="main"'):
+            self.assertIn(text, home)
+            self.assertIn(text, lab)
+        for text in ('id="tab-html"', 'id="tab-c"', 'id="copy-code"'):
+            self.assertIn(text, home)
+        for text in ('aria-current="page"', 'id="boot-stop"',
+                     'id="iso-download"', 'aria-live="polite"',
+                     'id="screen_container"'):
+            self.assertIn(text, lab)
+        for key in ("basic", "math", "functions", "scoped",
+                    "branches", "u32", "signed"):
+            self.assertIn(f'value="{key}"', lab)
+        for text in ("--paper:", "--ink:", "focus-visible", "prefers-reduced-motion:reduce"):
+            self.assertIn(text, css)
+        self.assertIn("@media(max-width:480px)", lab_css)
+        self.assertNotIn("@import", css)
+        self.assertNotIn("linear-gradient(", css)
+        self.assertNotIn("radial-gradient(", css)
+
     def test_copy_button_and_tabs_have_handlers(self):
         js = (SITE / "app.js").read_text(encoding="utf-8")
         self.assertIn("navigator.clipboard.writeText", js)

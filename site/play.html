@@ -3,47 +3,89 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#090f1b">
-<meta name="description" content="실제 HTML-derived x86-64 커널 ISO를 브라우저에서 부팅하는 체험실">
-<title>HTML Kernel OS — Native boot lab</title>
+<meta name="theme-color" content="#f5f3ec">
+<meta name="description" content="HTML Kernel OS의 실제 x86-64 커널 ISO를 브라우저 안의 가상 PC에서 부팅하는 공개 실험실.">
+<title>Boot Lab — HTML Kernel OS</title>
 <link rel="stylesheet" href="./styles.css">
 <link rel="stylesheet" href="./play.css">
 <script type="module" src="./play.js?v=20261123-signed"></script>
 </head>
 <body>
+<a class="skip-link" href="#main">본문으로 이동</a>
 <div class="shell">
-<header class="topbar"><a class="brand" href="./index.html"><span class="logo">&lt;/&gt;</span><span>HTML<span class="accent">KERNEL</span><small>BOOT LAB / x86-64</small></span></a><a class="top-cta" href="./index.html">프로젝트 홈</a></header>
-<main class="boot-lab">
-<p class="eyebrow"><span class="live-dot"></span> NATIVE BOOT EXPERIMENT • v64 WASM x86-64</p>
-<h1>HTML에서 <span class="gradient">커널로.</span></h1>
-<p class="lede">아래 버튼을 누르면 브라우저에서 64비트 PC를 에뮬레이션하고, HTML 소스를 컴파일해 만든 <strong>진짜 x86-64 커널 ISO</strong>를 부팅해. 단순한 HTML 화면 재현이 아니야.</p>
-<div class="demo-choice">
-<label for="kernel-demo">체험할 커널 선택</label>
-<select id="kernel-demo">
-<option value="basic">기본 부팅 메시지 (M1)</option>
-<option value="math">변수·계산·반복·조건 (M2 부분 구현)</option>
-<option value="functions">사용자 정의 함수·매개변수·중첩 호출 (M2 확장)</option>
-<option value="scoped">함수 내부 지역변수·반복·조건부 반환 (M2 확장)</option>
-<option value="branches">참·거짓 분기·중첩 조건문 (M2 if/else)</option>
-<option value="u32">u32·u64 자료형·32비트 순환 계산 (M2 타입)</option>
-<option value="signed">i32·i64 음수·비트연산·break/continue (M2 확장)</option>
-</select>
+  <header class="topbar">
+    <a class="brand" href="./index.html" aria-label="HTML Kernel OS 홈">
+      <span class="brand-mark" aria-hidden="true">H<span>/</span>K</span>
+      <span class="brand-name">HTML Kernel OS<small>Open systems experiment</small></span>
+    </a>
+    <nav aria-label="주 메뉴">
+      <a href="./index.html#about">프로젝트</a>
+      <a href="./index.html#code">소스 코드</a>
+      <a href="./index.html#roadmap">진행 상황</a>
+      <a href="./play.html" aria-current="page">부팅 체험실</a>
+    </nav>
+    <a class="top-cta" href="https://github.com/Eun-si123/html-kernel-os" target="_blank" rel="noopener noreferrer">GitHub <span aria-hidden="true">↗</span></a>
+  </header>
+  <main class="boot-lab" id="main">
+    <div class="lab-intro">
+      <div>
+        <p class="eyebrow"><span class="eyebrow-rule" aria-hidden="true"></span> 07 NATIVE KERNEL IMAGES / BOOT LAB</p>
+        <h1>커널을<br><span class="display-serif">직접</span> 부팅해 보자.</h1>
+      </div>
+      <div class="lab-intro-side">
+        <p class="lede">준비된 HTML 소스에서 생성한 <strong>실제 x86-64 커널 ISO</strong>를 브라우저의 가상 PC에서 부팅해. 단순한 웹 OS 화면이 아니라, 네이티브 부팅 메시지를 직접 확인하는 실험이야.</p>
+        <p class="lab-context"><span>ENVIRONMENT</span> x86-64 / WASM v86 / BIOS / COM1</p>
+      </div>
+    </div>
+
+    <section class="workbench" aria-labelledby="workbench-title">
+      <div class="workbench-head"><h2 id="workbench-title">Boot session <span> / 001</span></h2><span>LOCAL EMULATION · NO SERVER EXECUTION</span></div>
+      <div class="session-controls">
+        <div class="demo-choice">
+          <label for="kernel-demo">01 / 커널 이미지 선택</label>
+          <select id="kernel-demo">
+            <option value="basic">기본 부팅 메시지 (M1)</option>
+            <option value="math">변수·계산·반복·조건 (M2 부분 구현)</option>
+            <option value="functions">사용자 정의 함수·매개변수·중첩 호출 (M2 확장)</option>
+            <option value="scoped">함수 내부 지역변수·반복·조건부 반환 (M2 확장)</option>
+            <option value="branches">참·거짓 분기·중첩 조건문 (M2 if/else)</option>
+            <option value="u32">u32·u64 자료형·32비트 순환 계산 (M2 타입)</option>
+            <option value="signed">i32·i64 음수·비트연산·break/continue (M2 확장)</option>
+          </select>
+        </div>
+        <div class="lab-controls">
+          <button type="button" id="boot-start" class="btn primary">부팅 시작 <span aria-hidden="true">↗</span></button>
+          <button type="button" id="boot-stop" class="btn secondary" disabled>정지</button>
+          <a id="iso-download" class="btn secondary" href="./html-kernel.iso" download>ISO 내려받기 ↓</a>
+        </div>
+      </div>
+      <div class="lab-status-bar"><span class="lab-status-label">SESSION STATUS</span><p id="boot-status" class="lab-status" role="status" aria-live="polite">준비됨 · 아직 가상머신을 시작하지 않았어.</p></div>
+      <div class="lab-grid">
+        <section class="lab-pane" aria-label="가상 PC 화면">
+          <h3><span class="lab-pane-index">01 / DISPLAY</span>가상 PC 화면<small>VGA framebuffer</small></h3>
+          <div id="screen_container" class="emulator-screen"><div style="white-space:pre;font:14px monospace;line-height:14px"></div><canvas style="display:none"></canvas></div>
+        </section>
+        <section class="lab-pane" aria-label="커널 시리얼 출력">
+          <h3><span class="lab-pane-index">02 / SERIAL</span>커널 출력<small>COM1 · 0x3F8</small></h3>
+          <pre id="boot-output" class="boot-output" role="log" aria-live="polite">부팅을 시작하면 HTML에서 생성한 커널의 시리얼 출력을 이곳에 표시해.</pre>
+        </section>
+      </div>
+      <p class="lab-footnote"><span class="footnote-mark" aria-hidden="true">i</span> 실행 중 브라우저 자원을 사용해. 느리거나 반응이 없다면 정지한 뒤 다시 시도해. 모바일 환경에서는 메모리가 부족할 수 있어.</p>
+    </section>
+
+    <section class="lab-explainer">
+      <div><p class="section-id">ABOUT THIS EXPERIMENT</p><h2>무엇을 검증하는가?</h2></div>
+      <div>
+        <p>이 페이지는 HTML 형태의 언어로 작성된 커널을 미리 컴파일한 ISO를 내려받아, 브라우저 내부의 x86-64 에뮬레이터로 실행해. 결과는 <strong>실제 커널의 COM1 시리얼 출력</strong>으로 확인해.</p>
+        <p class="notice"><strong>정확한 범위</strong> — 현재는 M2의 정수 자료형·함수·조건·반복·비트 연산 등 일부가 구현됐어. 재귀 호출, 함수 내부 입출력, 일반 프로그램 실행, 메모리 관리, 키보드 드라이버, 그래픽 데스크톱은 아직 구현되지 않았어. 브라우저 가상머신 부팅이 물리적 PC 지원을 증명하지는 않아.</p>
+        <div class="lab-links"><a href="https://github.com/Eun-si123/html-kernel-os">GitHub 소스 ↗</a><a href="https://github.com/Eun-si123/html-kernel-os/blob/main/docs/VALIDATION.md">검증 방법 ↗</a><a href="./v86-LICENSE.txt">에뮬레이터 라이선스 ↗</a></div>
+      </div>
+    </section>
+  </main>
+  <footer>
+    <div><strong>HTML Kernel OS</strong><span>Client-side boot lab · No server-side execution</span></div>
+    <div class="footer-links"><a href="./index.html">프로젝트 홈</a><a href="https://github.com/Eun-si123/html-kernel-os/blob/main/docs/STATUS.md">검증 상태</a></div>
+  </footer>
 </div>
-<div class="lab-controls">
-<button type="button" id="boot-start" class="btn primary">브라우저에서 부팅하기</button>
-<button type="button" id="boot-stop" class="btn secondary" disabled>정지</button>
-<a id="iso-download" class="btn secondary" href="./html-kernel.iso" download>선택한 커널 ISO 받기</a>
-</div>
-<p id="boot-status" class="lab-status" role="status" aria-live="polite">준비됨 · 아직 가상머신을 시작하지 않았어.</p>
-<div class="lab-grid">
-<section class="lab-pane"><h2>PC 화면 <small>실제 가상 그래픽 출력</small></h2>
-<div id="screen_container" class="emulator-screen"><div style="white-space:pre;font:14px monospace;line-height:14px"></div><canvas style="display:none"></canvas></div></section>
-<section class="lab-pane"><h2>커널 출력 <small>COM1 시리얼 포트에서 직접 수신</small></h2>
-<pre id="boot-output" class="boot-output" role="log" aria-live="polite">부팅을 시작하면 HTML에서 생성한 커널의 시리얼 출력을 이곳에 표시해.</pre></section>
-</div>
-<p class="notice"><strong>정확한 범위:</strong> 기본 커널은 부팅 메시지를 출력하고 정지하며, M2 실험은 변수를 계산하고 조건문·반복문을 실행해. 함수 내부 지역변수·조건·반복·반환, if/else 분기와 u32/u64/i32/i64 자료형, 비트 연산 및 제한 반복문의 break/continue도 부분 구현했지만, 재귀 호출·외부 상태 변경·입출력은 함수에서 지원하지 않아. 메모리 관리·데스크톱·키보드 입력 등은 아직 구현되지 않았어. 브라우저 에뮬레이션은 기기/브라우저에 따라 실패하거나 느릴 수 있어. QEMU에서의 실제 부팅과 브라우저에서의 호환성은 별도로 검증해.</p>
-<p class="lab-links"><a href="https://github.com/Eun-si123/html-kernel-os">GitHub 소스</a> · <a href="https://github.com/Eun-si123/html-kernel-os/blob/main/docs/VALIDATION.md">테스트 방법</a> · <a href="./v86-LICENSE.txt">브라우저 에뮬레이터 라이선스</a></p>
-</main>
-<footer><strong>HTML<span class="accent">KERNEL</span></strong><span>Client-side emulation · No server-side execution</span></footer>
-</div>
-</body></html>
+</body>
+</html>
