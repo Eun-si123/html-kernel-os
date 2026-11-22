@@ -31,3 +31,7 @@ Do not confuse a visual preview with execution evidence.
 ## CSS deployment cache
 
 Both pages pin a versioned CSS URL to prevent previously cached pre-redesign assets from styling newly deployed HTML. Update the version string when changing the CSS on subsequent releases. Tests resolve the local asset path before the query.
+
+## Automatic device light/dark theme (2026-11-23)
+
+Both routes follow the browser/OS prefers-color-scheme setting with CSS, including form controls and toolbar color. The existing warm paper palette remains light; dark uses charcoal and ink-friendly contrast. No local storage, JavaScript, tracking, or manual toggle. Cache-versioned shared CSS URL is incremented to avoid stale styles during Pages deployment.
