@@ -116,7 +116,7 @@ class SiteTests(unittest.TestCase):
             self.assertIn(text, css)
         self.assertIn('href="./styles.css?v=20261123-auto-theme2"', home)
         self.assertIn('href="./styles.css?v=20261123-auto-theme2"', lab)
-        self.assertIn('href="./play.css?v=20261123-editorial1"', lab)
+        self.assertIn('href="./play.css?v=20261123-auto-theme3"', lab)
         self.assertIn("@media(max-width:480px)", lab_css)
         self.assertNotIn("@import", css)
         self.assertNotIn("linear-gradient(", css)
@@ -134,6 +134,10 @@ class SiteTests(unittest.TestCase):
         self.assertIn('color-scheme: dark;', css)
         self.assertIn('--paper: #151a17;', css)
         self.assertIn('.lab-status-bar', css)
+        boot_css = (SITE / "play.css").read_text(encoding="utf-8")
+        self.assertIn('@media (prefers-color-scheme: dark)', boot_css)
+        self.assertIn('.lab-status-bar { background:#222b25;', boot_css)
+        self.assertIn('play.css?v=20261123-auto-theme3', lab)
 
     def test_copy_button_and_tabs_have_handlers(self):
         js = (SITE / "app.js").read_text(encoding="utf-8")
