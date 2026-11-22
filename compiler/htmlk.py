@@ -6,9 +6,11 @@ import argparse
 from pathlib import Path
 
 if __package__:
-    from .language import CompileError, MAX_FUNCTION_DEPTH, MAX_RUNTIME_STEPS, Node, expression, fail, parse, validate_name
+    from .language import CompileError, MAX_RUNTIME_STEPS, Node, expression, fail, parse, validate_name
+    from .function_codegen import compile_functions
 else:
-    from language import CompileError, MAX_FUNCTION_DEPTH, MAX_RUNTIME_STEPS, Node, expression, fail, parse, validate_name
+    from language import CompileError, MAX_RUNTIME_STEPS, Node, expression, fail, parse, validate_name
+    from function_codegen import compile_functions
 
 
 def compile_html(source: str, *, target: str = "kernel") -> str:
@@ -68,43 +70,7 @@ def compile_html(source: str, *, target: str = "kernel") -> str:
             "  outb(10);",
             "}",
         ]
-    # Pure, typed u64 functions with explicit prototypes for forward calls.
-    for fn in functions.values():
-        args = ", ".join(f"uint64_t htmlk_{param}" for param in fn.params) or "void"
-        lines.append(f"uint64_t htmlk_fn_{fn.name}({args});")
-    graph: dict[str, list[str]] = {}
-    definitions: list[str] = []
-    for fn in functions.values():
-        called: list[str] = []
-        value = expression(fn.return_node.attrs["value"], fn.return_node,
-                           set(fn.params), functions=functions, calls=called)
-        graph[fn.name] = called
-        args = ", ".join(f"uint64_t htmlk_{param}" for param in fn.params) or "void"
-        definitions += [
-            f"uint64_t htmlk_fn_{fn.name}({args}) {{",
-            f"  return {value};",
-            "}",
-        ]
-    # Cache both work and longest call-chain height. A cached function may
-    # be called at a *deeper* site; its depth still needs to be rechecked.
-    costs: dict[str, tuple[int, int]] = {}
-    def call_cost(name: str, chain: tuple[str, ...] = ()) -> tuple[int, int]:
-        if name in chain:
-            fail(functions[name].source_node, "recursive function calls: " +
-                 " -> ".join((*chain, name)))
-        if name not in costs:
-            nested = [call_cost(callee, (*chain, name)) for callee in graph[name]]
-            steps = 1 + sum(steps for steps, _ in nested)
-            depth = 1 + max((depth for _, depth in nested), default=0)
-            if steps > MAX_RUNTIME_STEPS:
-                fail(functions[name].source_node, "function invocation work limit exceeded")
-            costs[name] = (steps, depth)
-        if len(chain) + costs[name][1] > MAX_FUNCTION_DEPTH:
-            fail(functions[name].source_node,
-                 f"function call depth exceeds {MAX_FUNCTION_DEPTH}")
-        return costs[name]
-    for name in functions:
-        call_cost(name)
+    definitions, costs = compile_functions(functions)
     lines.extend(definitions)
     lines.append("void kernel_main(void) {" if target == "kernel"
                  else "int main(void) {")
@@ -127,7 +93,7 @@ def compile_html(source: str, *, target: str = "kernel") -> str:
                 called: list[str] = []
                 result = expression(source, node, variables,
                                     boolean=boolean, functions=functions, calls=called)
-                work_done += multiplier * sum(costs[name][0] for name in called)
+                work_done += multiplier * sum(costs[name] for name in called)
                 if work_done > MAX_RUNTIME_STEPS:
                     fail(node, "expanded function work budget exceeded")
                 return result

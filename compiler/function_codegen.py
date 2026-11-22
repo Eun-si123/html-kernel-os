@@ -1,0 +1,137 @@
+"""Compile scoped, typed u64 function statements to native C.
+
+One checked AST drives both kernel and Linux targets. Functions cannot use
+global state or I/O; every variable binding resolves to a unique C local.
+"""
+from __future__ import annotations
+
+from collections import Counter
+
+if __package__:
+    from .language import (
+        FunctionDef, MAX_FUNCTION_DEPTH, MAX_RUNTIME_STEPS,
+        expression, fail, validate_name,
+    )
+else:
+    from language import (
+        FunctionDef, MAX_FUNCTION_DEPTH, MAX_RUNTIME_STEPS,
+        expression, fail, validate_name,
+    )
+
+
+def compile_functions(functions: dict[str, FunctionDef]) -> tuple[list[str], dict[str, int]]:
+    lines: list[str] = []
+    own_steps: dict[str, int] = {}
+    edges: dict[str, Counter[str]] = {}
+
+    for fn in functions.values():
+        params = ", ".join(f"uint64_t htmlk_{arg}" for arg in fn.params) or "void"
+        lines.append(f"uint64_t htmlk_fn_{fn.name}({params});")
+
+    for fn in functions.values():
+        params = ", ".join(f"uint64_t htmlk_{arg}" for arg in fn.params) or "void"
+        code = [f"uint64_t htmlk_fn_{fn.name}({params}) {{"]
+        # Unused parameters are legal, even when GCC uses -Wextra -Werror.
+        for param in fn.params:
+            code.append(f"  (void)htmlk_{param};")
+        scopes: list[dict[str, str]] = [
+            {arg: f"htmlk_{arg}" for arg in fn.params}
+        ]
+        counts: Counter[str] = Counter()
+        referenced: set[str] = set()
+        bindings = 0
+        loops = 0
+        body_steps = 0
+
+        def resolve() -> dict[str, str]:
+            merged = {}
+            for scope in scopes:
+                merged.update(scope)
+            return merged
+
+        def emit(nodes: list, indent: int, weight: int) -> None:
+            nonlocal bindings, loops, body_steps
+            pad = "  " * indent
+            for node in nodes:
+                body_steps += weight
+                if body_steps > MAX_RUNTIME_STEPS:
+                    fail(node, "function statement work budget exceeded")
+
+                def checked(expr: str, *, boolean: bool = False) -> str:
+                    called: list[str] = []
+                    value = expression(expr, node, resolve(), boolean=boolean,
+                                       functions=functions, calls=called)
+                    for callee in called:
+                        counts[callee] += weight
+                        referenced.add(callee)
+                    return value
+
+                if node.tag == "let":
+                    name = validate_name(node)
+                    if name in scopes[-1]:
+                        fail(node, f"variable {name!r} already declared in this scope")
+                    value = checked(node.attrs["value"])  # resolve before binding
+                    symbol = f"htmlk_local_{fn.name}_{bindings}"
+                    bindings += 1
+                    scopes[-1][name] = symbol
+                    code.extend((f"{pad}uint64_t {symbol} = {value};",
+                                 f"{pad}(void){symbol};"))
+                elif node.tag == "set":
+                    name = validate_name(node)
+                    variables = resolve()
+                    if name not in variables:
+                        fail(node, f"undefined variable {name!r}")
+                    code.append(f"{pad}{variables[name]} = {checked(node.attrs['value'])};")
+                elif node.tag == "if":
+                    condition = checked(node.attrs["test"], boolean=True)
+                    code.append(f"{pad}if ({condition}) {{")
+                    scopes.append({})
+                    emit(node.children, indent + 1, weight)
+                    scopes.pop()
+                    code.append(f"{pad}}}")
+                elif node.tag == "repeat":
+                    count = int(node.attrs["times"])
+                    loop = f"htmlk_repeat_{fn.name}_{loops}"
+                    loops += 1
+                    code.append(f"{pad}for (uint64_t {loop} = 0;"
+                                f" {loop} < UINT64_C({count}); ++{loop}) {{")
+                    scopes.append({})
+                    emit(node.children, indent + 1, weight * count)
+                    scopes.pop()
+                    code.append(f"{pad}}}")
+                elif node.tag == "return":
+                    code.append(f"{pad}return {checked(node.attrs['value'])};")
+                else:
+                    fail(node, f"unsupported statement <{node.tag}> inside function")
+        emit(fn.body, 1, 1)
+        code.append("}")
+        lines.extend(code)
+        own_steps[fn.name] = body_steps
+        # Keep zero-trip loop references for static cycle/depth analysis.
+        for call in referenced:
+            counts.setdefault(call, 0)
+        edges[fn.name] = counts
+
+    costs: dict[str, tuple[int, int]] = {}
+
+    def visit(name: str, chain: tuple[str, ...] = ()) -> tuple[int, int]:
+        if name in chain:
+            fail(functions[name].source_node,
+                 "recursive function calls: " + " -> ".join((*chain, name)))
+        if name not in costs:
+            children = {child: visit(child, (*chain, name)) for child in edges[name]}
+            depth = 1 + max((height for _, height in children.values()), default=0)
+            steps = own_steps[name] + sum(
+                edges[name][child] * children[child][0] for child in children
+            )
+            if steps > MAX_RUNTIME_STEPS:
+                fail(functions[name].source_node, "function invocation work limit exceeded")
+            costs[name] = (steps, depth)
+        if len(chain) + costs[name][1] > MAX_FUNCTION_DEPTH:
+            fail(functions[name].source_node,
+                 f"function call depth exceeds {MAX_FUNCTION_DEPTH}")
+        return costs[name]
+
+    for name in functions:
+        visit(name)
+    return lines, {name: steps for name, (steps, _) in costs.items()}

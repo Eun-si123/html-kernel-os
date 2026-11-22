@@ -69,7 +69,7 @@ class LanguageTests(unittest.TestCase):
 
     def test_reject_bad_nesting_and_attributes(self):
         self.assert_invalid('<repeat times="2"><let name="x" type="u64" value="1"/></repeat><print>x</print>',
-                            "not allowed")
+                            "only supported inside functions")
         self.assert_invalid('<let name="x" type="u64" value="1" extra="bad"/><print>x</print>',
                             "invalid attributes")
         self.assert_invalid('<let name="x" name="y" type="u64" value="1"/><print>x</print>',

@@ -80,6 +80,8 @@ class SiteTests(unittest.TestCase):
         self.assertIn("html-kernel.iso", script)
         self.assertIn("html-kernel-math.iso", script)
         self.assertIn("html-kernel-functions.iso", script)
+        self.assertIn("html-kernel-scoped.iso", script)
+        self.assertIn('value="scoped"', html)
         self.assertIn('value="functions"', html)
         self.assertIn('id="kernel-demo"', html)
         self.assertIn("condition PASS", script)

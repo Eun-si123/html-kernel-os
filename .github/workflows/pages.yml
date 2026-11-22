@@ -28,11 +28,14 @@ jobs:
         run: python scripts/test_language_boot.py
       - name: Verify user-defined functions run in Linux and native QEMU
         run: python scripts/test_functions.py
-      - name: Build three non-test boot ISOs for visitors
+      - name: Verify scoped-function native behavior
+        run: python scripts/test_scoped_functions.py
+      - name: Build four non-test boot ISOs for visitors
         run: |
           python scripts/build_boot.py --out build/html-kernel.iso
           python scripts/build_boot.py --source examples/math-kernel.html --out build/html-kernel-math.iso
           python scripts/build_boot.py --source examples/functions-kernel.html --out build/html-kernel-functions.iso
+          python scripts/build_boot.py --source examples/scoped-functions-kernel.html --out build/html-kernel-scoped.iso
       - name: Assemble static Pages bundle with pinned x86-64 WebAssembly emulator
         run: |
           mkdir -p public/vendor
@@ -41,11 +44,13 @@ jobs:
           cp build/html-kernel.iso public/html-kernel.iso
           cp build/html-kernel-math.iso public/html-kernel-math.iso
           cp build/html-kernel-functions.iso public/html-kernel-functions.iso
+          cp build/html-kernel-scoped.iso public/html-kernel-scoped.iso
           test -s public/index.html
           test -s public/play.html
           test -s public/html-kernel.iso
           test -s public/html-kernel-math.iso
           test -s public/html-kernel-functions.iso
+          test -s public/html-kernel-scoped.iso
           test -s public/vendor/v86.wasm
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
