@@ -52,7 +52,7 @@ python3 scripts/test_else.py
 python3 scripts/build_boot.py --source examples/math-kernel.html --out build/html-kernel-math.iso
 ~~~
 
-The arithmetic test runs QEMU for original/changed expressions; `test_functions.py` covers typed pure functions; `test_scoped_functions.py` compiles the same scoped program for native Linux and QEMU and verifies both altered and baseline outputs, missing return/scope errors, and wrong output rejection. GitHub PR #23 and merged main CI both passed; public Pages deployed four independent boot ISOs, including scoped-function demonstration, which was actually booted in connected Chromium and observed via COM1. Other browsers/mobile/physical hardware remain unverified.
+The arithmetic test runs QEMU for original/changed expressions; `test_functions.py` covers typed pure functions; `test_scoped_functions.py` compiles the same scoped program for native Linux and QEMU and verifies both altered and baseline outputs, missing return/scope errors, and wrong output rejection. GitHub PR #23 and merged main CI both passed; public Pages now deploys **five** independent boot ISOs; scoped functions and if/else demonstrations have both been booted in connected Chromium and verified through actual COM1. The if/else PR #25 CI run `45039571823`, main CI `45039645315` and Pages run `45039645280` all passed. Other browsers/mobile/physical hardware remain unverified.
 
 ## Shared Linux process proof (P2)
 
