@@ -12,6 +12,7 @@ Start with [AGENTS.md](../AGENTS.md) for AI collaborators and [README.md](../REA
 | Which test/evidence class is required? | [VALIDATION.md](VALIDATION.md) |
 | How does compilation work, and what does not work? | [ARCHITECTURE.md](ARCHITECTURE.md) |
 | What has been decided versus proposed? | [DECISIONS.md](DECISIONS.md) |
+| What did the founder answer in interviews 1–15, including deferred choices? | [INTERVIEW_DECISIONS.md](INTERVIEW_DECISIONS.md) |
 | What should agents do before GitHub changes? | [AGENT_GOVERNANCE.md](AGENT_GOVERNANCE.md) |
 | How to avoid duplicate / conflicting agent work? | [AGENT_WORK_QUEUE.md](AGENT_WORK_QUEUE.md) |
 | How are AI commits credited safely? | [AGENT_COMMIT_IDENTITY.md](AGENT_COMMIT_IDENTITY.md) |

@@ -11,6 +11,8 @@ Only user-confirmed decisions belong under **Confirmed**. Proposals are not blan
 - **Implementation honesty:** a compiler prototype is not yet a complete kernel or OS; public docs must label it accordingly.
 - **Performance goal (2026-11-22):** aim for compiled native execution speed comparable to C++/Rust while keeping common programming tasks beginner-friendly like Python. This is a **goal, not measured performance**; see [PERFORMANCE.md](PERFORMANCE.md).
 
+- **Founder interview snapshot (2026-11-22, Q1–Q15):** HTML-like language + independent OS as long-term goals; preserve HTML-like syntax where practical; prioritize OS/kernel language first; favor common compiler and shared language, with a Linux-based practical prototype and separately verified independent-kernel track in parallel. Prefer staged implementation, measured trade-offs, and existing toolchains. See [INTERVIEW_DECISIONS.md](INTERVIEW_DECISIONS.md) for the exact responses and unresolved choices. These are design goals, not currently implemented functionality.
+
 ## Proposals / not yet authorizations
 
 - Exact bootloader/version and final compiler backend (C-as-IR versus LLVM/native code generation). See [ROADMAP.md](ROADMAP.md) M1; Limine is a candidate, not a pinned implementation yet.
