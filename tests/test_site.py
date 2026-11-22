@@ -79,6 +79,8 @@ class SiteTests(unittest.TestCase):
         self.assertIn("serial0-output-byte", script)
         self.assertIn("html-kernel.iso", script)
         self.assertIn("html-kernel-math.iso", script)
+        self.assertIn("html-kernel-functions.iso", script)
+        self.assertIn('value="functions"', html)
         self.assertIn('id="kernel-demo"', html)
         self.assertIn("condition PASS", script)
         self.assertIn("./vendor/v86.wasm", script)

@@ -10,13 +10,15 @@
       "regressions": [
         "tests/test_compiler.py",
         "tests/test_language.py",
-        "tests/test_targets.py"
+        "tests/test_targets.py",
+        "tests/test_functions.py"
       ],
       "fieldEvidence": [
         "docs/VALIDATION.md",
         "docs/M2_LANGUAGE_CONTRACT.md",
         "scripts/test_language_boot.py",
-        "scripts/test_linux.py"
+        "scripts/test_linux.py",
+        "scripts/test_functions.py"
       ]
     },
     {

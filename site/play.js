@@ -16,6 +16,10 @@ import V86 from './vendor/libv86.mjs';
     math: {
       iso: 'html-kernel-math.iso',
       expected: 'Arithmetic in HTML Kernel!\n14\n16\n18\ncondition PASS\n18446744073709551615\n'
+    },
+    functions: {
+      iso: 'html-kernel-functions.iso',
+      expected: 'Functions in HTML Kernel!\n13\n17\nfunction PASS\n10\n12\n'
     }
   });
   selection.addEventListener('change', () => {

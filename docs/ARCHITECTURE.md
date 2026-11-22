@@ -19,7 +19,7 @@ Write kernel *logic* in a constrained HTML-like language. Translate it ahead of 
 
 ## M2 compiler architecture (partial)
 
-The new compiler/language.py performs strict HTML-shaped parsing into a small typed statement tree and validates expressions through a restricted Python AST (parsed but **never evaluated as Python code**). compiler/htmlk.py lowers accepted numeric and text operations to freestanding x86-64 C. u64 arithmetic wraps; repeat times are bounded at source level. This code runs inside the real M1 boot image, not in a browser/Python runtime. See [M2_LANGUAGE_CONTRACT.md](M2_LANGUAGE_CONTRACT.md).
+The new compiler/language.py performs strict HTML-shaped parsing into a small typed statement tree and validates expressions through a restricted Python AST (parsed but **never evaluated as Python code**). compiler/htmlk.py lowers accepted numeric and text operations to freestanding x86-64 C. u64 arithmetic wraps; repeat times are bounded at source level. Pure typed u64 function declarations are validated into a signature table, compiled for both targets, and checked against a bounded non-recursive call graph. This code runs inside the real M1 boot image, not in a browser/Python runtime. See [M2_LANGUAGE_CONTRACT.md](M2_LANGUAGE_CONTRACT.md).
 
 ## Linux userland backend (minimal P2, not a distribution)
 

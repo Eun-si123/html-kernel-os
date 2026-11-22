@@ -1,0 +1,29 @@
+<kernel arch="x86_64">
+  <function name="base" params="" returns="u64">
+    <return value="7"/>
+  </function>
+  <function name="double" params="x:u64" returns="u64">
+    <return value="x * 2"/>
+  </function>
+  <function name="add" params="left:u64, right:u64" returns="u64">
+    <return value="left + right"/>
+  </function>
+  <function name="total" params="score:u64" returns="u64">
+    <return value="add(double(score), base())"/>
+  </function>
+  <onboot>
+    <print>Functions in HTML Kernel!</print>
+    <let name="score" type="u64" value="3"/>
+    <print value="total(score)"/>
+    <set name="score" value="score + 2"/>
+    <print value="total(score)"/>
+    <if test="total(score) == 17">
+      <print>function PASS</print>
+    </if>
+    <repeat times="2">
+      <print value="double(score)"/>
+      <set name="score" value="score + 1"/>
+    </repeat>
+    <halt/>
+  </onboot>
+</kernel>

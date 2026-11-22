@@ -3,7 +3,7 @@
 **Audience:** human contributors, beginner programmers, coding agents, reviewers.
 **Project goal:** express increasingly capable **native OS/kernel logic** in an HTML-like systems language, while retaining a reproducible boot chain and honest execution evidence.
 
-> **한국어 요약:** `kernel.html → C → x86-64 커널 이미지 → 실제 QEMU BIOS 부팅`이 로컬 및 GitHub CI에서 검증됐어(M1). 이제 **변수·타입·제어 흐름·함수** 구현이 다음 목표야(M2). 이후 메모리/인터럽트(M3), 작업/보호(M4), 최소 사용자 환경(M5), 실기기 검증(M6) 순으로 진행해. 실제 커널 부팅은 첫 성취로 검증됐고, **브라우저 체험도 한 Chromium 환경에서 동작을 확인**했어. Linux 사용자 프로그램과 실제 PC는 추후 목표야. 브라우저 UI 시뮬레이션은 커널 부팅 증거가 아니야. 구체적인 병행 계획은 [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)를 참고해.
+> **한국어 요약:** `kernel.html → C → x86-64 커널 이미지 → 실제 QEMU BIOS 부팅`이 로컬 및 GitHub CI에서 검증됐어(M1). 이제 **변수·타입·제어 흐름·함수** 구현이 다음 목표야(M2). 이후 메모리/인터럽트(M3), 작업/보호(M4), 최소 사용자 환경(M5), 실기기 검증(M6) 순으로 진행해. 실제 커널 부팅은 첫 성취로 검증됐고, **브라우저 체험도 한 Chromium 환경에서 동작을 확인**했어. Linux 사용자 프로그램의 최초 실행 경로는 구현·CI 검증됐고, 실제 PC 부팅은 추후 목표야. 브라우저 UI 시뮬레이션은 커널 부팅 증거가 아니야. 구체적인 병행 계획은 [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)를 참고해.
 
 ## How to read this / 읽는 방법
 
@@ -18,7 +18,7 @@
 
 The completed [founder interview](INTERVIEW_DECISIONS.md) confirms **D + E** success criteria: prove actual source-derived kernel boot first, then expand real HTML-language kernel functions and practical use; adjust later gates only with observed evidence. The [implementation plan](IMPLEMENTATION_PLAN.md) maps work into **P0–P5 execution slices**: language-core reliability, M1 boot, minimal Linux userspace target, language usability, browser/Windows demos, and existing M3–M6 kernel capabilities. **P-slices are planning workstreams, not replacement M-milestones or shipped features.**
 
-M1 QEMU BIOS boot and one Chromium browser boot are verified; the next language gate is **M2**, while Linux-native compilation remains an unimplemented parallel track. Continue developing reusable compiler semantics and target-specific execution support. Any website/browser UI simulation must be labeled separately from real boot emulation.
+M1 QEMU BIOS boot and one Chromium browser boot are verified; the next language gate is **M2**, while Linux-native compilation is now verified for the existing language subset; Linux OS/distribution support remains a separate, unimplemented goal. Continue developing reusable compiler semantics and target-specific execution support. Any website/browser UI simulation must be labeled separately from real boot emulation.
 
 ## Milestone overview
 
@@ -54,7 +54,7 @@ M1 QEMU BIOS boot and one Chromium browser boot are verified; the next language 
 
 ### M2 — easy-to-read but systems-capable language
 
-**Partial implementation (local QEMU PASS, CI pending):** unsigned u64 variables, numeric expressions (+, -, *), bounded repeat, if comparisons, numeric print, AST validation and initial line/column diagnostics. See [M2_LANGUAGE_CONTRACT.md](M2_LANGUAGE_CONTRACT.md). Functions, broader types, beginner exercises and benchmark gates remain OPEN.
+**Partial implementation:** unsigned u64 variables, numeric expressions (+, -, *), bounded repeat, if comparisons, numeric print, and pure user-defined typed u64 functions (Linux and real QEMU local PASS; function CI pending), AST validation and initial line/column diagnostics. See [M2_LANGUAGE_CONTRACT.md](M2_LANGUAGE_CONTRACT.md). General multi-statement functions, broader types, beginner exercises and benchmark gates remain OPEN.
 
 1. Write a versioned [language design](LANGUAGE_DESIGN.md): grammar, nesting, attributes, names, expressions, whitespace, entities, Unicode, errors, versioning.
 2. Implement a typed AST/semantic validation (no silent HTML browser error-recovery); accept/reject fixtures before native codegen.

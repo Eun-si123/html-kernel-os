@@ -6,15 +6,17 @@ import argparse
 from pathlib import Path
 
 if __package__:
-    from .language import CompileError, Node, expression, fail, parse, validate_name
+    from .language import CompileError, MAX_FUNCTION_DEPTH, MAX_RUNTIME_STEPS, Node, expression, fail, parse, validate_name
 else:
-    from language import CompileError, Node, expression, fail, parse, validate_name
+    from language import CompileError, MAX_FUNCTION_DEPTH, MAX_RUNTIME_STEPS, Node, expression, fail, parse, validate_name
 
 
 def compile_html(source: str, *, target: str = "kernel") -> str:
     if target not in ("kernel", "linux"):
         raise CompileError(f"unknown compiler target {target!r}")
-    program = parse(source)
+    parsed = parse(source)
+    program = parsed.statements
+    functions = parsed.functions
     contains_numeric_print = False
 
     def scan(nodes: list[Node]) -> None:
@@ -66,21 +68,72 @@ def compile_html(source: str, *, target: str = "kernel") -> str:
             "  outb(10);",
             "}",
         ]
+    # Pure, typed u64 functions with explicit prototypes for forward calls.
+    for fn in functions.values():
+        args = ", ".join(f"uint64_t htmlk_{param}" for param in fn.params) or "void"
+        lines.append(f"uint64_t htmlk_fn_{fn.name}({args});")
+    graph: dict[str, list[str]] = {}
+    definitions: list[str] = []
+    for fn in functions.values():
+        called: list[str] = []
+        value = expression(fn.return_node.attrs["value"], fn.return_node,
+                           set(fn.params), functions=functions, calls=called)
+        graph[fn.name] = called
+        args = ", ".join(f"uint64_t htmlk_{param}" for param in fn.params) or "void"
+        definitions += [
+            f"uint64_t htmlk_fn_{fn.name}({args}) {{",
+            f"  return {value};",
+            "}",
+        ]
+    # Cache both work and longest call-chain height. A cached function may
+    # be called at a *deeper* site; its depth still needs to be rechecked.
+    costs: dict[str, tuple[int, int]] = {}
+    def call_cost(name: str, chain: tuple[str, ...] = ()) -> tuple[int, int]:
+        if name in chain:
+            fail(functions[name].source_node, "recursive function calls: " +
+                 " -> ".join((*chain, name)))
+        if name not in costs:
+            nested = [call_cost(callee, (*chain, name)) for callee in graph[name]]
+            steps = 1 + sum(steps for steps, _ in nested)
+            depth = 1 + max((depth for _, depth in nested), default=0)
+            if steps > MAX_RUNTIME_STEPS:
+                fail(functions[name].source_node, "function invocation work limit exceeded")
+            costs[name] = (steps, depth)
+        if len(chain) + costs[name][1] > MAX_FUNCTION_DEPTH:
+            fail(functions[name].source_node,
+                 f"function call depth exceeds {MAX_FUNCTION_DEPTH}")
+        return costs[name]
+    for name in functions:
+        call_cost(name)
+    lines.extend(definitions)
     lines.append("void kernel_main(void) {" if target == "kernel"
                  else "int main(void) {")
     if target == "kernel":
         lines.append("  serial_init();")
     variables: set[str] = set()
     loop_id = 0
+    work_done = 0
 
-    def statements(nodes: list[Node], indent: int = 1) -> None:
-        nonlocal loop_id
+    def statements(nodes: list[Node], indent: int = 1, multiplier: int = 1) -> None:
+        nonlocal loop_id, work_done
         pad = "  " * indent
         for node in nodes:
             tag = node.tag
+            work_done += multiplier
+            if work_done > MAX_RUNTIME_STEPS:
+                fail(node, "runtime statement budget exceeded")
+            def checked(source: str, *, boolean: bool = False) -> str:
+                nonlocal work_done
+                called: list[str] = []
+                result = expression(source, node, variables,
+                                    boolean=boolean, functions=functions, calls=called)
+                work_done += multiplier * sum(costs[name][0] for name in called)
+                if work_done > MAX_RUNTIME_STEPS:
+                    fail(node, "expanded function work budget exceeded")
+                return result
             if tag == "print":
                 if "value" in node.attrs:
-                    value = expression(node.attrs["value"], node, variables)
+                    value = checked(node.attrs["value"])
                     lines.append(f"{pad}htmlk_print_u64({value});")
                 else:
                     data = ", ".join(f"0x{b:02x}" for b in
@@ -95,7 +148,7 @@ def compile_html(source: str, *, target: str = "kernel") -> str:
                 name = validate_name(node)
                 if name in variables:
                     fail(node, f"variable {name!r} is already declared")
-                value = expression(node.attrs["value"], node, variables)
+                value = checked(node.attrs["value"])
                 variables.add(name)
                 lines.append(f"{pad}uint64_t htmlk_{name} = {value};")
                 # An unused declaration is legal source, not a C -Werror failure.
@@ -104,12 +157,12 @@ def compile_html(source: str, *, target: str = "kernel") -> str:
                 name = validate_name(node)
                 if name not in variables:
                     fail(node, f"undefined variable {name!r}")
-                value = expression(node.attrs["value"], node, variables)
+                value = checked(node.attrs["value"])
                 lines.append(f"{pad}htmlk_{name} = {value};")
             elif tag == "if":
-                test = expression(node.attrs["test"], node, variables, boolean=True)
+                test = checked(node.attrs["test"], boolean=True)
                 lines.append(f"{pad}if ({test}) {{")
-                statements(node.children, indent + 1)
+                statements(node.children, indent + 1, multiplier)
                 lines.append(f"{pad}}}")
             elif tag == "repeat":
                 count = int(node.attrs["times"])
@@ -117,7 +170,7 @@ def compile_html(source: str, *, target: str = "kernel") -> str:
                 loop_id += 1
                 lines.append(f"{pad}for (uint64_t {temp} = 0;"
                              f" {temp} < UINT64_C({count}); ++{temp}) {{")
-                statements(node.children, indent + 1)
+                statements(node.children, indent + 1, multiplier * count)
                 lines.append(f"{pad}}}")
             elif tag == "halt":
                 # The parser enforces that halt is the final top-level statement.

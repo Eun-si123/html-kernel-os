@@ -34,6 +34,10 @@ Requires QEMU x86-64, GCC, make, xorriso, Python 3.12+; pinned Limine dependenci
 
 Use scripts/test_language_boot.py with QEMU to verify the committed arithmetic example and a changed expression in a *second* independently built boot image. Assert exact decimal output, the conditional changing from true to false, and invalid-source rejection. See [M2_LANGUAGE_CONTRACT.md](M2_LANGUAGE_CONTRACT.md) for currently implemented syntax and unsigned 64-bit semantics.
 
+## M2 user-defined functions — observed local proof
+
+Run `python3 scripts/test_functions.py` to compile one HTML source into both a Linux executable and a real Limine/QEMU kernel. It checks original and modified function return expressions, exact output, conditional changes and rejects incorrect expected output and recursive calls. Run `python3 -m unittest discover -s tests -q` for malformed typed signatures, call arity, undefined functions, recursion, depth and work budgets. General function bodies and other data types remain unsupported.
+
 ## P2 Linux userspace target — independent proof
 
 The same compiler front-end accepts the original kernel source and M2 arithmetic source with a Linux output backend. Run the following as an unprivileged x86-64 Linux user:
