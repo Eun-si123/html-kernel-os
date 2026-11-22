@@ -13,18 +13,24 @@ MAX_NODES = 1024
 MAX_OUTPUT_BYTES = 16384
 MAX_RUNTIME_STEPS = 20000
 MAX_LOOP_TIMES = 64
+MAX_FUNCTIONS = 32
+MAX_FUNCTION_ARGS = 4
+MAX_FUNCTION_DEPTH = 8
 NAME = re.compile(r"[a-zA-Z_][a-zA-Z_0-9]*\Z")
 CHILDREN = {"kernel": {None}, "onboot": {"kernel"},
             "print": {"onboot", "if", "repeat"},
             "let": {"onboot"}, "set": {"onboot", "if", "repeat"},
             "if": {"onboot", "if", "repeat"},
             "repeat": {"onboot", "if", "repeat"},
-            "halt": {"onboot"}}
+            "halt": {"onboot"},
+            "function": {"kernel"}, "return": {"function"}}
 ALLOWED = {"kernel": {"arch"}, "onboot": set(), "print": {"value"},
            "let": {"name", "type", "value"}, "set": {"name", "value"},
-           "if": {"test"}, "repeat": {"times"}, "halt": set()}
+           "if": {"test"}, "repeat": {"times"}, "halt": set(),
+           "function": {"name", "params", "returns"}, "return": {"value"}}
 REQUIRED = {"let": {"name", "type", "value"}, "set": {"name", "value"},
-            "if": {"test"}, "repeat": {"times"}}
+            "if": {"test"}, "repeat": {"times"},
+            "function": {"name", "params", "returns"}, "return": {"value"}}
 
 
 class CompileError(ValueError):
@@ -52,6 +58,20 @@ def validate_name(node: Node) -> str:
     return name
 
 
+@dataclass
+class FunctionDef:
+    name: str
+    params: tuple[str, ...]
+    return_node: Node
+    source_node: Node
+
+
+@dataclass
+class Program:
+    statements: list[Node]
+    functions: dict[str, FunctionDef]
+
+
 class KernelParser(HTMLParser):
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
@@ -60,6 +80,7 @@ class KernelParser(HTMLParser):
         self.boot_seen = False
         self.halted = False
         self.program: list[Node] = []
+        self.functions: list[Node] = []
         self.nodes = 0
         self.saw_print = False
         self.source_lines: list[str] = []
@@ -71,7 +92,7 @@ class KernelParser(HTMLParser):
         parent = self.stack[-1].tag if self.stack else None
         if tag not in CHILDREN or parent not in CHILDREN[tag]:
             fail(node, f"<{tag}> is not allowed under <{parent}>")
-        if self.halted:
+        if self.halted and any(item.tag == "onboot" for item in self.stack):
             fail(node, "no statements are allowed after <halt/>")
         if len(pairs) != len(attrs):
             fail(node, f"duplicate attributes on <{tag}>")
@@ -87,6 +108,10 @@ class KernelParser(HTMLParser):
             if self.boot_seen:
                 fail(node, "only one <onboot> is allowed")
             self.boot_seen = True
+        elif tag == "function":
+            validate_name(node)
+            if pairs["returns"] != "u64":
+                fail(node, 'only returns="u64" is implemented')
         elif tag == "let":
             validate_name(node)
             if pairs["type"] != "u64":
@@ -125,6 +150,12 @@ class KernelParser(HTMLParser):
             fail(node, f"text is only permitted inside <print>, not <{tag}>")
         if tag == "onboot":
             self.program = node.children
+        elif tag == "function":
+            if len(node.children) != 1 or node.children[0].tag != "return":
+                fail(node, '<function> must contain exactly one <return value="..."/>')
+            self.functions.append(node)
+            if len(self.functions) > MAX_FUNCTIONS:
+                fail(node, f"at most {MAX_FUNCTIONS} functions are supported")
         elif tag == "halt":
             self.halted = True
         if self.stack:
@@ -156,7 +187,7 @@ class KernelParser(HTMLParser):
     def unknown_decl(self, data: str) -> None:
         raise CompileError("unknown declarations are not valid kernel source")
 
-    def finish(self) -> list[Node]:
+    def finish(self) -> Program:
         if self.stack or not (self.root_seen and self.boot_seen):
             raise CompileError("expected closed <kernel><onboot>...</onboot></kernel>")
         if not self.saw_print:
@@ -182,10 +213,28 @@ class KernelParser(HTMLParser):
                     fail(node, f"estimated work exceeds {MAX_RUNTIME_STEPS} steps")
             return output, steps
         estimate(self.program)
-        return self.program
+        funcs: dict[str, FunctionDef] = {}
+        for fn in self.functions:
+            name = validate_name(fn)
+            if name in funcs:
+                fail(fn, f"function {name!r} already defined")
+            raw = fn.attrs["params"].strip()
+            parts = [] if not raw else [part.strip() for part in raw.split(",")]
+            if len(parts) > MAX_FUNCTION_ARGS:
+                fail(fn, f"function parameters exceed limit of {MAX_FUNCTION_ARGS}")
+            params: list[str] = []
+            for part in parts:
+                bits = [bit.strip() for bit in part.split(":")]
+                if len(bits) != 2 or bits[1] != "u64" or not NAME.fullmatch(bits[0]) or keyword.iskeyword(bits[0]):
+                    fail(fn, f"bad typed parameter {part!r}; expected name:u64")
+                if bits[0] in params:
+                    fail(fn, f"duplicate parameter {bits[0]!r}")
+                params.append(bits[0])
+            funcs[name] = FunctionDef(name, tuple(params), fn.children[0], fn)
+        return Program(self.program, funcs)
 
 
-def parse(source: str) -> list[Node]:
+def parse(source: str) -> Program:
     if len(source.encode("utf-8")) > MAX_SOURCE_BYTES:
         raise CompileError(f"source exceeds {MAX_SOURCE_BYTES} bytes")
     parser = KernelParser()
@@ -195,7 +244,9 @@ def parse(source: str) -> list[Node]:
     return parser.finish()
 
 
-def expression(source: str, node: Node, variables: set[str], *, boolean: bool = False) -> str:
+def expression(source: str, node: Node, variables: set[str], *, boolean: bool = False,
+               functions: dict[str, FunctionDef] | None = None,
+               calls: list[str] | None = None) -> str:
     if not source or len(source.encode("utf-8")) > 256:
         fail(node, "expression must contain 1..256 UTF-8 bytes")
     try:
@@ -210,6 +261,24 @@ def expression(source: str, node: Node, variables: set[str], *, boolean: bool = 
             if not 0 <= item.value <= UINT64_MAX:
                 fail(node, "integer literal outside u64 range")
             return f"UINT64_C({item.value})", "number"
+        if isinstance(item, ast.Call):
+            if not isinstance(item.func, ast.Name) or item.keywords:
+                fail(node, "unsupported function call; expected a plain name and positional u64 arguments")
+            name = item.func.id
+            func = (functions or {}).get(name)
+            if func is None:
+                fail(node, f"undefined function {name!r}")
+            if len(item.args) != len(func.params):
+                fail(node, f"function {name!r} expects {len(func.params)} arguments; got {len(item.args)}")
+            arguments = []
+            for arg in item.args:
+                part, kind = emit(arg)
+                if kind != "number":
+                    fail(node, "function arguments must be u64")
+                arguments.append(part)
+            if calls is not None:
+                calls.append(name)
+            return f"htmlk_fn_{name}(" + ", ".join(arguments) + ")", "number"
         if isinstance(item, ast.Name):
             if item.id not in variables:
                 fail(node, f"undefined variable {item.id!r}")

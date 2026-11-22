@@ -40,10 +40,13 @@ jobs:
         run: python scripts/test_boot.py
       - name: Verify M2 variables and control flow boot
         run: python scripts/test_language_boot.py
+      - name: Verify M2 user-defined functions in Linux and native QEMU
+        run: python scripts/test_functions.py
       - name: Assemble standalone, non-test boot images
         run: |
           python scripts/build_boot.py --out build/html-kernel.iso
           python scripts/build_boot.py --source examples/math-kernel.html --out build/html-kernel-math.iso
+          python scripts/build_boot.py --source examples/functions-kernel.html --out build/html-kernel-functions.iso
       - uses: actions/upload-artifact@v4
         with:
           name: html-kernel-os-native-iso
@@ -52,3 +55,5 @@ jobs:
             build/html-kernel.elf
             build/html-kernel-math.iso
             build/html-kernel-math.elf
+            build/html-kernel-functions.iso
+            build/html-kernel-functions.elf
