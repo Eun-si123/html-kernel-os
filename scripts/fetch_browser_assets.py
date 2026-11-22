@@ -9,11 +9,12 @@ from pathlib import Path
 import shutil
 from urllib.request import urlopen
 
-BASE = "https://portlandhodl.github.io/v86_64/"
-# Reviewed 2026-11-22. Browser binaries are not checked into the source repo.
+BASE = "https://v64-2ys.pages.dev/"
+# v64 by speedyHKjournalist (BSD-2-Clause), build 6448e1f3e6140684d1294aba67e91f46e924b3f3,
+# reviewed 2026-11-22. Browser binaries are not checked into source control.
 ASSETS = {
-    "v86_all.js": ("build/v86_all.js", "d84c4279325bc3f4084dad32f985bce60809ae7c49f780d81e63ac96f7e8947c"),
-    "v86.wasm": ("build/v86.wasm", "fc9e655c68eaf8aed50ccf987897bfb211ae793832b498a6d9c6a4733618ad2b"),
+    "libv86.mjs": ("build/libv86.mjs", "bcdae0093f81470a041039cedbc57704d32b88dc07561b6900b5dfd0444d0c97"),
+    "v86.wasm": ("build/v86.wasm", "7a5bf011bdb6e33d1801d6b07aceb50f54dfcc6f1d631565c65ed4ec48cd833e"),
     "seabios.bin": ("bios/seabios.bin", "73e3f359102e3a9982c35fce98eb7cd08f18303ac7f1ba6ebfbe6cdc1c244d98"),
     "vgabios.bin": ("bios/vgabios.bin", "a4bc0d80cc3ca028c73dafa8fee396b8d054ce87ebd8abfbd31b06b437607880"),
 }

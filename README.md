@@ -61,7 +61,7 @@ Generated C implements a function named kernel_main(). It uses the **QEMU debugc
 
 ## Website / GitHub Pages
 
-The user requested a **project-specific static GitHub Pages browser boot lab**, separate from the existing personal github.io homepage. After the Pages workflow succeeds, visit https://eun-si123.github.io/html-kernel-os/play.html to boot the generated ISO in a WebAssembly x86-64 emulator. The host is static: JavaScript runs the emulator on the visitor's machine, not on GitHub's servers. Actual browser boot success must be confirmed independently of the QEMU tests. The workflow builds and uploads the ISO and checksum-pinned third-party emulator assets; no heavyweight binaries are stored in Git source. Browser emulator license in `site/v86-LICENSE.txt`.
+The user requested a **project-specific static GitHub Pages browser boot lab**, separate from the existing personal github.io homepage. After the Pages workflow succeeds, visit https://eun-si123.github.io/html-kernel-os/play.html to boot the generated ISO in a WebAssembly x86-64 emulator. The host is static: JavaScript runs the emulator on the visitor's machine, not on GitHub's servers. Actual browser boot success must be confirmed independently of the QEMU tests. The workflow builds and uploads the ISO and checksum-pinned v64 x86-64 WebAssembly emulator assets; no heavyweight binaries are stored in Git source. Browser emulator license in `site/v86-LICENSE.txt`.
 
 Local preview:
 

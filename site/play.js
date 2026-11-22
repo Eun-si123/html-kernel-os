@@ -1,3 +1,5 @@
+import V86 from './vendor/libv86.mjs';
+
 (() => {
   'use strict';
   const start = document.getElementById('boot-start');
@@ -10,18 +12,15 @@
 
   start.addEventListener('click', () => {
     if (machine) { window.location.reload(); return; }
-    if (typeof window.V86 !== 'function') {
-      setStatus('에뮬레이터 라이브러리를 불러오지 못했어. 인터넷 연결을 확인해.');
-      return;
-    }
     start.disabled = true;
     output.textContent = '';
     setStatus('x86-64 WebAssembly 가상머신과 실제 커널 ISO를 불러오는 중...');
     try {
-      machine = new window.V86({
+      machine = new V86({
+        cpu_type: 'x86_64',
         wasm_path: './vendor/v86.wasm',
         memory_size: 128 * 1024 * 1024,
-        vga_memory_size: 2 * 1024 * 1024,
+        vram_size: 2 * 1024 * 1024,
         screen_container: document.getElementById('screen_container'),
         bios: { url: './vendor/seabios.bin' },
         vga_bios: { url: './vendor/vgabios.bin' },
