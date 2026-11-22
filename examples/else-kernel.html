@@ -1,0 +1,50 @@
+<kernel arch="x86_64">
+  <function name="category" params="value:u64" returns="u64">
+    <let name="result" type="u64" value="0"/>
+    <if test="value &gt; 10">
+      <let name="bonus" type="u64" value="2"/>
+      <set name="result" value="value + bonus"/>
+      <else>
+        <let name="bonus" type="u64" value="3"/>
+        <set name="result" value="value + bonus"/>
+      </else>
+    </if>
+    <return value="result"/>
+  </function>
+  <function name="choose" params="x:u64" returns="u64">
+    <if test="x == 1">
+      <return value="111"/>
+      <else>
+        <if test="x == 2">
+          <return value="222"/>
+          <else>
+            <return value="333"/>
+          </else>
+        </if>
+      </else>
+    </if>
+    <return value="0"/>
+  </function>
+  <onboot>
+    <print>HTML if/else native!</print>
+    <let name="v" type="u64" value="5"/>
+    <if test="v &gt; 10">
+      <print>wrong branch</print>
+      <else>
+        <print>else branch PASS</print>
+      </else>
+    </if>
+    <print value="category(5)"/>
+    <print value="category(15)"/>
+    <print value="choose(2)"/>
+    <repeat times="2">
+      <if test="v == 5">
+        <print>nested PASS</print>
+        <else>
+          <print>wrong nested branch</print>
+        </else>
+      </if>
+    </repeat>
+    <halt/>
+  </onboot>
+</kernel>

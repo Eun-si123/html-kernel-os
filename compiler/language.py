@@ -18,18 +18,20 @@ MAX_FUNCTION_ARGS = 4
 MAX_FUNCTION_DEPTH = 8
 NAME = re.compile(r"[a-zA-Z_][a-zA-Z_0-9]*\Z")
 CHILDREN = {"kernel": {None}, "onboot": {"kernel"},
-            "print": {"onboot", "if", "repeat"},
-            "let": {"onboot", "function", "if", "repeat"},
-            "set": {"onboot", "function", "if", "repeat"},
-            "if": {"onboot", "function", "if", "repeat"},
-            "repeat": {"onboot", "function", "if", "repeat"},
+            "print": {"onboot", "if", "repeat", "else"},
+            "let": {"onboot", "function", "if", "repeat", "else"},
+            "set": {"onboot", "function", "if", "repeat", "else"},
+            "if": {"onboot", "function", "if", "repeat", "else"},
+            "repeat": {"onboot", "function", "if", "repeat", "else"},
             "halt": {"onboot"},
             "function": {"kernel"},
-            "return": {"function", "if", "repeat"}}
+            "return": {"function", "if", "repeat", "else"},
+            "else": {"if"}}
 ALLOWED = {"kernel": {"arch"}, "onboot": set(), "print": {"value"},
            "let": {"name", "type", "value"}, "set": {"name", "value"},
            "if": {"test"}, "repeat": {"times"}, "halt": set(),
-           "function": {"name", "params", "returns"}, "return": {"value"}}
+           "function": {"name", "params", "returns"}, "return": {"value"},
+           "else": set()}
 REQUIRED = {"let": {"name", "type", "value"}, "set": {"name", "value"},
             "if": {"test"}, "repeat": {"times"},
             "function": {"name", "params", "returns"}, "return": {"value"}}
@@ -100,7 +102,7 @@ class KernelParser(HTMLParser):
             fail(node, "no statements are allowed after <halt/>")
         if tag == "return" and not inside_function:
             fail(node, "<return> is only allowed inside a <function>")
-        if tag == "let" and parent in {"if", "repeat"} and not inside_function:
+        if tag == "let" and parent in {"if", "repeat", "else"} and not inside_function:
             fail(node, "block-scoped <let> is only supported inside functions")
         if len(pairs) != len(attrs):
             fail(node, f"duplicate attributes on <{tag}>")
@@ -156,6 +158,13 @@ class KernelParser(HTMLParser):
             self.saw_print = True
         elif node.text:
             fail(node, f"text is only permitted inside <print>, not <{tag}>")
+        if tag == "if":
+            else_positions = [i for i, child in enumerate(node.children)
+                              if child.tag == "else"]
+            if len(else_positions) > 1:
+                fail(node, "<if> may contain at most one <else>")
+            if else_positions and else_positions[0] != len(node.children) - 1:
+                fail(node, "<else> must be the final child of <if>")
         if tag == "onboot":
             self.program = node.children
         elif tag == "function":
@@ -208,7 +217,7 @@ class KernelParser(HTMLParser):
                 if node.tag == "print":
                     nout = (21 if "value" in node.attrs
                             else len("".join(node.text).encode("utf-8")) + 1)
-                elif node.tag in {"if", "repeat"}:
+                elif node.tag in {"if", "repeat", "else"}:
                     nested_out, nested_steps = estimate(node.children)
                     scale = int(node.attrs["times"]) if node.tag == "repeat" else 1
                     nout = scale * nested_out
@@ -241,11 +250,18 @@ class KernelParser(HTMLParser):
             # A top-level final return guarantees a value even when earlier
             # conditional branches or zero-iteration repeats do not execute.
             def check_return_order(nodes: list[Node]) -> None:
-                for index, item in enumerate(nodes):
-                    if item.tag == "return" and index + 1 != len(nodes):
+                # An <else> is a sibling marker within <if>, not a statement
+                # executed after the then-branch. A branch ending in <return>
+                # may legally have a following <else>.
+                has_else = bool(nodes and nodes[-1].tag == "else")
+                branch = nodes[:-1] if has_else else nodes
+                for index, item in enumerate(branch):
+                    if item.tag == "return" and index + 1 != len(branch):
                         fail(item, "statements after <return> are unreachable")
                     if item.tag in {"if", "repeat"}:
                         check_return_order(item.children)
+                if has_else:
+                    check_return_order(nodes[-1].children)
             check_return_order(fn.children)
             funcs[name] = FunctionDef(name, tuple(params), fn.children[-1], fn,
                                       fn.children)

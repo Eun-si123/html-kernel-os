@@ -84,10 +84,18 @@ def compile_functions(functions: dict[str, FunctionDef]) -> tuple[list[str], dic
                     code.append(f"{pad}{variables[name]} = {checked(node.attrs['value'])};")
                 elif node.tag == "if":
                     condition = checked(node.attrs["test"], boolean=True)
+                    alternate = (node.children[-1] if node.children and
+                                 node.children[-1].tag == "else" else None)
+                    true_body = node.children[:-1] if alternate else node.children
                     code.append(f"{pad}if ({condition}) {{")
                     scopes.append({})
-                    emit(node.children, indent + 1, weight)
+                    emit(true_body, indent + 1, weight)
                     scopes.pop()
+                    if alternate is not None:
+                        code.append(f"{pad}}} else {{")
+                        scopes.append({})
+                        emit(alternate.children, indent + 1, weight)
+                        scopes.pop()
                     code.append(f"{pad}}}")
                 elif node.tag == "repeat":
                     count = int(node.attrs["times"])

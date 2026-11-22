@@ -44,12 +44,15 @@ jobs:
         run: python scripts/test_functions.py
       - name: Verify scoped functions in Linux and native QEMU
         run: python scripts/test_scoped_functions.py
+      - name: Verify M2 if/else branches in Linux and native QEMU
+        run: python scripts/test_else.py
       - name: Assemble standalone, non-test boot images
         run: |
           python scripts/build_boot.py --out build/html-kernel.iso
           python scripts/build_boot.py --source examples/math-kernel.html --out build/html-kernel-math.iso
           python scripts/build_boot.py --source examples/functions-kernel.html --out build/html-kernel-functions.iso
           python scripts/build_boot.py --source examples/scoped-functions-kernel.html --out build/html-kernel-scoped.iso
+          python scripts/build_boot.py --source examples/else-kernel.html --out build/html-kernel-else.iso
       - uses: actions/upload-artifact@v4
         with:
           name: html-kernel-os-native-iso
@@ -62,3 +65,5 @@ jobs:
             build/html-kernel-functions.elf
             build/html-kernel-scoped.iso
             build/html-kernel-scoped.elf
+            build/html-kernel-else.iso
+            build/html-kernel-else.elf

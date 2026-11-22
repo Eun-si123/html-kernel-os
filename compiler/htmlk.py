@@ -127,8 +127,14 @@ def compile_html(source: str, *, target: str = "kernel") -> str:
                 lines.append(f"{pad}htmlk_{name} = {value};")
             elif tag == "if":
                 test = checked(node.attrs["test"], boolean=True)
+                alternate = (node.children[-1] if node.children and
+                             node.children[-1].tag == "else" else None)
+                true_body = node.children[:-1] if alternate else node.children
                 lines.append(f"{pad}if ({test}) {{")
-                statements(node.children, indent + 1, multiplier)
+                statements(true_body, indent + 1, multiplier)
+                if alternate is not None:
+                    lines.append(f"{pad}}} else {{")
+                    statements(alternate.children, indent + 1, multiplier)
                 lines.append(f"{pad}}}")
             elif tag == "repeat":
                 count = int(node.attrs["times"])
@@ -173,7 +179,7 @@ def main() -> int:
         args.out.parent.mkdir(parents=True, exist_ok=True)
         args.out.write_text(generated, encoding="utf-8")
     except (CompileError, OSError, UnicodeError) as exc:
-        ap.error(str(exc))
+        ap.error(f"{args.input}: {exc}")
     print(f"Generated {args.out} ({args.target} x86-64 C source)")
     return 0
 
