@@ -1,0 +1,20 @@
+name: Validate prototype
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Python unit tests
+        run: python -m unittest discover -s tests -v
+      - name: Generate freestanding C
+        run: python compiler/htmlk.py examples/kernel.html --out build/kernel.c
+      - name: Compile x86-64 object
+        run: gcc -std=c11 -ffreestanding -fno-stack-protector -fno-pie -Wall -Wextra -Werror -c build/kernel.c -o build/kernel.o
