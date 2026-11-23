@@ -84,6 +84,23 @@
         "scripts/test_video_screen.py",
         "docs/M3_FRAMEBUFFER_CONSOLE.md"
       ]
+    },
+    {
+      "id": "m3-exception-idt",
+      "source": [
+        "boot/exception_idt.c",
+        "boot/exception_idt.h",
+        "boot/kernel_entry.c",
+        "scripts/build_boot.py"
+      ],
+      "regressions": [
+        "tests/test_exception_idt.py"
+      ],
+      "fieldEvidence": [
+        "tests/native/test_exception_idt.c",
+        "scripts/test_exception_idt.py",
+        "docs/M3_EXCEPTION_IDT.md"
+      ]
     }
   ]
 }
