@@ -123,3 +123,7 @@ Then open http://127.0.0.1:8000 in your browser.
 ## License
 
 **No license has been selected yet.** Public visibility does not grant open-source reuse rights by itself; a license decision should be made before encouraging outside contributions.
+
+## M3 memory bootstrap experiment (separate from normal boot)
+
+An opt-in Limine memory-map/HHDM probe now selects exactly 16 usable, 4KiB-aligned physical pages, performs actual RAM readback through HHDM, and checks exhaustion. The ordinary HTML-derived kernel image is unchanged. Run `python3 scripts/test_m3_memory.py` to check the freestanding C page-pool logic with GCC UBSan and run positive/negative real BIOS QEMU boots, or build a manually bootable test ISO with `python3 scripts/build_boot.py --memory-probe --out build/html-kernel-m3-memory.iso`. This is **only the initial M3 physical memory slice**: no virtual page mapping, interrupt/fault handler, real PC verification or user-program isolation. Full design and limitations: [M3 memory bootstrap](docs/M3_MEMORY_BOOTSTRAP.md).
