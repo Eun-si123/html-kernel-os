@@ -161,3 +161,7 @@ python3 scripts/build_boot.py --exception-idt --paging-probe --out build/html-ke
 ```
 
 See [M3_PRIVATE_PAGING.md](docs/M3_PRIVATE_PAGING.md). The existing public browser Boot Lab is unchanged.
+
+## M3 one-shot recoverable page fault and physical-frame ownership
+
+An opt-in M3 experiment now tracks 16 physical frames by TABLE/DATA owner (bounded claim, wrong-owner/double-free refusal, reclaimed reuse). With `--exception-idt --paging-probe --paging-recover-test`, one tightly scoped **real CPU #PF** on a reserved private 4KiB virtual alias allocates a zeroed page, updates its PTE and resumes the faulting instruction with `iretq`. The original CR3 is restored and all owned frames are released afterward. This is **not** general demand paging, a process-isolated virtual memory manager, or TSS/IST; unarmed/unauthorized faults still halt. See [M3_FAULT_RECOVERY.md](docs/M3_FAULT_RECOVERY.md). Run `python3 scripts/test_paging_recovery.py` and `python3 -m unittest tests.test_frame_owner -v`. No public Boot Lab ISO or physical hardware claims are made for this opt-in experiment.
