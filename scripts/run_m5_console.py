@@ -24,17 +24,20 @@ def qemu_command(iso: Path, debug_log: Path) -> list[str]:
     ]
 
 
-def build_command(iso: Path, romfs_root: Path) -> list[str]:
+def build_command(iso: Path, romfs_root: Path, *, shell: bool = False) -> list[str]:
     return [
         sys.executable, str(ROOT / "scripts/build_boot.py"),
-        "--romfs-console", "--romfs-root", str(romfs_root),
+        "--romfs-shell" if shell else "--romfs-console",
+        "--romfs-root", str(romfs_root),
         "--out", str(iso), "--test-exit",
     ]
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--iso", type=Path, default=ROOT / "build/m5-interactive.iso",
+    parser.add_argument("--shell", action="store_true",
+                        help="M5-D integrated QEMU terminal with run /apps/hello.hke")
+    parser.add_argument("--iso", type=Path, default=None,
                         help="Build output ISO; does not mount a host disk in the guest")
     parser.add_argument("--romfs-root", type=Path, default=ROOT / "examples/romfs",
                         help="Bounded trusted files embedded at compile time")
@@ -47,20 +50,26 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("M5 console needs an interactive TTY; for CI use scripts/test_m5_console.py")
     if shutil.which("qemu-system-x86_64") is None:
         parser.error("qemu-system-x86_64 is required (Ubuntu: qemu-system-x86)")
-    iso = args.iso.resolve()
-    log = args.debug_log.resolve()
+    iso = (args.iso or (ROOT / "build" /
+           ("m5-shell-interactive.iso" if args.shell else "m5-interactive.iso"))).resolve()
+    log = (ROOT / "build/m5-shell-interactive-debugcon.log" if args.shell and
+           args.debug_log == ROOT / "build/m5-interactive-debugcon.log"
+           else args.debug_log).resolve()
     if iso == log:
         parser.error("ISO and debugcon log cannot be the same file")
     if not args.reuse_iso or not iso.is_file():
         iso.parent.mkdir(parents=True, exist_ok=True)
-        print("Building native HTML Kernel OS M5-B ISO ...", flush=True)
-        build = subprocess.run(build_command(iso, args.romfs_root.resolve()),
+        print("Building native HTML Kernel OS M5-D ISO ..." if args.shell
+              else "Building native HTML Kernel OS M5-B ISO ...", flush=True)
+        build = subprocess.run(build_command(iso, args.romfs_root.resolve(), shell=args.shell),
                                cwd=ROOT, check=False)
         if build.returncode != 0:
-            print("M5-B ISO build failed", file=sys.stderr)
+            print("M5-D ISO build failed" if args.shell else "M5-B ISO build failed",
+                  file=sys.stderr)
             return 1
     log.parent.mkdir(parents=True, exist_ok=True)
-    print("Actual QEMU serial console. Commands: help, ls, cat /welcome.txt, exit", flush=True)
+    print("Actual QEMU serial console. Commands: help, ls, cat /welcome.txt, "
+          + ("run /apps/hello.hke, " if args.shell else "") + "exit", flush=True)
     print("The guest runs at the virtual COM1 port; no host disk or network is attached.", flush=True)
     guest = subprocess.run(qemu_command(iso, log), cwd=ROOT, check=False)
     if guest.returncode != SUCCESS_EXIT:

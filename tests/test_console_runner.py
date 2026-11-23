@@ -28,6 +28,12 @@ class ConsoleRunnerTests(unittest.TestCase):
         self.assertNotIn("--romfs-probe", cmd)
         self.assertNotIn("--user-preempt-probe", cmd)
 
+    def test_shell_uses_separate_image_and_bounded_native_loader(self):
+        command = build_command(Path("shell.iso"), ROOT / "examples/romfs", shell=True)
+        self.assertIn("--romfs-shell", command)
+        self.assertNotIn("--romfs-console", command)
+        self.assertIn("--test-exit", command)
+
     def test_requires_interactive_tty_without_building(self):
         with patch("sys.stdin.isatty", return_value=False):
             with patch("subprocess.run") as proc:

@@ -1,6 +1,10 @@
 /* M5-B: real guest CPU 16550 UART RX; no host-simulated command delivery. */
 #include "serial_command.h"
 #include "romfs.h"
+#ifdef HTMLK_M5_D_SHELL
+#include "user_probe.h"
+#include "limine.h"
+#endif
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -84,10 +88,20 @@ static void cat(const char *path) {
     send_text("M5_CAT_END\n");
 }
 
+#ifdef HTMLK_M5_D_SHELL
+void htmlk_m5_serial_console(const struct limine_memmap_response *map,
+                             const struct limine_hhdm_response *hhdm) {
+    if (!map || !hhdm) serial_fatal();
+#else
 void htmlk_m5_serial_console(void) {
+#endif
     if (!htmlk_romfs_validate(&htmlk_romfs_image)) serial_fatal();
     init_uart();
+#ifdef HTMLK_M5_D_SHELL
+    send_text("M5_D_SHELL_READY\nM5_PROMPT> ");
+#else
     send_text("M5_CONSOLE_READY\nM5_PROMPT> ");
+#endif
     struct htmlk_console_line line;
     htmlk_console_line_clear(&line);
     for (;;) {
@@ -114,7 +128,12 @@ void htmlk_m5_serial_console(void) {
             const struct htmlk_console_command command = htmlk_console_parse(line.bytes);
             switch (command.kind) {
                 case HTMLK_CONSOLE_HELP:
-                    send_text("M5_HELP help ls cat /path exit\n"); break;
+#ifdef HTMLK_M5_D_SHELL
+                    send_text("M5_HELP help ls cat /path run /apps/hello.hke exit\n");
+#else
+                    send_text("M5_HELP help ls cat /path exit\n");
+#endif
+                    break;
                 case HTMLK_CONSOLE_LS:
                     for (size_t i = 0; i < htmlk_romfs_image.count; ++i) {
                         send_text("M5_FILE ");
@@ -123,6 +142,28 @@ void htmlk_m5_serial_console(void) {
                     }
                     break;
                 case HTMLK_CONSOLE_CAT: cat(command.path); break;
+#ifdef HTMLK_M5_D_SHELL
+                case HTMLK_CONSOLE_RUN:
+                    /* M5-D bounded gate: only one trusted opt-in HKEX path.
+                     * Arbitrary paths, ELF images and additional processes are
+                     * deliberately unsupported until ownership APIs mature. */
+                    {
+                        const char *target = "/apps/hello.hke";
+                        bool match = true;
+                        for (size_t i = 0; i <= sizeof("/apps/hello.hke"); ++i) {
+                            if (command.path[i] != target[i]) { match = false; break; }
+                            if (target[i] == 0) break;
+                        }
+                        if (!match) {
+                            send_text("M5_ERR_NOT_EXECUTABLE\n");
+                            break;
+                        }
+                    }
+                    send_text("M5_D_RUN_BEGIN /apps/hello.hke\n");
+                    htmlk_m4_user_probe(map, hhdm);
+                    send_text("M5_D_RUN_END\n");
+                    break;
+#endif
                 case HTMLK_CONSOLE_BAD_PATH:
                     send_text("M5_ERR_INVALID_PATH\n"); break;
                 case HTMLK_CONSOLE_UNKNOWN:

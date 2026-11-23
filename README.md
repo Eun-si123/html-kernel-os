@@ -62,6 +62,16 @@ python3 scripts/test_m5_user_loader.py
 
 This is **not** HTML-to-user-executable compilation, an ELF loader, or M5-B's interactive shell. Actual QEMU boots include independent source mutations and CPU fault negative controls; see [M5-C1 contract](docs/M5_USER_LOADER.md).
 
+## Run a real Ring 3 program from the native UART shell (M5-D)
+
+On an Ubuntu terminal with x86-64 QEMU, GCC and xorriso:
+
+```sh
+python3 scripts/run_m5_console.py --shell
+```
+
+Type `cat /welcome.txt`, `run /apps/hello.hke`, then `exit`. This opt-in single-CPU BIOS-QEMU build executes a real independently assembled program in CPL3, returns to the UART prompt and reclaims its pages; it is **not** an ELF loader, dynamic process runtime or a verified general-purpose OS. Negative tests and exact evidence: [M5-D shell contract](docs/M5_SHELL.md). The original browser demo and M5-B-only command runner remain unchanged.
+
 ## Test real M2 language features
 
 The experimental language now supports **signed i32/i64 and unsigned u32/u64**, fixed-width wrapping arithmetic, defined integer division/remainder with divide-by-zero traps, zero-initialized fixed-size typed arrays with checked indexes, explicit conversions, unsigned bitwise/shift operations, bounded repeat and capped conditional `while` loops with `break`/`continue`, `if/else` and scoped typed functions (up to four parameters). The compiler's signed arithmetic avoids undefined C signed-overflow behavior. For example, [signed-bits-kernel.html](examples/signed-bits-kernel.html) prints the signed minimum values, safely wrapped results and loop-control output from an actual native kernel. The **same HTML source compiles to x86-64 kernel or an unprivileged Linux executable**. Neither functions nor ordinary source can directly access arbitrary hardware, I/O or memory; recursion and unbounded loops remain unavailable. **M2 is partially implemented, not a complete OS.**

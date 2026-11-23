@@ -370,6 +370,27 @@
         "scripts/test_m5_user_loader.py",
         "docs/M5_USER_LOADER.md"
       ]
+    },
+    {
+      "id": "m5-native-interactive-shell",
+      "source": [
+        "boot/serial_console.c",
+        "boot/serial_command.c",
+        "boot/serial_command.h",
+        "boot/user_probe.c",
+        "boot/kernel_entry.c",
+        "scripts/build_boot.py",
+        "scripts/run_m5_console.py"
+      ],
+      "regressions": [
+        "tests/test_shell_command.py",
+        "tests/test_console_runner.py"
+      ],
+      "fieldEvidence": [
+        "tests/native/test_shell_command.c",
+        "scripts/test_m5_shell.py",
+        "docs/M5_SHELL.md"
+      ]
     }
   ]
 }

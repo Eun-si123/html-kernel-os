@@ -18,6 +18,20 @@ static struct htmlk_frame_registry frames_registry;
 static uint64_t frames[6];
 static volatile bool syscall_seen;
 static volatile bool user_exited;
+#ifdef HTMLK_M5_D_SHELL
+static void m5_shell_emit(uint8_t byte) {
+    __asm__ volatile ("outb %0,%1" :: "a"(byte), "Nd"((uint16_t)0xe9));
+    for (unsigned tries = 0; tries < 1000000U; ++tries) {
+        uint8_t status;
+        __asm__ volatile ("inb %1,%0" : "=a"(status) : "Nd"((uint16_t)0x3fd));
+        if ((status & 0x20U) != 0) {
+            __asm__ volatile ("outb %0,%1" :: "a"(byte), "Nd"((uint16_t)0x3f8));
+            return;
+        }
+    }
+    for (;;) __asm__ volatile ("cli;hlt");
+}
+#endif
 #ifdef HTMLK_M5_USER_LOADER
 static volatile bool user_reported;
 static void log_decimal(uint32_t number) {
@@ -27,7 +41,11 @@ static void log_decimal(uint32_t number) {
     while (number != 0U);
     while (count != 0U) {
         const uint8_t byte = (uint8_t)digits[--count];
+#ifdef HTMLK_M5_D_SHELL
+        m5_shell_emit(byte);
+#else
         __asm__ volatile ("outb %0,%1" :: "a"(byte), "Nd"((uint16_t)0xe9));
+#endif
     }
 }
 #endif
@@ -42,8 +60,12 @@ _Static_assert(sizeof(struct user_irq_frame)==160,"ring3 syscall IRQ frame misma
 
 static void log_text(const char *s) {
     while (*s) {
+#ifdef HTMLK_M5_D_SHELL
+        m5_shell_emit((uint8_t)*s++);
+#else
         __asm__ volatile ("outb %0, %1" : :
             "a"((uint8_t)*s++), "Nd"((uint16_t)0xe9));
+#endif
     }
 }
 __attribute__((noreturn)) static void reject(const char *s) {

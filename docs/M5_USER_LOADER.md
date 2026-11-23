@@ -1,6 +1,6 @@
 # M5-C1 — ROMFS user executable (QEMU Ring 3)
 
-**Status:** local mini-PC genuine BIOS QEMU and GCC UBSan PASS; PR-head GitHub Actions and merge not yet verified. This is a narrowly scoped experimental loading slice, not a full OS or completed M5.
+**Status:** M5-C1 was merged as [PR #70](https://github.com/Eun-si123/html-kernel-os/pull/70), main commit `4d3d735`. PR-head GitHub Actions tests `45126700968` and `45126708750`, Gitleaks `45126705465`, and merged-main validation `45127110979`, Gitleaks `45127110884`, Pages `45127111088` all **SUCCESS**. Local genuine BIOS QEMU, GCC UBSan and invalid-user-program negative tests also pass. This remains an experimental loading slice, not a full OS or completed M5.
 
 ## Native execution
 

@@ -84,12 +84,16 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
           romfs_root: Path | None = None,
           romfs_console: bool = False,
           user_loader: bool = False, user_app_source: Path | None = None,
-          user_app_image: Path | None = None) -> None:
+          user_app_image: Path | None = None,
+          romfs_shell: bool = False) -> None:
+    if romfs_shell and not (user_loader and romfs_console and
+                             exception_idt and tss_ist):
+        raise ValueError("M5-D shell requires loader, serial, IDT and TSS")
     if user_loader:
         if not (exception_idt and tss_ist) or any((
             memory_probe, video_console, paging_probe, task_probe,
             timer_probe, preempt_probe, user_probe, isolation_probe,
-            user_preempt, romfs_probe, romfs_console,
+            user_preempt, romfs_probe, (romfs_console and not romfs_shell),
             fault_test is not None, double_fault_test,
             paging_fault_test, paging_recover_test, romfs_negative,
             user_bad_syscall, user_privileged_io, user_read_kernel,
@@ -107,11 +111,11 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
         raise ValueError("M5-A probe and M5-B console are exclusive")
     if romfs_negative and not (romfs_probe and test_exit):
         raise ValueError("M5-A denial requires ROMFS probe and test exit")
-    if (romfs_probe or romfs_console) and any((memory_probe, video_console, exception_idt,
-                            paging_probe, tss_ist, task_probe, timer_probe,
-                            preempt_probe, user_probe, isolation_probe,
-                            user_preempt)):
-        raise ValueError("M5-A ROMFS is independent of M4 IRQ/user probes")
+    if (romfs_probe or romfs_console) and not romfs_shell and any((
+            memory_probe, video_console, exception_idt, paging_probe,
+            tss_ist, task_probe, timer_probe, preempt_probe, user_probe,
+            isolation_probe, user_preempt)):
+        raise ValueError("M5-A/B ROMFS console is independent of M4 probes")
     dist, header = get_limine(cache)
     work_root.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="htmlk-boot-", dir=work_root) as temp:
@@ -132,6 +136,8 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
         define = ["-DHTMLK_QEMU_TEST_EXIT"] if test_exit else []
         if user_loader:
             define.append("-DHTMLK_M5_USER_LOADER")
+        if romfs_shell:
+            define.append("-DHTMLK_M5_D_SHELL")
         if romfs_probe:
             define.append("-DHTMLK_M5_ROMFS_PROBE")
         if romfs_console:
@@ -318,12 +324,14 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
             sources = (["page_pool"] if (memory_probe or paging_probe or user_probe or isolation_probe or user_preempt or user_loader) else [])
             if memory_probe:
                 sources.append("memory_probe")
+            if romfs_probe or romfs_console or user_loader:
+                sources.append("romfs")
             if romfs_probe:
-                sources.extend(("romfs", "romfs_probe"))
+                sources.append("romfs_probe")
             if romfs_console:
-                sources.extend(("romfs", "serial_command", "serial_console"))
+                sources.extend(("serial_command", "serial_console"))
             if user_loader:
-                sources.extend(("romfs", "user_image", "frame_owner", "user_pages", "user_probe"))
+                sources.extend(("user_image", "frame_owner", "user_pages", "user_probe"))
             if task_probe:
                 sources.extend(("task_model", "task_runtime"))
             if timer_probe:
@@ -527,6 +535,8 @@ def main() -> None:
                         help="M4-D hardening: wrong active CR3 owner rejected in APIC IRQ")
     parser.add_argument("--user-preempt-revoke-b", action="store_true",
                         help="M4-D hardening: revoked B code causes #PF after CR3 reload")
+    parser.add_argument("--romfs-shell", action="store_true",
+                        help="M5-D genuine UART run /apps/hello.hke in user mode")
     parser.add_argument("--user-loader-probe", action="store_true",
                         help="M5-C1 load a standalone bounded ROMFS HKEX binary into actual CPL3")
     parser.add_argument("--user-app-source", type=Path,
@@ -542,12 +552,24 @@ def main() -> None:
     parser.add_argument("--romfs-root", type=Path, default=ROOT / "examples/romfs",
                         help="Trusted ROMFS input (16 files, up to 4KiB each)")
     a = parser.parse_args()
+    if a.romfs_shell:
+        if any((a.user_probe, a.user_preempt_probe, a.user_isolation_probe,
+                a.preempt_probe, a.romfs_probe, a.memory_probe,
+                a.video_console, a.task_probe, a.timer_probe,
+                a.paging_probe, a.fault_test is not None,
+                a.double_fault_test, a.romfs_negative)):
+            parser.error("M5-D shell cannot combine unrelated probes")
+        a.user_loader_probe = True
+        a.romfs_console = True
+        a.exception_idt = True
+        a.tss_ist = True
     if a.user_loader_probe:
         if not (a.exception_idt and a.tss_ist) or any((
             a.memory_probe, a.video_console, a.paging_probe,
             a.task_probe, a.timer_probe, a.preempt_probe,
             a.user_probe, a.user_isolation_probe, a.user_preempt_probe,
-            a.romfs_probe, a.romfs_console, a.fault_test is not None,
+            a.romfs_probe, (a.romfs_console and not a.romfs_shell),
+            a.fault_test is not None,
             a.double_fault_test, a.romfs_negative,
             a.user_preempt_fault_gp, a.user_preempt_fault_ro)):
             parser.error("M5-C1 loader requires IDT+TSS only, no other probes")
@@ -559,12 +581,11 @@ def main() -> None:
         parser.error("--romfs-console and --romfs-probe are exclusive")
     if a.romfs_negative and not (a.romfs_probe and a.test_exit):
         parser.error("--romfs-negative requires --romfs-probe --test-exit")
-    if (a.romfs_probe or a.romfs_console) and any((a.memory_probe, a.video_console,
-                              a.exception_idt, a.paging_probe, a.tss_ist,
-                              a.task_probe, a.timer_probe, a.preempt_probe,
-                              a.user_probe, a.user_isolation_probe,
-                              a.user_preempt_probe)):
-        parser.error("M5-A ROMFS must run alone (separate M4 proof)")
+    if (a.romfs_probe or a.romfs_console) and not a.romfs_shell and any((
+            a.memory_probe, a.video_console, a.exception_idt, a.paging_probe,
+            a.tss_ist, a.task_probe, a.timer_probe, a.preempt_probe,
+            a.user_probe, a.user_isolation_probe, a.user_preempt_probe)):
+        parser.error("M5-A/B ROMFS must run alone (separate M4 proof)")
     if (a.user_preempt_fault or a.user_preempt_survivor_fault) and not (
         a.user_preempt_probe and a.test_exit):
         parser.error("M4 D2 faults need --user-preempt-probe --test-exit")
@@ -679,7 +700,7 @@ def main() -> None:
           a.user_preempt_revoke_b,
           a.romfs_probe, a.romfs_negative, a.romfs_root,
           a.romfs_console, a.user_loader_probe,
-          a.user_app_source, a.user_app_image)
+          a.user_app_source, a.user_app_image, a.romfs_shell)
 
 
 if __name__ == "__main__":

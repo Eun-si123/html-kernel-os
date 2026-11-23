@@ -49,5 +49,14 @@ struct htmlk_console_command htmlk_console_parse(const char *line) {
             return (struct htmlk_console_command){HTMLK_CONSOLE_BAD_PATH, 0};
         return (struct htmlk_console_command){HTMLK_CONSOLE_CAT, path};
     }
+#ifdef HTMLK_M5_D_SHELL
+    if (line != 0 && line[0] == 'r' && line[1] == 'u' &&
+        line[2] == 'n' && line[3] == ' ') {
+        const char *path = &line[4];
+        if (!htmlk_romfs_path_valid(path))
+            return (struct htmlk_console_command){HTMLK_CONSOLE_BAD_PATH, 0};
+        return (struct htmlk_console_command){HTMLK_CONSOLE_RUN, path};
+    }
+#endif
     return (struct htmlk_console_command){HTMLK_CONSOLE_UNKNOWN, 0};
 }

@@ -8,7 +8,7 @@ enum { HTMLK_CONSOLE_LINE_CAP = 96 };
 enum htmlk_console_line_event { HTMLK_CONSOLE_WAIT, HTMLK_CONSOLE_READY,
                                 HTMLK_CONSOLE_INVALID };
 enum htmlk_console_command_kind { HTMLK_CONSOLE_HELP, HTMLK_CONSOLE_LS,
-                                  HTMLK_CONSOLE_CAT, HTMLK_CONSOLE_EXIT,
+                                  HTMLK_CONSOLE_CAT, HTMLK_CONSOLE_RUN, HTMLK_CONSOLE_EXIT,
                                   HTMLK_CONSOLE_UNKNOWN, HTMLK_CONSOLE_BAD_PATH };
 struct htmlk_console_line {
     char bytes[HTMLK_CONSOLE_LINE_CAP];
