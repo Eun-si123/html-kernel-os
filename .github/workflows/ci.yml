@@ -113,3 +113,4 @@ jobs:
             build/html-kernel-m3-memory.elf
             build/html-kernel-video.iso
             build/html-kernel-video.elf
+            build/html-kernel-video-visible-screen.png
