@@ -1,6 +1,6 @@
 # M5-E2 — real CPU x2APIC timeout of nonyielding user program
 
-**Status:** opt-in, QEMU BIOS single-vCPU native proof; local acceptance PASS. New exact-head PR CI and merge status must be verified independently. **Not a production process security boundary.**
+**Status:** opt-in, QEMU BIOS single-vCPU native proof; local acceptance PASS. PR #79 merged as `220e657` after exact-head GitHub QEMU validation and Gitleaks PASS; no physical device test. **Not a production process security boundary.**
 
 ## Build and manually run
 

@@ -1,6 +1,6 @@
 # M5-E3 — interleaved real Ring3 process lifecycle regression
 
-**Scope:** repeatable integration testing on one QEMU q35 x86-64 vCPU. This is **not** a general-purpose security/auditing certification of arbitrary HKEX programs. Local QEMU test PASS; exact PR-head GitHub CI and merge require separate confirmation.
+**Scope:** repeatable integration testing on one QEMU q35 x86-64 vCPU. This is **not** a general-purpose security/auditing certification of arbitrary HKEX programs. Local 3-boot QEMU test PASS. PR #80 exact-head GitHub QEMU CI/Gitleaks PASS and merged as `b1bac26`. Physical hardware and arbitrary-program security remain unverified.
 
 ## Test
 
