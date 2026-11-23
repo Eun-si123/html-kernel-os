@@ -63,6 +63,17 @@ jobs:
           cp build/html-kernel-else.iso public/html-kernel-else.iso
           cp build/html-kernel-u32.iso public/html-kernel-u32.iso
           cp build/html-kernel-signed.iso public/html-kernel-signed.iso
+          # Ship the exact, unchanged source files used to compile these ISOs.
+          # Only these eight public-safe examples are included (not all repo files).
+          mkdir -p public/examples
+          cp examples/kernel.html public/examples/kernel.html
+          cp examples/framebuffer-kernel.html public/examples/framebuffer-kernel.html
+          cp examples/math-kernel.html public/examples/math-kernel.html
+          cp examples/functions-kernel.html public/examples/functions-kernel.html
+          cp examples/scoped-functions-kernel.html public/examples/scoped-functions-kernel.html
+          cp examples/else-kernel.html public/examples/else-kernel.html
+          cp examples/u32-kernel.html public/examples/u32-kernel.html
+          cp examples/signed-bits-kernel.html public/examples/signed-bits-kernel.html
           test -s public/index.html
           test -s public/play.html
           test -s public/html-kernel.iso
@@ -73,6 +84,14 @@ jobs:
           test -s public/html-kernel-else.iso
           test -s public/html-kernel-u32.iso
           test -s public/html-kernel-signed.iso
+          test -s public/examples/kernel.html
+          test -s public/examples/framebuffer-kernel.html
+          test -s public/examples/math-kernel.html
+          test -s public/examples/functions-kernel.html
+          test -s public/examples/scoped-functions-kernel.html
+          test -s public/examples/else-kernel.html
+          test -s public/examples/u32-kernel.html
+          test -s public/examples/signed-bits-kernel.html
           test -s public/vendor/v86.wasm
       - name: Block private credentials in generated public Pages artifact
         run: |
