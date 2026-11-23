@@ -104,6 +104,7 @@ class SiteTests(unittest.TestCase):
         self.assertIn("screen-put-char", script)
         self.assertIn("recordVgaCell", script)
         self.assertIn("latestEvent.textContent = kind", script)
+        self.assertIn("실제 가상 CPU 실행 재개", script)
         self.assertIn("sourceLineForLiteral", script)
         self.assertIn("output.textContent = serial", script)
         self.assertIn("machine.run()", script)
