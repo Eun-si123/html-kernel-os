@@ -169,7 +169,8 @@ import V86 from './vendor/libv86.mjs';
     const row = sourceNodes[found];
     row.classList.add('source-active');
     row.setAttribute('aria-current', 'true');
-    row.scrollIntoView({ block: 'nearest' });
+    // Keep the VGA screen in view; only scroll the source subpanel.
+    sourceView.scrollTop = Math.max(0, row.offsetTop - sourceView.clientHeight / 2);
     sourceNote.textContent = '실제 COM1 출력과 일치한 <print> 텍스트를 강조했어. 이는 명령어별 디버깅이 아니야.';
   }
 
