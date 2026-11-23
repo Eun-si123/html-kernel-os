@@ -101,6 +101,6 @@ Three potential improvements, currently **design options, NOT implemented**, are
 
 Before choosing, compare the five already-verified [native learner exercises](../examples/m2-exercises-kernel.html) as equivalent programs in current HTML, a candidate compact syntax and Python: median visible characters, maximum nesting, typo diagnosis, novice time-to-completion, and generated-code/runtime equivalence. Prefer adding **one documented opt-in syntax surface** only if it improves these measurements without doubling language maintenance or weakening M2 safety checks. The C backend is a valid *build-time intermediate representation*; replacing it does not make the syntax more readable or the resulting kernel more complete. Module/struct/unsafe semantics remain unresolved.
 
-## M2-UX1 development interface checkpoint (local branch, not yet merged)
+## M2-UX1 development interface (merged PR #103)
 
 A practical implementation of the existing *better diagnostics* goal is underway: the checked compiler remains **the single grammar**; a separate `scripts/htmlk_check.py` interface provides human caret/hint diagnostics and a versioned JSON result for agents, plus `--describe --json` metadata assembled directly from current tag/attribute/parent tables. A single tested beginner source compiles to the existing kernel/Linux/user C backends and runs as a native Linux process and QEMU Ring3 HKEX. This does **not** add a new general-purpose grammar or prove superiority to Python. See [Human/Agent UX scope and working example](LANGUAGE_HUMAN_AGENT.md).
