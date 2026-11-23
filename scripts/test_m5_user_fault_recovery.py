@@ -2,6 +2,7 @@
 """M5-E1 real x86-64 CPU user fault -> frame reclaim -> live COM1 prompt."""
 from __future__ import annotations
 import os
+import shutil
 from pathlib import Path
 import subprocess
 import sys
@@ -30,40 +31,35 @@ def build(source:Path,iso:Path,work:Path,cache:Path,*extra:str)->None:
         raise AssertionError(f'M5-E1 build failed:\n{result.stdout}\n{result.stderr}')
     assert 'ROMFS_CONTENT_SHA256=' in result.stdout,result.stdout
 
-def reject_syscall_in_guest(iso:Path)->None:
-    """Unknown syscall is NOT a CPU exception: remains fail-stop on real guest."""
-    with tempfile.TemporaryDirectory(prefix='htmlk-m5-e1-reject-') as temp:
-        log=Path(temp)/'debugcon.log'
-        cmd=['qemu-system-x86_64','-M','q35','-m','256M',
-             '-cdrom',str(iso),'-boot','d','-display','none','-monitor','none',
-             '-net','none','-serial','stdio','-debugcon',f'file:{log}',
-             '-global','isa-debugcon.iobase=0xe9',
-             '-device','isa-debug-exit,iobase=0xf4,iosize=0x04','-no-reboot']
-        guest=subprocess.Popen(cmd,stdin=subprocess.PIPE,stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE)
-        def current(): return log.read_bytes() if log.is_file() else b''
-        try:
-            start=time.monotonic()
-            while BASE not in current():
-                if guest.poll() is not None or time.monotonic()-start>15:
-                    raise AssertionError((guest.returncode,current()))
-                time.sleep(.02)
-            assert current()==BASE
-            assert guest.stdin is not None
-            for b in b'run /apps/hello.hke\r':
-                guest.stdin.write(bytes((b,)))
-                guest.stdin.flush()
-                time.sleep(.008)
-            _,stderr=guest.communicate(timeout=9)
-            output=current()
-            assert guest.returncode==53,(guest.returncode,output,stderr)
-            assert output.endswith(b'M4_UNKNOWN_SYSCALL_REJECTED\n'),output
-            assert b'M5_ERR_USER_FAULT' not in output
-            assert b'M5_RUN_DONE' not in output
-            assert HTML not in output
-        finally:
-            if guest.poll() is None:
-                guest.kill();guest.communicate(timeout=4)
+def recover_invalid_syscall_and_reexecute(work: Path, cache: Path,
+                                         source: Path, app_source: Path,
+                                         label: str) -> None:
+    """Bad Ring3 syscall must retire only that task, not the UART shell."""
+    from build_user_image import build as build_user_image
+    image_root = work / ('romfs-' + label)
+    shutil.copytree(ROOT / 'examples/romfs', image_root)
+    build_user_image(ROOT / 'examples/user-programs/hello.S',
+                     image_root / 'good.hke')
+    iso = work / (label + '-syscall.iso')
+    build(source, iso, work, cache, '--romfs-root',str(image_root),
+          '--user-app-source',str(app_source))
+    good_trace = APP_TRACE.replace(b'/apps/hello.hke',b'/good.hke')
+    trace, uart = exercise(iso,[
+        (b'run /good.hke\r',good_trace),
+        (b'run /apps/hello.hke\r',b'M5_ERR_USER_SYSCALL'),
+        (b'help\r',b'M5_HELP help ls cat /path run /path exit'),
+        (b'run /good.hke\r',good_trace),
+        (b'exit\r',b'M5_CONSOLE_EXIT\n'+HTML)],HTML)
+    assert trace.count(b'M5_E_USER_BAD_SYSCALL\n')==1,trace
+    assert trace.count(b'M5_E_BAD_SYSCALL_FRAMES_RECLAIMED\n')==1,trace
+    assert trace.count(b'M5_ERR_USER_SYSCALL\n')==1,trace
+    assert trace.count(b'M5_RUN_DONE\n')==2,trace
+    assert trace.count(b'M5_C_USER_FRAMES_RECLAIMED\n')==2,trace
+    assert trace.count(b'M5_C_USER_VALUE=2026\n')==2,trace
+    assert uart.count(b'M5_ERR_USER_SYSCALL\n')==1,uart
+    assert uart.count(b'M5_C_USER_VALUE=2026')==2,uart
+    assert b'M4_UNKNOWN_SYSCALL_REJECTED' not in trace,trace
+
 
 def main():
     with tempfile.TemporaryDirectory(prefix='htmlk-m5-e1-') as temp:
@@ -131,11 +127,11 @@ def main():
         assert b'M5_C_USER_VALUE=2027' in uart
         print('M5-E1 MUTATED USER IMAGE CHANGES REAL CPL3 SYSCALL OUTPUT')
 
-        bad_iso=work/'unsupported-syscall.iso'
-        build(source,bad_iso,work,cache,'--user-app-source',
-              str(ROOT/'examples/user-programs/bad-syscall.S'))
-        reject_syscall_in_guest(bad_iso)
-        print('M5-E1 UNKNOWN SYSCALL STILL FAIL-STOPS; NO FALSE USER FAULT RECOVERY')
+        recover_invalid_syscall_and_reexecute(work,cache,source,
+            ROOT/'examples/user-programs/bad-syscall.S','invalid-id')
+        recover_invalid_syscall_and_reexecute(work,cache,source,
+            ROOT/'examples/user-programs/bad-argument.S','invalid-argument')
+        print('M5-E1 INVALID SYSCALL ID/ARG: USER RETIRED, LIVE SHELL AND RE-RUN PASS')
 
         for opts in (('--user-fault-recover',),
                      ('--user-fault-recover','--exception-idt','--tss-ist'),

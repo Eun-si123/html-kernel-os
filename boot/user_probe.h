@@ -13,6 +13,7 @@ void htmlk_m5_user_run(const char *path,
 void htmlk_m5_console_byte(uint8_t byte);
 #ifdef HTMLK_M5_USER_FAULT_RECOVER
 bool htmlk_m5_user_last_faulted(void);
+bool htmlk_m5_user_last_bad_syscall(void);
 bool htmlk_m5_accept_user_fault(unsigned vector, uint64_t rip,
                                 uint64_t cs, uint64_t flags,
                                 uint64_t rsp, uint64_t ss,

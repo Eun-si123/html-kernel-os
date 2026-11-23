@@ -114,6 +114,8 @@ static void run_program(const char *path) {
 #ifdef HTMLK_M5_USER_FAULT_RECOVER
     if (htmlk_m5_user_last_faulted())
         send_text("M5_ERR_USER_FAULT\n");
+    else if (htmlk_m5_user_last_bad_syscall())
+        send_text("M5_ERR_USER_SYSCALL\n");
     else
 #endif
         send_text("M5_RUN_DONE\n");
