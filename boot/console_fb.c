@@ -160,9 +160,18 @@ bool htmlk_fb_init(const struct htmlk_fb_mode *mode) {
     report("FB_DRIVER_ENTRY\n");
 #endif
     fb.active = false;
+#ifdef HTMLK_FB_TEST
+    report("FB_STATE1\n");
+#endif
     fb.pixels = 0;
+#ifdef HTMLK_FB_TEST
+    report("FB_STATE2\n");
+#endif
     fb.glyphs = 0;
     fb.probe_written = false;
+#ifdef HTMLK_FB_TEST
+    report("FB_STATE3\n");
+#endif
     if (mode == 0 || mode->address == 0 ||
         mode->memory_model != 1 || mode->bpp != 32 ||
         mode->width < 320 || mode->width > 4096 ||
