@@ -74,6 +74,10 @@ jobs:
           test -s public/html-kernel-u32.iso
           test -s public/html-kernel-signed.iso
           test -s public/vendor/v86.wasm
+      - name: Block private credentials in generated public Pages artifact
+        run: |
+          python3 -m unittest discover -s scripts -p 'test_verify_published_secrets.py' -v
+          python3 scripts/verify_published_secrets.py public
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:
