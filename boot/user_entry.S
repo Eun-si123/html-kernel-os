@@ -12,7 +12,10 @@ htmlk_m4_user_enter:
     movq %rsp, htmlk_m4_saved_main_rsp(%rip)
     pushq %rcx      /* user SS */
     pushq %rsi      /* user RSP */
-    pushfq          /* IF remains 0 in this opt-in no-IRQ proof */
+    pushfq          /* inherit IF=0 by default; opt-in E2 enables real IRQ */
+#ifdef HTMLK_M5_USER_TIMEOUT
+    orq $0x200, (%rsp) /* enable IF only in CPL3 user task IRET frame */
+#endif
     pushq %rdx      /* user CS */
     pushq %rdi      /* user RIP */
     iretq

@@ -13,7 +13,7 @@
 #ifdef HTMLK_M4_X2APIC_PREEMPT
 #include "preempt_x2apic.h"
 #endif
-#ifdef HTMLK_M4_USER_PREEMPT
+#if defined(HTMLK_M4_USER_PREEMPT) || defined(HTMLK_M5_USER_TIMEOUT)
 #include "user_preempt.h"
 #endif
 #ifdef HTMLK_M4_TIMER_PROBE
@@ -369,6 +369,14 @@ void htmlk_idt_install(void) {
             (uint64_t)(uintptr_t)&htmlk_m4_x2apic_spurious_entry, cs)) {
         panic(13, 0, 0);
     }
+#endif
+#ifdef HTMLK_M5_USER_TIMEOUT
+    /* Shared with M4-D's proven 15-GPR Ring3 IRQ entry + spurious IRET. */
+    if (!htmlk_idt_gate_make(&idt[0x40U],
+            (uint64_t)(uintptr_t)&htmlk_m4_d1_irq_entry, cs) ||
+        !htmlk_idt_gate_make(&idt[0xffU],
+            (uint64_t)(uintptr_t)&htmlk_m4_d1_spurious, cs))
+        panic(13,0,0);
 #endif
 #ifdef HTMLK_M4_USER_PREEMPT
     if (!htmlk_idt_gate_make(&idt[0x40U],

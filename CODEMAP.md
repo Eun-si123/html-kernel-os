@@ -44,3 +44,5 @@ Locate the smallest source and test surface. This is a navigation index, **not e
 - `docs/`: status, evidence standards, architecture, decisions, and agent navigation.
 
 Do not introduce a long-running agent service, database, or synthetic feature count simply because another larger repository has one.
+
+- `boot/user_timeout.{h,c}`, `boot/user_timeout_frame.{h,c}`: opt-in bounded Ring3 executable CPU x2APIC IRQ timeout using the existing `boot/user_preempt_switch.S` 160-byte M4-D frame ABI; native acceptance `scripts/test_m5_user_timeout.py`, host guard `tests/test_user_timeout_frame.py`; see `docs/M5_USER_TIMEOUT.md`.
