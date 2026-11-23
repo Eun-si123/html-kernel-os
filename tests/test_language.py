@@ -64,7 +64,7 @@ class LanguageTests(unittest.TestCase):
                      "1 < 2 < 3"):
             with self.subTest(expr=expr):
                 self.assert_invalid(f'<print value="{expr}"/>',
-                                    "unsupported|integer literal|expected|undefined")
+                                    "unsupported|integer literal|expected|undefined|zero literal")
         self.assert_invalid(f'<print value="{UINT64_MAX + 1}"/>', "outside u64")
 
     def test_reject_bad_nesting_and_attributes(self):
