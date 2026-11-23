@@ -17,6 +17,9 @@ Only user-confirmed decisions belong under **Confirmed**. Proposals are not blan
 
 ## Proposals / not yet authorizations
 
+- **M2 array safety semantics (proposed 2026-11-23):** support bounded 1..64-element, zero-initialized per-scope arrays without raw pointer escape; literal out-of-bounds accesses fail at compile-time, computed out-of-bounds accesses fatally trap with distinct kernel/Linux markers. This does **not** establish full memory safety, and runtime or syntax changes need deliberate review. The implementation remains an independent PR until verified.
+
+
 - **M2 integer division semantics (2026-11-23, proposed, implemented in an unmerged branch):** use C-style integer `/` (truncate toward zero) and `%` (remainder matches dividend sign), reject literal zero, trap dynamic zero, define `INT_MIN/-1` wrap and zero remainder. Tests and a source-derived QEMU artifact demonstrate behavior but do not by themselves finalize the language specification. Python `//` remains unsupported due to conflicting rounding expectations. See [M2_LANGUAGE_CONTRACT.md](M2_LANGUAGE_CONTRACT.md) and the PR before standardizing this choice.
 
 
