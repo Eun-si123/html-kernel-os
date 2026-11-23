@@ -138,14 +138,30 @@ def main() -> None:
                 sock.settimeout(2)
                 sock.connect(str(monitor))
                 sock.sendall(f"screendump {screenshot}\n".encode("ascii"))
-                # Poll file instead of relying on QEMU HMP's optional prompt.
-                deadline = time.monotonic() + 5
-                while not screenshot.exists() and time.monotonic() < deadline:
+                # HMP creates the PPM file before all RGB bytes are flushed.
+                # Wait for the *declared* P6 geometry, not mere path existence.
+                deadline = time.monotonic() + 6
+                image = b""
+                expected_bytes = None
+                while time.monotonic() < deadline:
+                    if screenshot.exists():
+                        image = screenshot.read_bytes()
+                        header = re.match(rb"P6\s+(\d+)\s+(\d+)\s+255\s", image)
+                        if header:
+                            expected_bytes = (
+                                header.end() + int(header[1]) * int(header[2]) * 3
+                            )
+                            if len(image) == expected_bytes:
+                                break
+                            if len(image) > expected_bytes:
+                                raise AssertionError("QEMU screenshot larger than P6 header")
                     time.sleep(.05)
-                if not screenshot.exists():
-                    response = sock.recv(4096).decode("utf-8", errors="replace")
-                    raise AssertionError(f"QEMU HMP did not write screenshot: {response!r}")
-            image = screenshot.read_bytes()
+                else:
+                    raise AssertionError(
+                        f"incomplete QEMU HMP screenshot: received {len(image)} "
+                        f"of {expected_bytes or 'unknown'} bytes"
+                    )
+            # Image data has completed; now compare exact VGA glyph colors.
             check_display(image)
             png = opt.work_dir / "html-kernel-video-visible-screen.png"
             png.write_bytes(png_from_ppm(image))
