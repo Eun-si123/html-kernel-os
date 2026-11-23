@@ -38,7 +38,8 @@
         "scripts/test_while.py",
         "scripts/test_division.py",
         "scripts/test_division_oracle.py",
-        "scripts/test_arrays.py"
+        "scripts/test_arrays.py",
+        "scripts/test_m2_gate.py"
       ]
     },
     {
