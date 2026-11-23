@@ -395,10 +395,12 @@ def expression(source: str, node: Node, variables: set[str] | dict[str, str],
             return inner
         if isinstance(item, ast.BinOp):
             op = type(item.op)
-            if op not in (ast.Add, ast.Sub, ast.Mult, ast.BitAnd,
+            if op not in (ast.Add, ast.Sub, ast.Mult, ast.Div, ast.Mod, ast.BitAnd,
                           ast.BitOr, ast.BitXor, ast.LShift, ast.RShift):
                 fail(node, "unsupported binary operator")
             result = require_pair(kind(item.left), kind(item.right), "arithmetic")
+            if op in (ast.Div, ast.Mod) and isinstance(item.right, ast.Constant) and type(item.right.value) is int and item.right.value == 0:
+                fail(node, "division or remainder by zero literal")
             if op in (ast.BitAnd, ast.BitOr, ast.BitXor, ast.LShift, ast.RShift):
                 if result in signed or result == "negative_literal":
                     fail(node, "bitwise operations require unsigned integers; cast using u32(...) or u64(...)")
@@ -495,6 +497,9 @@ def expression(source: str, node: Node, variables: set[str] | dict[str, str],
                     helper = {ast.Add: "add", ast.Sub: "sub", ast.Mult: "mul"}[operator]
                     return f"htmlk_{helper}_{resolved}({left}, {right})"
                 return f"(({c_type(resolved)})({left} {op} {right}))"
+            if operator in (ast.Div, ast.Mod):
+                helper = "div" if operator == ast.Div else "mod"
+                return f"htmlk_{helper}_{resolved}({left}, {right})"
             if resolved not in unsigned:
                 fail(node, "bitwise operations require u32/u64; use an explicit conversion")
             op = {ast.BitAnd: "&", ast.BitOr: "|", ast.BitXor: "^"}.get(operator)
