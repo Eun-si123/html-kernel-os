@@ -6,7 +6,7 @@ HTML is normally a document language. This repository explores a dedicated compi
 
 > **Current status: VERIFIED BOOTABLE DEMO KERNEL (QEMU BIOS + browser), NOT A USABLE OS.** A restricted HTML dialect compiles to freestanding x86-64 C; Limine starts the generated kernel. Real QEMU source-mutation/negative controls passed locally and on GitHub CI. The same boot ISO was independently booted in Chromium using the v64 WebAssembly x86-64 emulator: [try the browser demo](https://eun-si123.github.io/html-kernel-os/play.html). UEFI, mobile-browser compatibility and physical hardware remain unverified. No general-purpose memory manager, writable/disk filesystem, production task scheduler or general hardware drivers; bounded opt-in M3/M4 experiments and M5 immutable ROMFS + real QEMU UART terminal now exist. **M4-C1/C2** prove native CPL3 entry, syscalls and sequential fault isolation; the later bounded **M4-D** opt-in experiment also proves true x2APIC preemption and survivor fault cleanup in QEMU. **M5-A/B/C1/D1** provide an embedded read-only filesystem, real UART command input and a restricted, build-time embedded CPL3 user program launched with `run`; this does not constitute a production process manager or general-purpose filesystem.
 
-## Write one HTML-like program — for humans and agents (M2-UX1 development)
+## Write one HTML-like program — for humans and agents (M2-UX1 merged #103)
 
 HTML Kernel Language is a **typed native programming language using familiar HTML-style tags**, not standard browser HTML. Start from [this beginner example](examples/human-agent-hello.html) with `<let>`, `<repeat>`, `<print>` and `<halt/>`. Before building or booting, check a program with the **existing real compiler** (no generated artifacts):
 
@@ -16,9 +16,9 @@ python3 scripts/htmlk_check.py examples/human-agent-hello.html --target user --j
 python3 scripts/htmlk_check.py --describe --json  # discover supported tags/attributes/limits
 ```
 
-Humans get file/line/column/caret and useful typo suggestions; coding agents receive deterministic JSON diagnostics and grammar metadata assembled from the actual compiler tables. The **same** example runs as a real Linux program and a native Ring3 HKEX on QEMU; changed HTML source yields changed native CPU output. The new frontend has **local proof, but exact PR-head CI and merge are pending**. Source language grammar and current runtime safety rules remain unchanged. See [quickstart, agent API and limits](docs/LANGUAGE_HUMAN_AGENT.md).
+Humans get file/line/column/caret and useful typo suggestions; coding agents receive deterministic JSON diagnostics and grammar metadata assembled from the actual compiler tables. The **same** example runs as a real Linux program and a native Ring3 HKEX on QEMU; changed HTML source yields changed native CPU output. The checker is **merged and tested in PR #103**. Source language grammar and current runtime safety rules remain unchanged. See [quickstart, agent API and limits](docs/LANGUAGE_HUMAN_AGENT.md).
 
-## One-command HTMLK programs (M2-UX2 development, local verification)
+## One-command HTMLK programs (M2-UX2 merged #106)
 
 The new CLI reuses the **same native typed compiler** for humans and agents. No interpreter or JavaScript fake CPU output:
 
@@ -29,7 +29,28 @@ python3 scripts/htmlk.py build examples/human-agent-hello.html --target linux --
 python3 scripts/htmlk.py build examples/human-agent-hello.html --target user --out build/my-program.hke
 ```
 
-`run` launches a generated **Linux userspace binary**, never a kernel or an imported executable; native QEMU boot requires the separate ISO builder. For full-u64 native Ring3 HKEX, ISO construction must use the **byte-exact checked source** `--user-app-image build/my-program.hke --user-app-html-proof examples/human-agent-hello.html`; otherwise the original legacy syscall ABI remains unchanged. See [commands, real QEMU proof, and security/overwrite boundaries](docs/LANGUAGE_HUMAN_AGENT.md). This slice is locally tested; PR-head CI/merge are pending.
+`run` launches a generated **Linux userspace binary**, never a kernel or an imported executable; native QEMU boot requires the separate ISO builder. For full-u64 native Ring3 HKEX, ISO construction must use the **byte-exact checked source** `--user-app-image build/my-program.hke --user-app-html-proof examples/human-agent-hello.html`; otherwise the original legacy syscall ABI remains unchanged. See [commands, real QEMU proof, and security/overwrite boundaries](docs/LANGUAGE_HUMAN_AGENT.md). This CLI and checked Ring3 source proof passed exact PR-head CI and merged as PR #106.
+
+## App-friendly HTML programming syntax (M2-UX3 development)
+
+Ordinary native Linux and Ring3 applications can now use `<program><main>`
+instead of the historical `<kernel><onboot>` source naming:
+
+```html
+<program>
+  <main>
+    <print>Hello from native HTML Kernel Language!</print>
+    <halt/>
+  </main>
+</program>
+```
+
+The [real runnable example](examples/human-agent-program.html) uses typed
+functions, variables, loops and full-width numeric output; the same existing
+compiler emits identical machine-directed C as its legacy-tag equivalent.
+The kernel backend **rejects** the aliases, rather than silently running
+a user app in ring 0. Actual Linux and QEMU Ring3 execution are locally
+verified; exact PR-head CI/merge are pending. See [user and agent guide](docs/LANGUAGE_HUMAN_AGENT.md).
 
 ## Agent and contributor entry points
 

@@ -138,6 +138,7 @@ def describe() -> dict[str, Any]:
             "Use quoted attribute expressions and HTML &lt; for < in conditions.",
             "Native Ring3 user output is bounded and requires a final print then halt.",
             "Only supported tags and attributes compile; no DOM scripting, JS, or browser HTML semantics.",
+            "For native Linux/Ring3 apps, <program><main> aliases <kernel><onboot> with identical typed semantics; kernel target requires <kernel>.",
             "Check source with scripts/htmlk_check.py before building a native artifact.",
         ],
         "example": "examples/human-agent-hello.html",

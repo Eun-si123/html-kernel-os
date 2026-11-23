@@ -1,6 +1,6 @@
 # HTML Kernel Language — one syntax for humans and AI agents
 
-**M2-UX1 merged in PR #103. M2-UX2 native one-command CLI is a separate local feature branch, CI/merge pending.**
+**M2-UX1 merged in PR #103; M2-UX2 one-command CLI and reproducible Ring3 ABI merged in PR #106. M2-UX3 app-friendly root aliases have local test evidence and PR-head CI/merge pending.**
 A useful programming language should be understandable from its source,
 provide actionable feedback to a beginner, and give an agent a **stable
 machine-readable contract**. A browser-looking demo or a larger list of tags
@@ -34,6 +34,53 @@ and uses GCC/native linking to obtain real CPU instructions. The
 for grammar reuse; human-readable aliases and simpler entrypoints are a
 separate, not-yet-implemented design question. Nor do tags alone remove
 systems-programming complexity.
+
+## M2-UX3: write a program, not a kernel (local development)
+
+Newcomers should not need `<kernel><onboot>` to write a normal Linux
+program or an unprivileged Ring3 user app. The same parser now accepts
+**optional nonkernel-only aliases** `<program>` (root) and `<main>`
+(entrypoint) with the same typed AST, statements and expression rules.
+
+```html
+<program>
+  <main>
+    <let name="count" type="u64" value="3"/>
+    <repeat times="3"><print value="count"/></repeat>
+    <print value="4294967296"/>
+    <halt/>
+  </main>
+</program>
+```
+
+The full [real runnable example](../examples/human-agent-program.html)
+also defines a typed `double(x:u64)` function sibling to `<main>`.
+It prints `6` three times and `4294967296` once. The original
+`<kernel arch="x86_64"><onboot>...</onboot></kernel>` remains accepted
+on **all three** target backends, preserving all existing code. For Linux
+and Ring3, replacing only the outer aliases yields **byte-for-byte
+identical generated C** (same checked typed AST), proved by tests.
+For the native kernel backend, `<program>` explicitly **fails before
+code generation**, so a user program cannot silently become privileged
+code. Mixed `<program><onboot>` / `<kernel><main>`, malformed closing
+tags, extra attributes, bad types, oversized repeat bounds and root
+architecture are rejected with the same existing diagnostics.
+
+```sh
+python3 scripts/htmlk.py check examples/human-agent-program.html --target user --json
+python3 scripts/htmlk.py run examples/human-agent-program.html
+python3 scripts/htmlk.py build examples/human-agent-program.html --target user --out build/my-app.hke
+python3 scripts/test_htmlk_program_main_qemu.py
+```
+
+The native QEMU acceptance suite builds a **real** ROMFS HKEX from this
+new alias-form HTML, runs it twice in actual CPL3 with six-frame reclamation,
+then changes source `count=3` to `count=5`, builds a *different ISO* and
+observes a true CPU UART change from three `6` reports to three `10`
+reports. Passing grammar tests alone does not establish that real guest
+execution happened. The `<program>` and `<main>` tags do **not** mean a
+browser interprets ordinary HTML as executable machine code; they are
+source-language forms compiled through the same native toolchain.
 
 ## Human-first validation
 
