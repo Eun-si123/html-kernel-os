@@ -15,6 +15,7 @@ import V86 from './vendor/libv86.mjs';
   const paceChoice = document.getElementById('vm-pace');
   const pauseButton = document.getElementById('vm-pause');
   const events = document.getElementById('boot-events');
+  const latestEvent = document.getElementById('boot-latest');
   const sourceView = document.getElementById('boot-source');
   const sourcePath = document.getElementById('boot-source-path');
   const sourceNote = document.getElementById('boot-source-note');
@@ -101,6 +102,8 @@ import V86 from './vendor/libv86.mjs';
     if (events.children.length >= 60) events.firstElementChild.remove();
     events.append(li);
     events.scrollTop = events.scrollHeight;
+    // Keep the newest genuine event visible above the large VGA viewport.
+    latestEvent.textContent = kind + ' · ' + detail;
   }
 
   function resetVga() {
@@ -336,6 +339,7 @@ import V86 from './vendor/libv86.mjs';
     clearPaceTimer();
     resetVga();
     events.replaceChildren();
+    latestEvent.textContent = '실제 가상머신 이벤트 기록을 준비 중...';
     bootStartedAt = performance.now();
     serial = '';
     serialVerified = false;
