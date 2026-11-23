@@ -67,7 +67,10 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
           preempt_bad_frame: bool = False,
           user_probe: bool = False, user_bad_syscall: bool = False,
           user_privileged_io: bool = False, user_read_kernel: bool = False,
-          user_write_code: bool = False) -> None:
+          user_write_code: bool = False, isolation_probe: bool = False,
+          isolation_gp: bool = False, isolation_ro: bool = False,
+          isolation_forged: bool = False,
+          isolation_survivor_fault: bool = False) -> None:
     dist, header = get_limine(cache)
     work_root.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="htmlk-boot-", dir=work_root) as temp:
@@ -86,6 +89,27 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
                  "-mno-red-zone", "-mcmodel=kernel", "-mgeneral-regs-only",
                  "-fcf-protection=none", "-Wall", "-Wextra", "-Werror"]
         define = ["-DHTMLK_QEMU_TEST_EXIT"] if test_exit else []
+        if isolation_probe and (not exception_idt or not tss_ist or user_probe or
+                                memory_probe or paging_probe or video_console or
+                                task_probe or timer_probe or preempt_probe or
+                                fault_test is not None or double_fault_test):
+            raise ValueError("M4 isolation requires only IDT+TSS/IST")
+        iso_negatives = (isolation_gp, isolation_ro, isolation_forged,
+                         isolation_survivor_fault)
+        if any(iso_negatives) and not (isolation_probe and test_exit):
+            raise ValueError("M4 isolation negatives require probe and test-exit")
+        if sum(bool(x) for x in iso_negatives) > 1:
+            raise ValueError("M4 isolation negatives are exclusive")
+        if isolation_probe:
+            define.append("-DHTMLK_M4_USER_ISOLATION")
+        if isolation_gp:
+            define.append("-DHTMLK_M4_ISO_GP")
+        if isolation_ro:
+            define.append("-DHTMLK_M4_ISO_RO")
+        if isolation_forged:
+            define.append("-DHTMLK_M4_ISO_FORGED_FRAME")
+        if isolation_survivor_fault:
+            define.append("-DHTMLK_M4_ISO_SURVIVOR_FAULT")
         if user_probe and (not exception_idt or not tss_ist or
                            memory_probe or paging_probe or video_console or
                            task_probe or timer_probe or preempt_probe or
@@ -196,8 +220,8 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
         run("gcc", *flags, *define, "-I", header.parent, "-c",
             ROOT / "boot/kernel_entry.c", "-o", entry_obj)
         extra_objects: list[Path] = []
-        if memory_probe or video_console or exception_idt or paging_probe or tss_ist or task_probe or preempt_probe or user_probe:
-            sources = (["page_pool"] if (memory_probe or paging_probe or user_probe) else [])
+        if memory_probe or video_console or exception_idt or paging_probe or tss_ist or task_probe or preempt_probe or user_probe or isolation_probe:
+            sources = (["page_pool"] if (memory_probe or paging_probe or user_probe or isolation_probe) else [])
             if memory_probe:
                 sources.append("memory_probe")
             if task_probe:
@@ -210,6 +234,9 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
                 sources.extend(("frame_owner", "paging_tables", "paging_probe"))
             if user_probe:
                 sources.extend(("frame_owner", "user_pages", "user_probe"))
+            if isolation_probe:
+                sources.extend(("frame_owner", "user_pages",
+                                "isolation_policy", "user_isolation"))
             if exception_idt:
                 sources.append("exception_idt")
             if tss_ist:
@@ -231,10 +258,15 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
                 run("gcc", "-c", "-m64", "-fno-pie", "-fno-pic",
                     ROOT / "boot/preempt_switch.S", "-o", obj)
                 extra_objects.append(obj)
-            if user_probe:
+            if user_probe or isolation_probe:
                 obj = build_dir / "user_entry.o"
                 run("gcc", "-c", "-m64", "-fno-pie", "-fno-pic",
                     *define, ROOT / "boot/user_entry.S", "-o", obj)
+                extra_objects.append(obj)
+            if isolation_probe:
+                obj = build_dir / "user_isolation_payload.o"
+                run("gcc", "-c", "-m64", "-fno-pie", "-fno-pic",
+                    *define, ROOT / "boot/user_isolation_payload.S", "-o", obj)
                 extra_objects.append(obj)
         run("gcc", "-nostdlib", "-no-pie", "-Wl,--build-id=none",
             "-Wl,-z,max-page-size=0x1000", "-Wl,-T," + str(ROOT / "boot/linker.ld"),
@@ -324,7 +356,29 @@ def main() -> None:
                         help="M4 negative: ring3 read of supervisor kernel #PF")
     parser.add_argument("--user-write-code", action="store_true",
                         help="M4 negative: ring3 write to read-only user code #PF")
+    parser.add_argument("--user-isolation-probe", action="store_true",
+                        help="M4-C2: separate CPL3 task CR3s and survive actual #PF")
+    parser.add_argument("--user-isolation-gp", action="store_true",
+                        help="M4-C2: survive real ring3 privileged port #GP")
+    parser.add_argument("--user-isolation-ro", action="store_true",
+                        help="M4-C2: survive real ring3 RO-code write #PF")
+    parser.add_argument("--user-isolation-forged", action="store_true",
+                        help="M4-C2: reject forged CPL0 fault context before execution")
+    parser.add_argument("--user-isolation-survivor-fault", action="store_true",
+                        help="M4-C2: survivor faults must not be incorrectly recovered")
     a = parser.parse_args()
+    if a.user_isolation_probe and (
+        not a.exception_idt or not a.tss_ist or a.user_probe or
+        a.memory_probe or a.paging_probe or a.video_console or
+        a.task_probe or a.timer_probe or a.preempt_probe or
+        a.fault_test is not None or a.double_fault_test):
+        parser.error("--user-isolation-probe needs only --exception-idt --tss-ist")
+    iso_negatives = (a.user_isolation_gp, a.user_isolation_ro,
+                     a.user_isolation_forged, a.user_isolation_survivor_fault)
+    if any(iso_negatives) and not (a.user_isolation_probe and a.test_exit):
+        parser.error("M4 isolation negatives need --user-isolation-probe --test-exit")
+    if sum(bool(x) for x in iso_negatives) > 1:
+        parser.error("M4 isolation negatives cannot be combined")
     if a.user_probe and (not a.exception_idt or not a.tss_ist or
                          a.memory_probe or a.paging_probe or a.video_console or
                          a.task_probe or a.timer_probe or a.preempt_probe or
@@ -387,7 +441,10 @@ def main() -> None:
           a.timer_probe, a.timer_mask_test,
           a.preempt_probe, a.preempt_timer_mask, a.preempt_bad_frame,
           a.user_probe, a.user_bad_syscall, a.user_privileged_io,
-          a.user_read_kernel, a.user_write_code)
+          a.user_read_kernel, a.user_write_code,
+          a.user_isolation_probe, a.user_isolation_gp,
+          a.user_isolation_ro, a.user_isolation_forged,
+          a.user_isolation_survivor_fault)
 
 
 if __name__ == "__main__":
