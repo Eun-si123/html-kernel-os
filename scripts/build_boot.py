@@ -62,7 +62,9 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
           tss_ist: bool = False, double_fault_test: bool = False,
           multi_page_test: bool = False, multi_page_fault_test: bool = False,
           task_probe: bool = False, task_negative_test: bool = False,
-          timer_probe: bool = False, timer_mask_test: bool = False) -> None:
+          timer_probe: bool = False, timer_mask_test: bool = False,
+          preempt_probe: bool = False, preempt_timer_mask: bool = False,
+          preempt_bad_frame: bool = False) -> None:
     dist, header = get_limine(cache)
     work_root.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="htmlk-boot-", dir=work_root) as temp:
@@ -81,6 +83,20 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
                  "-mno-red-zone", "-mcmodel=kernel", "-mgeneral-regs-only",
                  "-fcf-protection=none", "-Wall", "-Wextra", "-Werror"]
         define = ["-DHTMLK_QEMU_TEST_EXIT"] if test_exit else []
+        if preempt_probe and (not exception_idt or task_probe or timer_probe or
+                              paging_probe or memory_probe or video_console or
+                              tss_ist or fault_test is not None):
+            raise ValueError("M4 x2APIC preemption requires only the IDT (no other probes)")
+        if preempt_bad_frame and not (preempt_probe and test_exit):
+            raise ValueError("M4 bad-frame negative requires preempt-probe and test-exit")
+        if preempt_bad_frame:
+            define.append("-DHTMLK_M4_PREEMPT_BAD_FRAME_TEST")
+        if preempt_timer_mask and not (preempt_probe and test_exit):
+            raise ValueError("M4 x2APIC masked negative requires preempt-probe and test-exit")
+        if preempt_probe:
+            define.append("-DHTMLK_M4_X2APIC_PREEMPT")
+        if preempt_timer_mask:
+            define.append("-DHTMLK_M4_PREEMPT_TIMER_MASK_TEST")
         if timer_probe and not (exception_idt and task_probe):
             raise ValueError("M4 PIT timer requires --exception-idt and --task-probe")
         if timer_mask_test and not (timer_probe and test_exit):
@@ -156,7 +172,7 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
         run("gcc", *flags, *define, "-I", header.parent, "-c",
             ROOT / "boot/kernel_entry.c", "-o", entry_obj)
         extra_objects: list[Path] = []
-        if memory_probe or video_console or exception_idt or paging_probe or tss_ist or task_probe:
+        if memory_probe or video_console or exception_idt or paging_probe or tss_ist or task_probe or preempt_probe:
             sources = (["page_pool"] if (memory_probe or paging_probe) else [])
             if memory_probe:
                 sources.append("memory_probe")
@@ -164,6 +180,8 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
                 sources.extend(("task_model", "task_runtime"))
             if timer_probe:
                 sources.append("timer_irq")
+            if preempt_probe:
+                sources.append("preempt_x2apic")
             if paging_probe:
                 sources.extend(("frame_owner", "paging_tables", "paging_probe"))
             if exception_idt:
@@ -181,6 +199,11 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
                 obj = build_dir / "task_switch.o"
                 run("gcc", "-c", "-m64", "-fno-pie", "-fno-pic",
                     ROOT / "boot/task_switch.S", "-o", obj)
+                extra_objects.append(obj)
+            if preempt_probe:
+                obj = build_dir / "preempt_switch.o"
+                run("gcc", "-c", "-m64", "-fno-pie", "-fno-pic",
+                    ROOT / "boot/preempt_switch.S", "-o", obj)
                 extra_objects.append(obj)
         run("gcc", "-nostdlib", "-no-pie", "-Wl,--build-id=none",
             "-Wl,-z,max-page-size=0x1000", "-Wl,-T," + str(ROOT / "boot/linker.ld"),
@@ -254,7 +277,21 @@ def main() -> None:
                         help="Opt-in real QEMU PIT/PIC IRQ0 task progress, needs IDT and tasks")
     parser.add_argument("--timer-mask-test", action="store_true",
                         help="Intentionally mask IRQ0 for bounded QEMU timeout negative oracle")
+    parser.add_argument("--preempt-probe", action="store_true",
+                        help="Opt-in M4-B2 actual x2APIC IRQ driven ring-0 preemption")
+    parser.add_argument("--preempt-timer-mask", action="store_true",
+                        help="M4-B2 QEMU negative: mask x2APIC timer interrupt")
+    parser.add_argument("--preempt-bad-frame", action="store_true",
+                        help="M4-B2 QEMU negative: reject intentionally misaligned task context")
     a = parser.parse_args()
+    if a.preempt_probe and (not a.exception_idt or a.task_probe or a.timer_probe or
+                            a.paging_probe or a.memory_probe or a.video_console or
+                            a.tss_ist or a.fault_test is not None):
+        parser.error("--preempt-probe needs --exception-idt alone (no other probes)")
+    if a.preempt_bad_frame and not (a.preempt_probe and a.test_exit):
+        parser.error("--preempt-bad-frame needs --preempt-probe --test-exit")
+    if a.preempt_timer_mask and not (a.preempt_probe and a.test_exit):
+        parser.error("--preempt-timer-mask needs --preempt-probe --test-exit")
     if a.timer_probe and not (a.exception_idt and a.task_probe):
         parser.error("--timer-probe requires --exception-idt and --task-probe")
     if a.timer_mask_test and not (a.timer_probe and a.test_exit):
@@ -295,7 +332,8 @@ def main() -> None:
           a.tss_ist, a.double_fault_test,
           a.multi_page_test, a.multi_page_fault_test,
           a.task_probe, a.task_negative_test,
-          a.timer_probe, a.timer_mask_test)
+          a.timer_probe, a.timer_mask_test,
+          a.preempt_probe, a.preempt_timer_mask, a.preempt_bad_frame)
 
 
 if __name__ == "__main__":

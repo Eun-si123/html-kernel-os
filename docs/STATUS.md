@@ -58,6 +58,10 @@ A separate opt-in M4 experiment adds two 8KiB ring-0 task stacks, real SysV x86-
 
 Opt-in, test-limited 8254 PIT+8259 PIC real IRQ0 delivered at new IDT vector 0x20, with two cooperative task stacks each receiving three timer interrupts before yielding. Real QEMU q35 under **`-cpu qemu64,-apic` only** verifies correct A0/B0/.../B2 order and generated HTML source-mutation provenance. Masking IRQ0 prevents forward progress as a bounded negative oracle. When local APIC is present, an explicit diagnostic and QEMU exit 49 replaces a hanging guest. Host PIT-rate checks under GCC UBSan -O0/-O3 pass. This is neither APIC support nor preemptive task switching. See [M4_PIT_IRQ.md](M4_PIT_IRQ.md). **B1 PR CI/main status pending; M4 milestone remains OPEN.**
 
+## M4 actual x2APIC timer preemption — Phase B2 (mini-PC native evidence)
+
+New opt-in code `boot/preempt_x2apic.c` and `boot/preempt_switch.S` enables x2APIC local periodic timer (IDT vector 0x40) on QEMU q35 `-cpu qemu64,+x2apic -smp 1`, saves 15 GPRs and entire CPU interrupt frames, performs real IRQ-driven stack switches between two **non-yielding** ring-0 task loops, and safely masks the timer/restores main kernel stack. `scripts/test_m4_preempt.py` on mini-PC verifies three repeated native QEMU boots in strict A0/B0/A1/B1/A2/B2 order and subsequent HTML-derived output, changed-source/provenance, unsupported CPUs exit 51, intentionally misaligned stack pointer rejected, masked timer makes no progress beyond A0 (bounded timeout), and invalid builder flags fail closed. Independent `tests/test_m4_preempt_frame.py` GCC UBSan `-O0/-O3` checks exact interrupt frame offsets. **PR-head CI/main verification pending**. This is not calibrated 100Hz, not SMP/FPU/FS-GS/CR3/ring-3 protection; **M4 milestone remains OPEN**. [M4-B2 exact contract](M4_X2APIC_PREEMPT.md).
+
 ## Site and licensing
 
 The `site/` directory contains source code for a separate project website. Avoid changing another `github.io` repository or enabling Pages without explicit authorization. No repository license has yet been selected, so public visibility alone does not grant open-source reuse rights.

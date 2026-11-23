@@ -4,6 +4,9 @@
 #ifdef HTMLK_M4_TASK_PROBE
 #include "task_runtime.h"
 #endif
+#ifdef HTMLK_M4_X2APIC_PREEMPT
+#include "preempt_x2apic.h"
+#endif
 #ifdef HTMLK_M4_TIMER_PROBE
 #include "timer_irq.h"
 #endif
@@ -118,6 +121,9 @@ void kmain(void) {
 #endif
 #ifdef HTMLK_M4_TIMER_PROBE
     htmlk_m4_timer_finish(); /* Mask IRQ0 before entering source-derived HTML. */
+#endif
+#ifdef HTMLK_M4_X2APIC_PREEMPT
+    htmlk_m4_preempt_probe(); /* Real timer preempts non-yielding ring-0 tasks. */
 #endif
     kernel_main(); /* Generated from examples/kernel.html. */
     for (;;) __asm__ volatile ("cli; hlt");

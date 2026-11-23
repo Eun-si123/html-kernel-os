@@ -3,6 +3,9 @@
  * Does not support recovery, interrupts, SMP, TSS, IST or user mode.
  */
 #include "exception_idt.h"
+#ifdef HTMLK_M4_X2APIC_PREEMPT
+#include "preempt_x2apic.h"
+#endif
 #ifdef HTMLK_M4_TIMER_PROBE
 #include "timer_irq.h"
 #endif
@@ -296,6 +299,14 @@ void htmlk_idt_install(void) {
 #ifdef HTMLK_M4_TIMER_PROBE
     if (!htmlk_idt_gate_make(&idt[32],
             (uint64_t)(uintptr_t)&htmlk_m4_irq0_entry, cs)) {
+        panic(13, 0, 0);
+    }
+#endif
+#ifdef HTMLK_M4_X2APIC_PREEMPT
+    if (!htmlk_idt_gate_make(&idt[HTMLK_M4_PREEMPT_VECTOR],
+            (uint64_t)(uintptr_t)&htmlk_m4_x2apic_irq_entry, cs) ||
+        !htmlk_idt_gate_make(&idt[0xffU],
+            (uint64_t)(uintptr_t)&htmlk_m4_x2apic_spurious_entry, cs)) {
         panic(13, 0, 0);
     }
 #endif
