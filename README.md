@@ -226,3 +226,5 @@ The public [Boot Lab](https://eun-si123.github.io/html-kernel-os/play.html) can 
 ## Stop a nonyielding user program with a real CPU timer (M5-E2)
 
 For Ubuntu with QEMU and GCC, run `python3 scripts/run_m5_console.py --with-user-program --recover-user-faults --user-timeout`. In the live COM1 console, type `run /apps/spin.hke`: its Ring3 machine code **never yields**, but a genuine x2APIC local timer IRQ retires the user program after a bounded four-tick budget and returns to `M5_PROMPT>`. Then `run /apps/hello.hke` and `exit` still work. Verify with `python3 scripts/test_m5_user_timeout.py`; see [actual CPU proof and limitations](docs/M5_USER_TIMEOUT.md). This mode requires an x2APIC QEMU CPU, is a narrow experiment and is not safe general-purpose user process support.
+
+**M5-E3 process lifecycle regression:** `python3 scripts/test_m5_process_lifecycle_stress.py` interleaves successful Ring3 executions, actual x2APIC timeouts, CPU exception recovery and invalid syscall recovery on a live QEMU UART shell, three full boots. See [M5-E3 test contract](docs/M5_PROCESS_LIFECYCLE_STRESS.md). This is not a full security audit or hardware compatibility claim.
