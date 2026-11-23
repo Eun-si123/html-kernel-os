@@ -8,8 +8,8 @@
 <meta name="description" content="HTML Kernel OS의 실제 x86-64 커널 ISO를 브라우저 안의 가상 PC에서 부팅하는 공개 실험실.">
 <title>Boot Lab — HTML Kernel OS</title>
 <link rel="stylesheet" href="./styles.css?v=20261123-auto-theme2">
-<link rel="stylesheet" href="./play.css?v=20261123-vga-fit4">
-<script type="module" src="./play.js?v=20261123-boot-replay4"></script>
+<link rel="stylesheet" href="./play.css?v=20261123-live-source5">
+<script type="module" src="./play.js?v=20261123-live-source5"></script>
 </head>
 <body>
 <a class="skip-link" href="#main">본문으로 이동</a>
@@ -62,8 +62,14 @@
         </div>
       </div>
       <div class="replay-controls">
-        <div class="replay-context"><strong>부팅 기록 감상</strong><span>CPU는 실제 속도로 부팅해. 완료 후 검증된 COM1 출력만 천천히 재생해.</span></div>
-        <label for="replay-speed">재생 속도</label>
+        <div class="replay-context"><strong>실제 부팅을 처음부터 관찰</strong><span>BIOS VGA 이벤트와 COM1은 처음부터 실시간 기록. 관찰 모드는 CPU 실행/정지를 번갈아 진행하고, 다시 보기는 기록만 재생해.</span></div>
+        <label for="vm-pace">VM 속도</label>
+        <select id="vm-pace" aria-label="가상 CPU 실행 방식">
+          <option value="normal">원래 속도</option>
+          <option value="slow" selected>느린 관찰 (실제 VM)</option>
+        </select>
+        <button type="button" class="btn secondary" id="vm-pause" disabled>일시 정지</button>
+        <label for="replay-speed">기록 재생</label>
         <select id="replay-speed" aria-label="시리얼 기록 재생 속도">
           <option value="100">느리게</option>
           <option value="55" selected>보통</option>
@@ -78,17 +84,29 @@
           <div id="screen_container" class="emulator-screen" aria-label="가상 PC VGA 화면"><div style="white-space:pre;font:14px monospace;line-height:14px"></div><canvas style="display:none"></canvas></div>
         </section>
         <section class="lab-pane" aria-label="커널 시리얼 출력">
-          <h3><span class="lab-pane-index">02 / SERIAL</span>커널 출력<small>COM1 · 0x3F8</small></h3>
-          <pre id="boot-output" class="boot-output" role="log" aria-live="polite">부팅을 시작하면 HTML에서 생성한 커널의 시리얼 출력을 이곳에 표시해.</pre>
+          <h3><span class="lab-pane-index">02 / SERIAL</span>커널 출력<small>COM1 · 0x3F8 · <span id="live-tag">WAITING / COM1</span></small></h3>
+          <pre id="boot-output" class="boot-output" role="log" aria-live="polite">부팅이 시작되면 실제 CPU가 COM1으로 보내는 문자를 한 바이트씩 실시간 표시해.</pre>
         </section>
       </div>
-      <p class="lab-footnote"><span class="footnote-mark" aria-hidden="true">i</span> VGA 예제는 실제 부팅한 커널이 픽셀을 그려. 나머지 예제는 COM1 중심이라 화면이 비어 있을 수 있어. 기록 다시 보기는 실제 CPU 부팅을 늦추는 기능이 아니야. 모바일에서는 메모리 사용량에 주의해.</p>
+      <div class="trace-grid">
+        <section class="trace-panel" aria-label="실제 부팅 이벤트 기록">
+          <h3><span class="lab-pane-index">03 / BOOT EVENTS</span>처음부터 부팅 관찰<small>실제 VM 이벤트 · BIOS VGA</small></h3>
+          <ol id="boot-events" class="boot-events" aria-label="실제 가상머신 부팅 단계와 BIOS 화면 로그"></ol>
+          <p class="trace-explainer">여기에는 브라우저 VM 이벤트와 BIOS가 실제 VGA 문자 화면에 쓴 내용만 기록해. 부트로더의 내부 함수 호출을 추측해서 로그로 만들지는 않아.</p>
+        </section>
+        <section class="trace-panel" aria-label="선택한 ISO의 실제 HTML 소스 코드">
+          <h3><span class="lab-pane-index">04 / HTML SOURCE</span>커널을 작성한 HTML<small id="boot-source-path">examples/</small></h3>
+          <p id="boot-source-note" class="source-note">원본 소스를 불러오는 중...</p>
+          <div id="boot-source" class="source-view" tabindex="0" aria-label="커널 HTML 소스와 줄 번호"></div>
+        </section>
+      </div>
+      <p class="lab-footnote"><span class="footnote-mark" aria-hidden="true">i</span> VGA 예제는 실제 CPU가 화면을 그려. 관찰 모드는 v86.run()/stop()으로 VM 실행 시간을 나눠 부팅 자체를 늦추지만 CPU 클럭을 낮추는 것은 아니야. BIOS 화면 문자, VM 이벤트, 커널 COM1은 출처가 달라 구분해 표시해. COM1 기록 다시 보기는 실제 부팅을 재실행하지 않아.</p>
     </section>
 
     <section class="lab-explainer">
       <div><p class="section-id">ABOUT THIS EXPERIMENT</p><h2>무엇을 검증하는가?</h2></div>
       <div>
-        <p>이 페이지는 HTML 형태의 언어로 작성된 커널을 미리 컴파일한 ISO를 내려받아, 브라우저 내부의 x86-64 에뮬레이터로 실행해. <strong>VGA 데모는 실제 커널의 프레임버퍼 픽셀</strong>을 보여주며, 결과의 정확성은 <strong>실제 COM1 시리얼 출력</strong>으로 확인해.</p>
+        <p>이 페이지는 HTML 형태의 언어로 작성된 커널을 미리 컴파일한 ISO를 내려받아, 브라우저 내부의 x86-64 에뮬레이터로 실행해. <strong>부팅 처음부터 실제 BIOS의 VGA 문자 기록과 커널의 COM1을 분리해서 보여주고</strong>, 선택한 ISO를 빌드할 때 사용한 HTML 소스를 함께 표시해. <strong>ISO 자체는 전부 HTML이 아니고</strong>, Limine 부트로더·설정 파일과 HTML에서 컴파일한 네이티브 ELF 커널 등으로 이루어져 있어. COM1에 일치한 일반 &lt;print&gt; 텍스트만 원본 소스에서 강조하며, 임의의 함수나 명령어 실행 위치까지 추적한다고 주장하지 않아.</p>
         <p class="notice"><strong>정확한 범위</strong> — 현재는 M2의 정수 자료형·함수·조건·반복·배열 등 핵심 부분과 M3의 선택적 물리·가상 메모리 및 CPU 예외 실험이 구현됐어. 범용 메모리 관리, 파일 저장, 키보드 드라이버, 스케줄러, 그래픽 데스크톱은 아직 구현되지 않았어. 브라우저 가상머신 부팅이 물리적 PC 지원을 증명하지는 않아.</p>
         <div class="lab-links"><a href="https://github.com/Eun-si123/html-kernel-os">GitHub 소스 ↗</a><a href="https://github.com/Eun-si123/html-kernel-os/blob/main/docs/VALIDATION.md">검증 방법 ↗</a><a href="./v86-LICENSE.txt">에뮬레이터 라이선스 ↗</a></div>
       </div>

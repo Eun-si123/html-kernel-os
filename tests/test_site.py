@@ -86,10 +86,29 @@ class SiteTests(unittest.TestCase):
         self.assertIn("serialVerified", script)
         self.assertIn("playRecordedSerial", script)
         self.assertIn("requestFullscreen()", script)
-        self.assertIn("CPU 속도 조절 아님", script)
+        self.assertIn("가상 CPU 부팅 속도를 조작하는 기능은 아니야", script)
         self.assertIn("실제 VGA", html)
         pages = (ROOT / ".github/workflows/pages.yml").read_text(encoding="utf-8")
         self.assertIn("html-kernel-video.iso public/html-kernel-video.iso", pages)
+        for filename in ("kernel.html", "framebuffer-kernel.html",
+                         "math-kernel.html", "functions-kernel.html",
+                         "scoped-functions-kernel.html", "else-kernel.html",
+                         "u32-kernel.html", "signed-bits-kernel.html"):
+            self.assertIn(f"examples/{filename} public/examples/{filename}", pages)
+            self.assertIn(f"source: '{filename}'", script)
+            self.assertTrue((ROOT / "examples" / filename).is_file())
+        for control in ("vm-pace", "vm-pause", "boot-events",
+                        "boot-source", "boot-source-note", "boot-source-path",
+                        "live-tag"):
+            self.assertIn(f'id="{control}"', html)
+        self.assertIn("screen-put-char", script)
+        self.assertIn("recordVgaCell", script)
+        self.assertIn("sourceLineForLiteral", script)
+        self.assertIn("output.textContent = serial", script)
+        self.assertIn("machine.run()", script)
+        self.assertIn("machine.stop()", script)
+        self.assertIn("관찰 모드", script)
+        self.assertIn("ISO 자체는 전부 HTML이 아니고", html)
         self.assertIn("python scripts/test_video_screen.py", pages)
         self.assertIn("html-kernel.iso", script)
         self.assertIn("html-kernel-math.iso", script)
@@ -129,11 +148,14 @@ class SiteTests(unittest.TestCase):
             self.assertIn(text, css)
         self.assertIn('href="./styles.css?v=20261123-auto-theme2"', home)
         self.assertIn('href="./styles.css?v=20261123-auto-theme2"', lab)
-        self.assertIn('href="./play.css?v=20261123-vga-fit4"', lab)
+        self.assertIn('href="./play.css?v=20261123-live-source5"', lab)
         self.assertIn("@media(max-width:480px)", lab_css)
         self.assertIn("aspect-ratio: 4/3", lab_css)
         self.assertIn("object-fit: contain", lab_css)
         self.assertIn("grid-template-columns: minmax(0,1fr)", lab_css)
+        self.assertIn(".trace-grid", lab_css)
+        self.assertIn(".boot-events", lab_css)
+        self.assertIn(".source-view", lab_css)
         self.assertNotIn("@import", css)
         self.assertNotIn("linear-gradient(", css)
         self.assertNotIn("radial-gradient(", css)
@@ -153,7 +175,7 @@ class SiteTests(unittest.TestCase):
         boot_css = (SITE / "play.css").read_text(encoding="utf-8")
         self.assertIn('@media (prefers-color-scheme: dark)', boot_css)
         self.assertIn('.lab-status-bar { background:#222b25;', boot_css)
-        self.assertIn('play.css?v=20261123-vga-fit4', lab)
+        self.assertIn('play.css?v=20261123-live-source5', lab)
 
     def test_copy_button_and_tabs_have_handlers(self):
         js = (SITE / "app.js").read_text(encoding="utf-8")

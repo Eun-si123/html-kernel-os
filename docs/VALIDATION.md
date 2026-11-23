@@ -157,3 +157,12 @@ python3 scripts/test_multimap.py                # actual 3x3 CPU aliases, physic
 ```
 
 The positive path must exercise three additional 4KiB leaf PTEs under a private CR3 for *three rounds*, each read/write confirmed via distinct Limine HHDM physical aliases; safely unmap/invlpg before returning owner-tagged frames and verify deterministic reuse and unchanged first-page mapping. The negative path triggers **real CPU #PF** at `0xFFFFA00000002000` after unmap and requires CR2 match plus fail-stop exit 45. The combined real kernel must prove physical pool, TSS/IST, approved first-page `iretq` fault repair, frame ownership and framebuffer pixel writes. CLI flag rejection and modified HTML source are independent controls. Only bounded BIOS QEMU acceptance is implied: no generic heap, ring3 or external IRQ/hardware claim. Independent mini-PC QEMU test PASS; exact branch push Actions `45105414876`, PR Actions `45105421245`, and PR security `45105418201` all SUCCESS at commit `7bfa7a1`. Post-merge main CI remains separately subject to verification.
+
+## Boot Lab live evidence — browser observation, not synthetic boot animation
+
+```sh
+node --check site/play.js
+python3 -m unittest tests.test_site -v
+```
+
+The UI must receive actual `screen-put-char` VGA BIOS text events, record v86 lifecycle events with measured wall-clock timestamps, and render raw `serial0-output-byte` characters **as they arrive**, regardless of eventual exact-match verification. Selected example HTML comes from a file copied in the same Pages build that compiled its ISO (no inserted fake source). Literal print-line highlighting can be claimed only for matched COM1 text, never for execution of arbitrary expressions, Limine or BIOS. Optional slow mode must use actual v86 `stop/run`; it pauses CPU progress, not changes CPU frequency. Verify the controls separately with a live browser emulator after Pages deployment. See [BOOT_LAB_LIVE_TRACE.md](BOOT_LAB_LIVE_TRACE.md).

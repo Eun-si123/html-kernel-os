@@ -53,3 +53,7 @@ This gate does not imply that a general-purpose memory manager, a scheduler, app
 ## Site and licensing
 
 The `site/` directory contains source code for a separate project website. Avoid changing another `github.io` repository or enabling Pages without explicit authorization. No repository license has yet been selected, so public visibility alone does not grant open-source reuse rights.
+
+## Boot Lab live trace rollout
+
+The Boot Lab source now includes raw-on-arrival COM1 rendering, real BIOS text-cell VGA event logging, optional v86 CPU run/stop observation mode, explicit manual CPU pause and a read-only view of the exact HTML example used to build each ISO. This is frontend/source code **pending independent live Chromium validation and final merged Pages deployment** at the time of this change; static/unit checks alone do not prove it works in a browser. The ISO contains a native ELF kernel and pinned Limine boot components, not HTML source files. See [BOOT_LAB_LIVE_TRACE.md](BOOT_LAB_LIVE_TRACE.md).
