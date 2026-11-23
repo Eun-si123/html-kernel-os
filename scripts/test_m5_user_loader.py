@@ -34,6 +34,29 @@ def require(iso: Path, code: int, expected: str) -> str:
     return output
 
 
+def checked_nm_symbols(kernel_elf: Path, *, runner=subprocess.run) -> str:
+    """Inspect the REAL ELF symbol table even if a shared runner stalls once.
+
+    Hosted GitHub main builds have twice exhausted the 20-second `nm` budget
+    on the same small ELF despite exact PR-head CPU tests passing. Retry a
+    transient timeout ONCE; never ignore a nonzero exit or accept missing
+    symbol output. Each subprocess timeout is bounded and kills its child.
+    """
+    for attempt in range(2):
+        try:
+            result = runner(["nm", str(kernel_elf)], capture_output=True,
+                            text=True, check=True, timeout=20)
+            return result.stdout
+        except subprocess.TimeoutExpired:
+            if attempt:
+                raise AssertionError(
+                    "M5-C1 `nm` symbol inspection timed out twice on "
+                    + str(kernel_elf)) from None
+            print("M5-C1 `nm` timed out once: retrying the same mandatory "
+                  "ELF symbol inspection", file=sys.stderr, flush=True)
+    raise AssertionError("unreachable nm symbol inspection")
+
+
 def main() -> None:
     with tempfile.TemporaryDirectory(prefix="htmlk-m5-c1-") as temp:
         work = Path(temp)
@@ -44,8 +67,10 @@ def main() -> None:
         for repeat in range(3):
             require(original, SUCCESS_EXIT, SUCCESS)
         kernel_elf = original.with_suffix(".elf")
-        nm = subprocess.run(["nm", str(kernel_elf)],capture_output=True,
-                            text=True,check=True,timeout=20).stdout
+        nm = checked_nm_symbols(kernel_elf)
+        # A stripped/empty result cannot be evidence that the obsolete
+        # hardcoded user image is absent: the live entry/return ABI MUST exist.
+        assert "htmlk_m4_user_enter" in nm and "htmlk_m4_user_return" in nm, (kernel_elf,nm[:500])
         assert "htmlk_m4_user_code_begin" not in nm, "old hardcoded executable leaked into M5-C1"
         print("M5-C1 THREE REAL QEMU ROMFS IMAGE -> RING3 INT80 -> EXIT -> FRAME RECLAIM BOOTS PASS")
 

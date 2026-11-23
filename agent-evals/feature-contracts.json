@@ -368,7 +368,8 @@
       "fieldEvidence": [
         "tests/native/test_user_image.c",
         "scripts/test_m5_user_loader.py",
-        "docs/M5_USER_LOADER.md"
+        "docs/M5_USER_LOADER.md",
+        "tests/test_nm_retry.py"
       ]
     },
     {
