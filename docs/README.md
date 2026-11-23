@@ -63,3 +63,5 @@ When a feature changes, update the **one authoritative** owner, then fix any con
 - [M5 Web Live: dedicated GitHub Pages x86-64 CPU boot of HTML-compiled Ring3 app](M5_WEB_LIVE.md).
 
 - [M5-E3-G genuine CPU #GP after poisoned user stack and distinct 48-byte error-word proof](M5_USER_BAD_GP.md).
+
+- [M5-E3-H real poisoned Ring3 RSP #PF5/#PF7 IST2 provenance and owner recovery](M5_USER_BAD_PF.md).

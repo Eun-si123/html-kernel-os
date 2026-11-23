@@ -35,6 +35,11 @@ bool htmlk_m5_accept_bad_user_rsp_gp(uintptr_t cpu_frame,
                                   uint64_t rip, uint64_t cs, uint64_t flags,
                                   uint64_t user_rsp, uint64_t ss,
                                   uint64_t error);
+bool htmlk_m5_accept_bad_user_rsp_pf(uintptr_t cpu_frame,
+                                  uintptr_t cpu_error_word,
+                                  uint64_t rip, uint64_t cs, uint64_t flags,
+                                  uint64_t user_rsp, uint64_t ss,
+                                  uint64_t error, uint64_t cr2);
 bool htmlk_m5_accept_user_fault(unsigned vector, uint64_t rip,
                                 uint64_t cs, uint64_t flags,
                                 uint64_t rsp, uint64_t ss,

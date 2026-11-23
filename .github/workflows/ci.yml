@@ -169,6 +169,8 @@ jobs:
           python scripts/test_live_source_mutation.py --baseline-dir build/ci-live
       - name: M5-E3-G true CPU general-protection error-code frame and owned bad user RSP recovery
         run: python scripts/test_m5_user_bad_gp_stack.py
+      - name: M5-E3-H genuine CPL3 PF on TSS IST2 after poisoned user RSP, safe owner isolation
+        run: python scripts/test_m5_user_bad_pf_stack.py
       - name: Assemble standalone, non-test boot images
         run: |
           python scripts/build_boot.py --out build/html-kernel.iso

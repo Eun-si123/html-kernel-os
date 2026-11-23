@@ -77,6 +77,7 @@ bool htmlk_tss_on_page_fault_stack(uint64_t rsp) {
 }
 
 uint64_t htmlk_tss_rsp0(void) { return tss.rsp[0]; }
+uint64_t htmlk_tss_pf_ist2_top(void) { return tss.ist[1]; }
 void htmlk_tss_set_rsp0(uint64_t stack_top) {
     /* Only privileged scheduler code can call this. Require canonical,
      * 16-byte aligned kernel virtual stack top, never user space. */

@@ -94,3 +94,27 @@ bool htmlk_m5_bad_gp_stack_owned(const struct htmlk_m5_bad_gp_owner *ctx) {
         return false;
     return bad_rsp_owner_valid(&ctx->frame);
 }
+
+/* Only user-origin, fault-class #PF error 5 (read supervisor memory) or 7
+ * (write user read-only image). A #PF in the kernel or a fault delivered to
+ * some other stack can never use this emergency user-process retirement. */
+bool htmlk_m5_bad_pf_stack_owned(const struct htmlk_m5_bad_pf_owner *ctx) {
+    if (!ctx || ctx->ist2_top == 0 ||
+        ctx->frame.tss_rsp0 != ctx->ist2_top ||
+        ctx->frame.tss_rsp0 < UINT64_C(48) ||
+        ctx->error_word_address != ctx->ist2_top - UINT64_C(48) ||
+        ctx->frame.frame_address != ctx->ist2_top - UINT64_C(40) ||
+        ctx->error_word_address != ctx->frame.frame_address - UINT64_C(8))
+        return false;
+    if (ctx->error_code == 5U) {
+        /* Read access from CPL3 to a privileged canonical high address. */
+        if (ctx->cr2 < UINT64_C(0xffff800000000000)) return false;
+    } else if (ctx->error_code == 7U) {
+        /* CPL3 attempted to write its private mapped RX user code page. */
+        if (ctx->cr2 < HTMLK_M4_USER_BASE ||
+            ctx->cr2 - HTMLK_M4_USER_BASE >= UINT64_C(4096)) return false;
+    } else {
+        return false;
+    }
+    return bad_rsp_owner_valid(&ctx->frame);
+}
