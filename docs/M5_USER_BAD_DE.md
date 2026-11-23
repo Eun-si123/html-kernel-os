@@ -1,6 +1,6 @@
 # M5-E3-F — contain a real Ring3 divide error with a poisoned user RSP
 
-**Status:** local native QEMU + GCC UBSan proof PASS on a branch based on prior M5-E3-E. The exact PR-head GitHub Actions/Gitleaks result and merge have **NOT** been checked yet. Only a known, owned user program; never treat this as a general arbitrary-code sandbox.
+**Status:** local native QEMU + GCC UBSan proof PASS on a branch based on prior M5-E3-E. PR #95 exact-head GitHub QEMU Actions `45146766163`/`45146776964` and Gitleaks `45146776741` PASS, merged `3b95090`. Only a known, owned user program; never treat this as a general arbitrary-code sandbox.
 
 ## Proven fatal bug before the fix
 

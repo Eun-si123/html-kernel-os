@@ -224,6 +224,15 @@ __attribute__((interrupt)) static void vector_13(struct interrupt_frame *f, unsi
         htmlk_m5_accept_user_fault(13U, f->rip, f->cs, f->rflags,
                                     f->rsp, f->ss, (uint64_t)code, 0U))
         htmlk_m4_user_return();
+    /* A real CPL3 #GP has an extra CPU error-code word at f-8.
+     * Only retire the one current task with poisoned *user* RSP after
+     * verifying BOTH the exact 48-byte CPU frame and owned CR3/TSS. */
+    if ((f->cs & 3U) == 3U &&
+        htmlk_m5_accept_bad_user_rsp_gp((uintptr_t)f,
+                                        (uintptr_t)f - sizeof(uint64_t),
+                                        f->rip, f->cs, f->rflags,
+                                        f->rsp, f->ss, (uint64_t)code))
+        htmlk_m4_user_return();
 #endif
 #if defined(HTMLK_M4_D2_FAULT) && defined(HTMLK_M4_D2_A_GP)
     struct htmlk_m4_d1_irq_frame *d2_survivor =

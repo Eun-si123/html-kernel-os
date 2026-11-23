@@ -44,14 +44,15 @@ bool htmlk_m5_bad_noerr_fault_vector(unsigned vector) {
     return vector == 0U || vector == 6U;
 }
 
-bool htmlk_m5_bad_noerr_stack_owned(const struct htmlk_m5_bad_noerr_owner *c) {
+/* Shared strict provenance. Frame size/layout is checked separately by each
+ * vector-specific wrapper; never turn this helper into a generic fault pass. */
+static bool bad_rsp_owner_valid(const struct htmlk_m5_bad_noerr_owner *c) {
     if (!c || !c->has_active_app || c->already_terminated ||
         c->live_frames != 6U ||
-        c->tss_rsp0 < UINT64_C(40) ||
+        c->tss_rsp0 < UINT64_C(48) ||
         (c->tss_rsp0 & UINT64_C(15)) != 0 ||
         (c->tss_rsp0 >> 48U) != UINT64_C(0xffff) ||
         (c->tss_rsp0 & (UINT64_C(1) << 47)) == 0 ||
-        c->frame_address != c->tss_rsp0 - UINT64_C(40) ||
         c->cs != UINT64_C(0x2b) || c->ss != UINT64_C(0x33) ||
         (c->rflags & UINT64_C(2)) == 0 ||
         (((c->rflags >> 9U) & UINT64_C(1)) != (uint64_t)c->expected_if) ||
@@ -71,4 +72,25 @@ bool htmlk_m5_bad_noerr_stack_owned(const struct htmlk_m5_bad_noerr_owner *c) {
      * fallback. Valid-stack CPU exceptions still use the strict policy. */
     return c->user_rsp <= HTMLK_M4_USER_BASE + UINT64_C(4096) ||
            c->user_rsp > HTMLK_M4_USER_STACK;
+}
+
+/* The original no-error-code proof still only accepts the exact five-word
+ * frame and never enables #GP by itself. */
+bool htmlk_m5_bad_noerr_stack_owned(const struct htmlk_m5_bad_noerr_owner *c) {
+    return c && c->frame_address == c->tss_rsp0 - UINT64_C(40) &&
+           bad_rsp_owner_valid(c);
+}
+
+/* CPU #GP pushes an extra 8-byte error word BEFORE five IRET words.
+ * GCC passes f pointing at the first IRET word (RIP), NOT the error code.
+ * Require both exact words relative to the *trusted* TSS.RSP0, plus
+ * CPU error code 0 (general protection from user privileged I/O). */
+bool htmlk_m5_bad_gp_stack_owned(const struct htmlk_m5_bad_gp_owner *ctx) {
+    if (!ctx || ctx->frame.tss_rsp0 < UINT64_C(48) ||
+        ctx->error_code != 0U ||
+        ctx->error_word_address != ctx->frame.tss_rsp0 - UINT64_C(48) ||
+        ctx->frame.frame_address != ctx->frame.tss_rsp0 - UINT64_C(40) ||
+        ctx->error_word_address != ctx->frame.frame_address - UINT64_C(8))
+        return false;
+    return bad_rsp_owner_valid(&ctx->frame);
 }

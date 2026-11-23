@@ -1,0 +1,21 @@
+# M5-E3-G — real CPU #GP after poisoned Ring3 RSP, owned task retirement
+
+**Scope:** trusted, explicitly loaded bounded HKEX program in the opt-in native Ring3 fault-recovery shell. Local BIOS QEMU acceptance PASS; exact PR-head GitHub CI/Gitleaks and final merge are separate gates. M6 hardware testing NOT RUN. Not a general untrusted-program security sandbox.
+
+## Reproduced before patch
+
+On the merged M5-E3-F implementation, an independently assembled Ring3 program executing `xorq %rsp,%rsp; movb $0x41,%al; outb %al,$0xe9` raised **real CPU general-protection vector 13, error code 0** while using an invalid saved *user* stack pointer. The original fault guard rejected the saved user RSP and terminated the whole kernel (actual BIOS QEMU exit **45**, debugcon `M3_EXCEPTION V=0D`, no next COM1 prompt). E3-D's IRQ protection and E3-E/F's #UD/#DE no-error-code exception checks did not cover this distinct CPU frame.
+
+## Minimal, deliberate CPU stack and owner contract
+
+**#GP pushes one additional 64-bit CPU error-code word**, unlike #UD/#DE. The error word is at trusted TSS.RSP0−48, while GCC's `__attribute__((interrupt))` pointer to the *five-word* RIP/CS/RFLAGS/RSP/SS frame points to TSS.RSP0−40. This difference is checked explicitly in a new pure `htmlk_m5_bad_gp_stack_owned()` wrapper, along with its 8-byte relative offset and **error code exactly zero**. The common ownership check still requires exact high-canonical aligned trusted TSS.RSP0, live selected app, six owned frames, kernel CR3 distinct from currently owned private CR3, saved supervisor stack, verified in-bounds code RIP, exact CPL3 CS/SS, IF/RFLAGS allowed, no previous task abort and **RSP outside** the known valid user stack. CPU kernel-origin CS is examined before the handler reads saved user-only SS/RSP. The corrupted user RSP is never dereferenced, mapped, or used for IRET.
+
+Only vector **13** uses this error-code wrapper, and only after the original strict #GP guard rejects the bad saved user RSP. The already established nonreturning supervisor CR3/RSP handoff retires only that owner task and reclaims its six pages; the kernel reports `M5_E3_USER_GP_BAD_RSP_RETIRED` and serves the next real COM1 command. The #DE/#UD no-error-code vector classifier remains limited to **0 and 6**. #PF uses its own IST2 handling and is **not** silently admitted to this #GP policy. All kernel-origin/unknown/wrong CR3/forged TSS/error-code/stale-owner contexts fail closed as before.
+
+## Actual CPU and negative gates
+
+`scripts/test_m5_user_bad_gp_stack.py` constructs four independent true CPL3 binaries with poisoned saved user RSP: zero, code-page address, supervisor address, and above-stack address. Three full x86-64 BIOS QEMU q35 x2APIC boots each execute all four user #GP programs followed by **five separately compiled healthy HTML user tasks**, plus a real timer expiry of a nonyielding Ring3 app and final native HTML kernel completion. This proves 12 real CPU #GP owner retirements plus 15 healthy reruns, with exact COM1/E9 output and six-page reclaim markers. No-timer E1-mode recovery and old standalone M5-C1 fatal #GP exit45 also PASS. Beyond host GCC UBSan O0/O3 denial of forged/misaligned **error-word** positions, 40-byte confused frames, CPU nonzero error codes, valid user RSP, CPL0 selectors, code end/outside RIP, wrong CR3, missing owner, saved main stack and unexpected IF, an additional **actual native CPU negative** assembles a CPL3 program with poisoned RSP and an illegal supervisor DS selector load (`movw $0x10,%ax; movw %ax,%ds`): the hardware pushes #GP **error 0x10**, and the patched kernel correctly retains strict fail-stop (QEMU exit45, real `M3_EXCEPTION V=0D`, error bytes `0x...0010`). It MUST NOT be rescued by the error-zero-only fallback. The source E3-E/F #UD/#DE and E3-D timer regressions remain required.
+
+## Still OPEN
+
+Poisoned stack followed by **#PF** on IST2 or other exception vectors (trap-class #DB/#BP, etc.) still need individually proven frame layout/owner logic. No general context switching, CPU vector universal recovery, physical hardware, SMP, XSAVE/FPU, FS/GS, UEFI, arbitrary external ELF authentication, disk writes, or user-process budget guarantee. [M5 tracking issue #75](https://github.com/Eun-si123/html-kernel-os/issues/75).

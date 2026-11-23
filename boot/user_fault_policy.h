@@ -21,4 +21,12 @@ struct htmlk_m5_bad_noerr_owner {
 };
 bool htmlk_m5_bad_noerr_fault_vector(unsigned vector);
 bool htmlk_m5_bad_noerr_stack_owned(const struct htmlk_m5_bad_noerr_owner *ctx);
+/* x86 #GP pushes an error word at RSP0-48; the five-word IRET frame
+ * starts at RSP0-40 (as given to GCC's interrupt function). Never use
+ * this separate error-code proof for #PF/IST2 or other exception vectors. */
+struct htmlk_m5_bad_gp_owner {
+    struct htmlk_m5_bad_noerr_owner frame;
+    uint64_t error_word_address, error_code;
+};
+bool htmlk_m5_bad_gp_stack_owned(const struct htmlk_m5_bad_gp_owner *ctx);
 #endif

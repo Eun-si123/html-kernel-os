@@ -112,5 +112,46 @@ int main(void) {
     ud.has_active_app=false;assert(!htmlk_m5_bad_noerr_stack_owned(&ud));ud.has_active_app=true;
     ud.already_terminated=true;assert(!htmlk_m5_bad_noerr_stack_owned(&ud));
     assert(!htmlk_m5_bad_noerr_stack_owned(NULL));
+    /* #GP uses an error-code word at -48 and IRET frame at -40.
+     * A five-word #UD frame may not be mistaken for a six-word #GP. */
+    struct htmlk_m5_bad_gp_owner gp = {
+        .frame=ud,
+        .error_word_address=UINT64_C(0xffff800000200000)-48U,
+        .error_code=0U,
+    };
+    gp.frame.already_terminated=false;
+    assert(htmlk_m5_bad_gp_stack_owned(&gp));
+    gp.error_code=1U;assert(!htmlk_m5_bad_gp_stack_owned(&gp));gp.error_code=0U;
+    gp.error_code=4U;assert(!htmlk_m5_bad_gp_stack_owned(&gp));gp.error_code=0U;
+    gp.error_word_address+=8U;
+    assert(!htmlk_m5_bad_gp_stack_owned(&gp));gp.error_word_address-=8U;
+    gp.error_word_address-=8U;
+    assert(!htmlk_m5_bad_gp_stack_owned(&gp));gp.error_word_address+=8U;
+    gp.frame.frame_address=gp.frame.tss_rsp0-48U;
+    assert(!htmlk_m5_bad_gp_stack_owned(&gp));
+    gp.frame.frame_address=gp.frame.tss_rsp0-40U;
+    gp.frame.cs=0x08U;assert(!htmlk_m5_bad_gp_stack_owned(&gp));gp.frame.cs=0x2bU;
+    gp.frame.ss=0x10U;assert(!htmlk_m5_bad_gp_stack_owned(&gp));gp.frame.ss=0x33U;
+    gp.frame.user_rsp=HTMLK_M4_USER_STACK-16U;
+    assert(!htmlk_m5_bad_gp_stack_owned(&gp));gp.frame.user_rsp=0U;
+    gp.frame.rip=HTMLK_M4_USER_BASE+64U;
+    assert(!htmlk_m5_bad_gp_stack_owned(&gp));gp.frame.rip=HTMLK_M4_USER_BASE+3U;
+    gp.frame.active_cr3=0x3000U;
+    assert(!htmlk_m5_bad_gp_stack_owned(&gp));gp.frame.active_cr3=0x2000U;
+    gp.frame.live_frames=5U;
+    assert(!htmlk_m5_bad_gp_stack_owned(&gp));gp.frame.live_frames=6U;
+    gp.frame.already_terminated=true;
+    assert(!htmlk_m5_bad_gp_stack_owned(&gp));gp.frame.already_terminated=false;
+    gp.frame.has_active_app=false;
+    assert(!htmlk_m5_bad_gp_stack_owned(&gp));gp.frame.has_active_app=true;
+    gp.frame.expected_if=false;
+    assert(!htmlk_m5_bad_gp_stack_owned(&gp));gp.frame.expected_if=true;
+    gp.frame.rflags=0x3002U;
+    assert(!htmlk_m5_bad_gp_stack_owned(&gp));gp.frame.rflags=0x202U;
+    gp.frame.saved_main_rsp=0U;
+    assert(!htmlk_m5_bad_gp_stack_owned(&gp));
+    gp.frame.saved_main_rsp=UINT64_C(0xffff800000300000);
+    assert(!htmlk_m5_bad_gp_stack_owned(NULL));
+
     puts("M5-E1 USER EXCEPTION FRAME/CR3/SEL/ERR GUARDS PASS");
 }
