@@ -344,6 +344,18 @@ def expression(source: str, node: Node, variables: set[str] | dict[str, str],
             return "negative_literal" if "negative_literal" in (a, b) else "literal"
         return a if a not in literals else b
 
+    def explicit_zero(item: ast.AST) -> bool:
+        """Recognize literal zero, parentheses, signs and explicit width casts."""
+        if isinstance(item, ast.Constant) and type(item.value) is int:
+            return item.value == 0
+        if isinstance(item, ast.UnaryOp) and isinstance(item.op, (ast.UAdd, ast.USub)):
+            return explicit_zero(item.operand)
+        if (isinstance(item, ast.Call) and isinstance(item.func, ast.Name)
+                and item.func.id in INT_TYPES and len(item.args) == 1
+                and not item.keywords):
+            return explicit_zero(item.args[0])
+        return False
+
     def kind(item: ast.AST) -> str:
         if isinstance(item, ast.Constant) and type(item.value) is int:
             if not 0 <= item.value <= UINT64_MAX:
@@ -395,10 +407,12 @@ def expression(source: str, node: Node, variables: set[str] | dict[str, str],
             return inner
         if isinstance(item, ast.BinOp):
             op = type(item.op)
-            if op not in (ast.Add, ast.Sub, ast.Mult, ast.BitAnd,
+            if op not in (ast.Add, ast.Sub, ast.Mult, ast.Div, ast.Mod, ast.BitAnd,
                           ast.BitOr, ast.BitXor, ast.LShift, ast.RShift):
                 fail(node, "unsupported binary operator")
             result = require_pair(kind(item.left), kind(item.right), "arithmetic")
+            if op in (ast.Div, ast.Mod) and explicit_zero(item.right):
+                fail(node, "division or remainder by zero literal")
             if op in (ast.BitAnd, ast.BitOr, ast.BitXor, ast.LShift, ast.RShift):
                 if result in signed or result == "negative_literal":
                     fail(node, "bitwise operations require unsigned integers; cast using u32(...) or u64(...)")
@@ -495,6 +509,9 @@ def expression(source: str, node: Node, variables: set[str] | dict[str, str],
                     helper = {ast.Add: "add", ast.Sub: "sub", ast.Mult: "mul"}[operator]
                     return f"htmlk_{helper}_{resolved}({left}, {right})"
                 return f"(({c_type(resolved)})({left} {op} {right}))"
+            if operator in (ast.Div, ast.Mod):
+                helper = "div" if operator == ast.Div else "mod"
+                return f"htmlk_{helper}_{resolved}({left}, {right})"
             if resolved not in unsigned:
                 fail(node, "bitwise operations require u32/u64; use an explicit conversion")
             op = {ast.BitAnd: "&", ast.BitOr: "|", ast.BitXor: "^"}.get(operator)

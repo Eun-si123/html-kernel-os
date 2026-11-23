@@ -51,6 +51,29 @@ def c_helpers() -> list[str]:
             f"  return htmlk_from_bits_{kind}((uint{size}_t)0 - (uint{size}_t)a);",
             "}",
         ])
+    # C11 signed division overflows for INT_MIN / -1, and all division by zero
+    # is undefined. Explicitly trap zeros and define wraparound for that one
+    # signed overflow case, without evaluating undefined C expressions.
+    for kind in INTEGER_TYPES:
+        t = c_type(kind)
+        signed = kind in SIGNED_TYPES
+        bits = width(kind)
+        for operation, symbol in (("div", "/"), ("mod", "%")):
+            result.extend([
+                f"static inline {t} htmlk_{operation}_{kind}({t} a, {t} b) {{",
+                "  if (b == 0) htmlk_divide_by_zero();",
+            ])
+            if signed:
+                overflow_return = (
+                    f"INT{bits}_MIN" if operation == "div" else f"({t})0"
+                )
+                result.extend([
+                    f"  if (a == INT{bits}_MIN && b == ({t})-1) return {overflow_return};",
+                ])
+            result.extend([
+                f"  return ({t})(a {symbol} b);",
+                "}",
+            ])
     for kind in ("u32", "u64"):
         size = width(kind)
         t = c_type(kind)

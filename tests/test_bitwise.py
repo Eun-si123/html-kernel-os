@@ -95,9 +95,11 @@ class BitwiseTests(unittest.TestCase):
         self.reject('<print value="(1 == 1) | 3"/>', "integer|bitwise")
 
     def test_unsupported_ops_remain_rejected(self):
-        for expr in ("1 / 0", "1 // 2", "2 ** 3", "8 % 3", "3 @ 2"):
+        for expr in ("1 // 2", "2 ** 3", "3 @ 2"):
             with self.subTest(expr=expr):
                 self.reject(f'<print value="{expr}"/>', "unsupported")
+        # Integer / and % are supported; literal-zero operands still fail.
+        self.reject('<print value="1 / 0"/>', "zero literal")
 
     def test_boolean_operators_must_use_comparisons(self):
         self.reject('<if test="1 and 2"><print>x</print></if>', "boolean operators require")

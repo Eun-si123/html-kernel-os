@@ -59,6 +59,28 @@ def compile_html(source: str, *, target: str = "kernel") -> str:
             "  (void)putchar((int)v); /* Linux userspace stdout, NOT port I/O */",
             "}",
         ]
+    # Division and remainder must never invoke C undefined behavior. The
+    # fault path is target-specific and deliberately does not silently return.
+    if target == "kernel":
+        lines += [
+            "static inline __attribute__((noreturn)) void htmlk_divide_by_zero(void) {",
+            "  const unsigned char msg[] = \"HTMLK_DIVIDE_BY_ZERO\\n\";",
+            "  for (uint64_t i = 0; i < sizeof(msg) - 1; ++i) outb(msg[i]);",
+            "#ifdef HTMLK_QEMU_TEST_EXIT",
+            "  io_outb(0xf4, 0x11); /* QEMU failure exit, never success */",
+            "#endif",
+            '  __asm__ volatile ("cli");',
+            '  for (;;) __asm__ volatile ("hlt");',
+            "}",
+        ]
+    else:
+        lines += [
+            "#include <stdlib.h>",
+            "static inline __attribute__((noreturn)) void htmlk_divide_by_zero(void) {",
+            '  (void)fputs("HTMLK_DIVIDE_BY_ZERO\\n", stderr);',
+            "  exit(65);",
+            "}",
+        ]
     lines.extend(c_helpers())
     if contains_numeric_print:
         lines += [
