@@ -419,6 +419,33 @@
         "scripts/test_m5_user_fault_recovery.py",
         "docs/M5_USER_FAULT_RECOVERY.md"
       ]
+    },
+    {
+      "id": "m5-x2apic-user-timeout",
+      "source": [
+        "boot/user_timeout.h",
+        "boot/user_timeout.c",
+        "boot/user_timeout_frame.h",
+        "boot/user_timeout_frame.c",
+        "boot/user_preempt_switch.S",
+        "boot/user_probe.c",
+        "boot/user_probe.h",
+        "boot/user_entry.S",
+        "boot/exception_idt.c",
+        "boot/serial_console.c",
+        "scripts/build_boot.py",
+        "scripts/run_m5_console.py",
+        "examples/user-programs/spin.S"
+      ],
+      "regressions": [
+        "tests/test_user_timeout_frame.py",
+        "tests/test_console_runner.py"
+      ],
+      "fieldEvidence": [
+        "tests/native/test_user_timeout_frame.c",
+        "scripts/test_m5_user_timeout.py",
+        "docs/M5_USER_TIMEOUT.md"
+      ]
     }
   ]
 }

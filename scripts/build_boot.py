@@ -86,7 +86,14 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
           user_loader: bool = False, user_app_source: Path | None = None,
           user_app_image: Path | None = None,
           interactive_run: bool = False,
-          user_fault_recover: bool = False) -> None:
+          user_fault_recover: bool = False,
+          user_timeout: bool = False,
+          user_timeout_mask: bool = False) -> None:
+    if user_timeout and not (user_fault_recover and interactive_run and
+                             exception_idt and tss_ist):
+        raise ValueError("M5-E2 requires full M5-E1 interactive mode")
+    if user_timeout_mask and not (user_timeout and test_exit):
+        raise ValueError("M5-E2 masked timer negative needs --test-exit")
     if user_fault_recover and not (interactive_run and exception_idt and tss_ist):
         raise ValueError("M5-E1 requires interactive run + exception IDT and TSS")
     if interactive_run:
@@ -153,6 +160,10 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
             define.extend(("-DHTMLK_M5_INTERACTIVE_RUN", "-DHTMLK_M5_SERIAL_CONSOLE"))
         if user_fault_recover:
             define.append("-DHTMLK_M5_USER_FAULT_RECOVER")
+        if user_timeout:
+            define.append("-DHTMLK_M5_USER_TIMEOUT")
+        if user_timeout_mask:
+            define.append("-DHTMLK_M5_USER_TIMEOUT_MASK")
         if romfs_probe:
             define.append("-DHTMLK_M5_ROMFS_PROBE")
         if romfs_console:
@@ -349,6 +360,8 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
                 sources.append("romfs")
             if user_fault_recover:
                 sources.append("user_fault_policy")
+            if user_timeout:
+                sources.extend(("user_timeout_frame", "user_timeout"))
             if task_probe:
                 sources.extend(("task_model", "task_runtime"))
             if timer_probe:
@@ -402,6 +415,10 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
                         run(sys.executable, ROOT / "scripts/build_user_image.py",
                             "--source", (user_app_source or ROOT / "examples/user-programs/hello.S").resolve(),
                             "--out", app_file)
+                    if user_timeout:
+                        run(sys.executable, ROOT / "scripts/build_user_image.py",
+                            "--source", ROOT / "examples/user-programs/spin.S",
+                            "--out", app_dir / "spin.hke")
                     if user_fault_recover:
                         for dest, source in (
                             ("fault-io.hke", "privileged-io.S"),
@@ -432,6 +449,12 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
                 obj = build_dir / "user_entry.o"
                 run("gcc", "-c", "-m64", "-fno-pie", "-fno-pic",
                     *define, ROOT / "boot/user_entry.S", "-o", obj)
+                extra_objects.append(obj)
+            if user_timeout:
+                # One-vCPU M5-E2 reuses the proven M4-D 15-GPR IRQ/IRET ABI.
+                obj = build_dir / "m5_timeout_irq.o"
+                run("gcc", "-c", "-m64", "-fno-pie", "-fno-pic",
+                    *define, ROOT / "boot/user_preempt_switch.S", "-o", obj)
                 extra_objects.append(obj)
             if user_preempt:
                 for name in ("user_preempt_switch", "user_preempt_payload"):
@@ -570,6 +593,10 @@ def main() -> None:
                         help="M5-C1 prebuilt HKEX file (guest validates integrity/format)")
     parser.add_argument("--user-fault-recover", action="store_true",
                         help="M5-E1 guarded real CPL3 #PF/#GP/#UD recovery to UART prompt")
+    parser.add_argument("--user-timeout", action="store_true",
+                        help="M5-E2 actual x2APIC IRQ finite Ring3 execution budget")
+    parser.add_argument("--user-timeout-mask", action="store_true",
+                        help="M5-E2 negative: masked real timer leaves nonyielding Ring3 spinning")
     parser.add_argument("--romfs-run-console", action="store_true",
                         help="M5-D1 interactive COM1 run /apps/hello.hke in actual CPL3")
     parser.add_argument("--romfs-probe", action="store_true",
@@ -581,6 +608,11 @@ def main() -> None:
     parser.add_argument("--romfs-root", type=Path, default=ROOT / "examples/romfs",
                         help="Trusted ROMFS input (16 files, up to 4KiB each)")
     a = parser.parse_args()
+    if a.user_timeout and not (a.user_fault_recover and a.romfs_run_console and
+                               a.exception_idt and a.tss_ist):
+        parser.error("M5-E2 needs --user-fault-recover plus interactive IDT/TSS")
+    if a.user_timeout_mask and not (a.user_timeout and a.test_exit):
+        parser.error("M5-E2 timer masking requires --user-timeout --test-exit")
     if a.user_fault_recover and not (a.romfs_run_console and
                                       a.exception_idt and a.tss_ist):
         parser.error("M5-E1 needs --romfs-run-console --exception-idt --tss-ist")
@@ -732,7 +764,8 @@ def main() -> None:
           a.romfs_probe, a.romfs_negative, a.romfs_root,
           a.romfs_console, a.user_loader_probe,
           a.user_app_source, a.user_app_image,
-          a.romfs_run_console, a.user_fault_recover)
+          a.romfs_run_console, a.user_fault_recover,
+          a.user_timeout, a.user_timeout_mask)
 
 
 if __name__ == "__main__":

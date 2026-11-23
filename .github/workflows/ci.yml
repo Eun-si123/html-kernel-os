@@ -132,6 +132,10 @@ jobs:
         run: python -m unittest tests.test_user_fault_policy tests.test_console_runner -v
       - name: Run M5-E1 genuine CPL3 exceptions, reclaim, shell continuation and negative syscalls in QEMU
         run: python scripts/test_m5_user_fault_recovery.py
+      - name: Guard M5-E2 actual Ring3 x2APIC timer frames with UBSan O0/O3
+        run: python -m unittest tests.test_user_timeout_frame tests.test_console_runner -v
+      - name: Native QEMU M5-E2 nonyielding CPL3 timeout, surviving UART shell and masked timer negatives
+        run: python scripts/test_m5_user_timeout.py
       - name: Assemble standalone, non-test boot images
         run: |
           python scripts/build_boot.py --out build/html-kernel.iso

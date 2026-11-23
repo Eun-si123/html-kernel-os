@@ -51,6 +51,30 @@ class ConsoleRunnerTests(unittest.TestCase):
         for flag in ("--user-loader-probe","--romfs-console","--user-preempt-probe"):
             self.assertNotIn(flag,cmd)
 
+    def test_real_x2apic_timeout_requires_fault_recovery_and_uses_safe_qemu(self):
+        with self.assertRaisesRegex(ValueError,"fault recovery"):
+            build_command(Path("unsafe.iso"),ROOT/"examples/romfs",user_timeout=True)
+        cmd=build_command(Path("timeout.iso"),ROOT/"examples/romfs",
+                          with_user_program=True,recover_user_faults=True,
+                          user_timeout=True)
+        for required in ("--user-timeout","--user-fault-recover",
+                         "--romfs-run-console","--exception-idt","--tss-ist"):
+            self.assertIn(required,cmd)
+        qemu=qemu_command(Path("timeout.iso"),Path("debug.log"),user_timeout=True)
+        self.assertEqual(qemu[qemu.index("-cpu")+1],"qemu64,+x2apic")
+        self.assertEqual(qemu[qemu.index("-smp")+1],"1")
+        self.assertEqual(qemu[qemu.index("-net")+1],"none")
+        for blocked in ("-hda","-drive","-usb","-netdev"):
+            self.assertNotIn(blocked,qemu)
+
+    def test_timeout_manual_cli_fails_closed_without_recovery(self):
+        with patch("sys.stdin.isatty",return_value=True), \
+             patch("sys.stdout.isatty",return_value=True):
+            with contextlib.redirect_stderr(io.StringIO()):
+                with self.assertRaises(SystemExit) as raised:
+                    main(["--user-timeout","--with-user-program"])
+                self.assertEqual(raised.exception.code,2)
+
     def test_requires_interactive_tty_without_building(self):
         with patch("sys.stdin.isatty", return_value=False):
             with patch("subprocess.run") as proc:

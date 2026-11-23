@@ -112,6 +112,11 @@ static void run_program(const char *path) {
     send_text("M5_RUN_START "); send_text(path); send_text("\n");
     htmlk_m5_user_run(path, program_map, program_hhdm);
 #ifdef HTMLK_M5_USER_FAULT_RECOVER
+#ifdef HTMLK_M5_USER_TIMEOUT
+    if (htmlk_m5_user_last_timed_out())
+        send_text("M5_ERR_USER_TIMEOUT\n");
+    else
+#endif
     if (htmlk_m5_user_last_faulted())
         send_text("M5_ERR_USER_FAULT\n");
     else if (htmlk_m5_user_last_bad_syscall())

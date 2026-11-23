@@ -7,6 +7,11 @@
 #include "user_image.h"
 #ifdef HTMLK_M5_USER_FAULT_RECOVER
 #include "user_fault_policy.h"
+#ifdef HTMLK_M5_USER_TIMEOUT
+#include "user_timeout.h"
+#include "user_timeout_frame.h"
+#include "tss_ist.h"
+#endif
 #endif
 #endif
 #include <stdbool.h>
@@ -28,6 +33,9 @@ static const char *selected_app_path;
 #ifdef HTMLK_M5_USER_FAULT_RECOVER
 static volatile bool user_faulted;
 static volatile bool user_bad_syscall;
+#ifdef HTMLK_M5_USER_TIMEOUT
+static volatile bool user_timed_out;
+#endif
 #endif
 #endif
 static void log_decimal(uint32_t number) {
@@ -248,10 +256,16 @@ void htmlk_m4_user_probe(const struct limine_memmap_response *map,
 #ifdef HTMLK_M5_USER_FAULT_RECOVER
     user_faulted = false;
     user_bad_syscall = false;
+#ifdef HTMLK_M5_USER_TIMEOUT
+    user_timed_out = false;
+#endif
 #endif
     log_text("M5_C_USER_PAGES_READY\n");
 #else
     log_text("M4_USER_PAGE_TABLES_READY\n");
+#endif
+#ifdef HTMLK_M5_USER_TIMEOUT
+    htmlk_m5_timeout_start();
 #endif
     const uint64_t user_root = frames[0];
     __asm__ volatile ("mov %0, %%cr3" : : "r"(user_root) : "memory");
@@ -259,14 +273,27 @@ void htmlk_m4_user_probe(const struct limine_memmap_response *map,
                          HTMLK_M4_USER_STACK - 16U, user_cs, user_ss);
     /* Reached only via the explicit syscall-1 return path. */
     __asm__ volatile ("cli" ::: "memory");
+#ifdef HTMLK_M5_USER_TIMEOUT
+    htmlk_m5_timeout_stop();
+#endif
     uint64_t restored_cr3;
     __asm__ volatile ("mov %%cr3,%0" : "=r"(restored_cr3));
     if (
 #ifdef HTMLK_M5_USER_FAULT_RECOVER
         (user_faulted && user_bad_syscall) ||
-        (!user_faulted && !user_bad_syscall &&
-         (!syscall_seen || !user_exited || !user_reported)) ||
-        ((user_faulted || user_bad_syscall) && user_exited) ||
+#ifdef HTMLK_M5_USER_TIMEOUT
+        (user_timed_out && (user_faulted || user_bad_syscall)) ||
+#endif
+        (!user_faulted && !user_bad_syscall
+#ifdef HTMLK_M5_USER_TIMEOUT
+         && !user_timed_out
+#endif
+         && (!syscall_seen || !user_exited || !user_reported)) ||
+        ((user_faulted || user_bad_syscall
+#ifdef HTMLK_M5_USER_TIMEOUT
+          || user_timed_out
+#endif
+          ) && user_exited) ||
 #else
         !syscall_seen || !user_exited ||
 #ifdef HTMLK_M5_USER_LOADER
@@ -285,6 +312,10 @@ void htmlk_m4_user_probe(const struct limine_memmap_response *map,
         reject("M4_USER_FRAME_LEAK\n");
 #ifdef HTMLK_M5_USER_LOADER
 #ifdef HTMLK_M5_USER_FAULT_RECOVER
+#ifdef HTMLK_M5_USER_TIMEOUT
+    if (user_timed_out) log_text("M5_E2_TIMEOUT_FRAMES_RECLAIMED\n");
+    else
+#endif
     if (user_faulted) log_text("M5_E_FAULT_FRAMES_RECLAIMED\n");
     else if (user_bad_syscall)
         log_text("M5_E_BAD_SYSCALL_FRAMES_RECLAIMED\n");
@@ -300,6 +331,29 @@ void htmlk_m4_user_probe(const struct limine_memmap_response *map,
 #ifdef HTMLK_M5_USER_FAULT_RECOVER
 bool htmlk_m5_user_last_faulted(void) { return user_faulted; }
 bool htmlk_m5_user_last_bad_syscall(void) { return user_bad_syscall; }
+#ifdef HTMLK_M5_USER_TIMEOUT
+bool htmlk_m5_user_last_timed_out(void) { return user_timed_out; }
+bool htmlk_m5_timeout_irq_context_valid(const struct htmlk_m4_d1_irq_frame *f) {
+    if (!selected_app_path || user_faulted || user_bad_syscall ||
+        user_timed_out || user_exited || frames_registry.live != 6U ||
+        !htmlk_m4_saved_main_rsp || !htmlk_m4_saved_cr3 ||
+        frames[0] == htmlk_m4_saved_cr3) return false;
+    uint64_t current;
+    __asm__ volatile("mov %%cr3,%0":"=r"(current));
+    const uint64_t rsp0=htmlk_tss_rsp0();
+    if ((rsp0 >> 48)!=UINT64_C(0xffff) ||
+        (rsp0 & (UINT64_C(1)<<47))==0) return false;
+    return htmlk_m5_timeout_frame_valid(f,rsp0,
+                                         user_code_length,current,frames[0]);
+}
+__attribute__((noreturn)) void htmlk_m5_timeout_expire(void) {
+    if (user_faulted || user_bad_syscall || user_timed_out || user_exited ||
+        frames_registry.live != 6U) reject("M5_E2_BAD_TIMEOUT_STATE\n");
+    user_timed_out = true;
+    log_text("M5_E2_CPL3_TIMEOUT\n");
+    htmlk_m4_user_return();
+}
+#endif
 
 bool htmlk_m5_accept_user_fault(unsigned vector, uint64_t rip,
                                 uint64_t cs, uint64_t flags,

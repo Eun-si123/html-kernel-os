@@ -32,7 +32,7 @@ def build(source: Path, dest: Path, root: Path, cache: Path,
 
 
 def exercise(iso: Path, instructions: list[tuple[bytes, bytes]], expected_html: bytes,
-             *, idle: bool = False) -> tuple[bytes, bytes]:
+             *, idle: bool = False, cpu: str | None = None) -> tuple[bytes, bytes]:
     with tempfile.TemporaryDirectory(prefix="m5-d-serial-") as temporary:
         debug = Path(temporary) / "debugcon.log"
         command = ["qemu-system-x86_64", "-M", "q35", "-m", "256M",
@@ -41,6 +41,8 @@ def exercise(iso: Path, instructions: list[tuple[bytes, bytes]], expected_html: 
                    "-debugcon", f"file:{debug}",
                    "-global", "isa-debugcon.iobase=0xe9",
                    "-device", "isa-debug-exit,iobase=0xf4,iosize=0x04", "-no-reboot"]
+        if cpu is not None:
+            command.extend(("-cpu",cpu))
         guest = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE)
         def current() -> bytes:

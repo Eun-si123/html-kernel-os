@@ -1,6 +1,6 @@
 # M5-E1 — guarded real CPL3 CPU fault recovery back to live UART shell
 
-**Status:** opt-in, local x86-64 BIOS QEMU/host UBSan proof PASS. Exact PR-head GitHub Actions/security and merge are **not yet verified**. This is bounded recovery for a *known active* Ring3 application, not safe execution of arbitrary untrusted code or the full M5-E timer budget.
+**Status:** opt-in x86-64 BIOS QEMU/host UBSan proof PASS, PR #77 merged as `923f353`; subsequent invalid syscall handling PR #78 merged as `881ea55` after exact-head GitHub CI and Gitleaks PASS. This is bounded recovery for a *known active* Ring3 application, not safe execution of arbitrary untrusted code or the full M5-E timer budget.
 
 ## Reproduce
 

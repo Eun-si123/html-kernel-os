@@ -39,3 +39,5 @@ Start with [AGENTS.md](../AGENTS.md) for AI collaborators and [README.md](../REA
 - GitHub Issues and PRs own the live work backlog and review discussion.
 
 When a feature changes, update the **one authoritative** owner, then fix any contradictory status references. Historical snapshots must stay historical. Run `python3 scripts/check_docs.py` and `python3 scripts/roadmap.py --check` after roadmap/documentation edits. Agents can request a read-only plan via `python3 scripts/roadmap.py --json`.
+
+- [M5-E2 real Ring3 x2APIC timeout and UART shell survival](M5_USER_TIMEOUT.md).
