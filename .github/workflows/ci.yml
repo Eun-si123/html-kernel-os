@@ -152,6 +152,8 @@ jobs:
         run: python scripts/test_m5_html_multi_report.py
       - name: M5-E3 guarded terminal INT80 user code-end exit and bad syscall, real QEMU
         run: python scripts/test_m5_user_syscall_eof.py
+      - name: M5-E3-D real x2APIC ISR with poisoned Ring3 RSP, safe process reclaim and live HTML UART
+        run: python scripts/test_m5_user_bad_irq.py
       - name: M5-F4 real QEMU HTML user exit 0/7/255, invalid exit, EOF and timer recovery
         run: python scripts/test_m5_html_exit_status.py
       - name: Assemble standalone, non-test boot images

@@ -21,6 +21,8 @@ uint8_t htmlk_m5_user_last_exit_status(void);
 struct htmlk_m4_d1_irq_frame;
 bool htmlk_m5_user_last_timed_out(void);
 bool htmlk_m5_timeout_irq_context_valid(const struct htmlk_m4_d1_irq_frame *frame);
+/* Distinct proof for correctly owned *but malformed* user IRQ frames. */
+bool htmlk_m5_timeout_irq_origin_owned(const struct htmlk_m4_d1_irq_frame *frame);
 __attribute__((noreturn)) void htmlk_m5_timeout_expire(void);
 #endif
 bool htmlk_m5_accept_user_fault(unsigned vector, uint64_t rip,

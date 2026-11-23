@@ -272,6 +272,8 @@ For Ubuntu with QEMU and GCC, run `python3 scripts/run_m5_console.py --with-user
 
 **M5-E3-C guarded user syscall frame (experimental):** a separate Ring3 HKEX program can deliberately corrupt its own RSP before `INT 0x80`; only an independently verified live user owner/privilege/TSS/CR3 context permits per-program retirement. The COM1 prompt and next HTML-compiled user program survive. Run `python3 scripts/test_m5_user_syscall_frame.py` for genuine CPU/COM1 QEMU and pre-fix fail-stop comparison; [exact limits](docs/M5_USER_SYSCALL_FRAME.md). This is not full untrusted-program safety.
 
+**M5-E3-D malformed user stack during timer IRQ (opt-in):** a recognized Ring3 program that clobbers its own stack pointer and spins can now be retired through an actual x2APIC interrupt **without killing the COM1 shell**, but only after an independent trusted TSS/CR3/owner context proof. Existing normal four-tick preemption and unsupported CPU fail-stop are preserved. `python3 scripts/test_m5_user_bad_irq.py` runs three entire QEMU boots with 12 corrupt-stack task terminations and 15 separately HTML-compiled text user program reruns; [exact limitations](docs/M5_USER_BAD_IRQ.md). This remains experimental QEMU-only code.
+
 ### M5-F4 — read a user program's exit code
 
 A trusted HTML user program can finish with `<halt code="7"/>` (ASCII decimal `0..255`). Compile it using `python3 scripts/run_m5_console.py --html-user-app path/to/user.html`, then enter `run /apps/hello.hke` on QEMU COM1. After private Ring3 task cleanup, status `0` keeps `M5_RUN_DONE`; status `7` prints `M5_RUN_EXIT_CODE=7`. Bad or out-of-range exit statuses are rejected without killing the guarded UART shell. [Exact QEMU tests and limitations](docs/M5_HTML_EXIT_STATUS.md).

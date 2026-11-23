@@ -53,5 +53,6 @@ Do not introduce a long-running agent service, database, or synthetic feature co
 - `boot/user_syscall_policy.{h,c}`: M5-E3-C pure owned Ring3 INT80 provenance guard (TSS.RSP0, CR3, selectors, six-frame ownership) for per-program abort of malformed saved user RSP/RIP, without dereferencing them; `tests/test_user_syscall_policy.py` host UBSan and `scripts/test_m5_user_syscall_frame.py` native QEMU proof; [contract](docs/M5_USER_SYSCALL_FRAME.md).
 
 - `boot/user_probe.c`, `scripts/test_m5_user_syscall_eof.py`: opt-in M5-E3 valid last-instruction Ring3 `INT 0x80` exit and per-task rejection of nonterminating final syscalls; actual QEMU native checks and legacy fail-stop; [contract](docs/M5_USER_SYSCALL_EOF.md).
+- `boot/user_timeout.c`, `boot/user_probe.c`, `boot/user_syscall_policy.c`: opt-in M5-E3-D x2APIC actual CPU IRQ invalid-user-RSP ownership fallback; `scripts/test_m5_user_bad_irq.py` repeats real QEMU CPU delivery and live HTML text HKEX runs; [contract](docs/M5_USER_BAD_IRQ.md).
 
 - M5-F4 bounded HTML user exit status: `compiler/language.py` / `compiler/htmlk.py` final `<halt code>` validation, `boot/user_probe.c` guarded syscall-1 exit status, `boot/serial_console.c` post-reclaim COM1 output, `scripts/test_m5_html_exit_status.py` actual QEMU acceptance; [evidence](docs/M5_HTML_EXIT_STATUS.md).

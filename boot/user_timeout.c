@@ -82,9 +82,21 @@ void htmlk_m5_timeout_stop(void) {
 }
 struct htmlk_m4_d1_irq_frame *htmlk_m4_d1_on_irq(
     struct htmlk_m4_d1_irq_frame *frame) {
-    if (!timer_active ||
-        !htmlk_m5_timeout_irq_context_valid(frame))
+    if (!timer_active) fail("M5_E2_UNTRUSTED_RING3_IRQ_CONTEXT\n");
+    if (!htmlk_m5_timeout_irq_context_valid(frame)) {
+        /* A genuinely owned Ring3 task may smash its own RIP/RSP then
+         * spin forever. This is *user* corruption, not kernel corruption.
+         * Retire the task only after an independent exact TSS/RSP0,
+         * privilege, original CR3/stack and owner-registry proof; never
+         * dereference the faulty user RSP or attempt to IRET through it.
+         * Unexpected CPL0/wrong-CR3/stale/unowned interrupts stay fatal. */
+        if (htmlk_m5_timeout_irq_origin_owned(frame)) {
+            log_text("M5_E3_USER_IRQ_FRAME_INVALID\n");
+            write_msr(APIC_EOI,0U); /* actual IRQ accepted before abort */
+            htmlk_m5_timeout_expire();
+        }
         fail("M5_E2_UNTRUSTED_RING3_IRQ_CONTEXT\n");
+    }
     if (++ticks > TICKS_ALLOWED)
         fail("M5_E2_TICK_BUDGET_OVERFLOW\n");
     if (ticks == 1U) log_text("M5_E2_REAL_USER_IRQ_1\n");

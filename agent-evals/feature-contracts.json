@@ -447,7 +447,8 @@
         "boot/serial_console.c",
         "scripts/build_boot.py",
         "scripts/run_m5_console.py",
-        "examples/user-programs/spin.S"
+        "examples/user-programs/spin.S",
+        "boot/user_syscall_policy.c"
       ],
       "regressions": [
         "tests/test_user_timeout_frame.py",
@@ -458,7 +459,9 @@
         "scripts/test_m5_user_timeout.py",
         "docs/M5_USER_TIMEOUT.md",
         "scripts/test_m5_process_lifecycle_stress.py",
-        "docs/M5_PROCESS_LIFECYCLE_STRESS.md"
+        "docs/M5_PROCESS_LIFECYCLE_STRESS.md",
+        "scripts/test_m5_user_bad_irq.py",
+        "docs/M5_USER_BAD_IRQ.md"
       ]
     },
     {
