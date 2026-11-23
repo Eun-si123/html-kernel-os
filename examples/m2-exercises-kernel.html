@@ -1,0 +1,49 @@
+<!-- Five constant-input beginner exercises, independently run on Linux and BIOS QEMU. -->
+<kernel arch="x86_64">
+  <function name="factorial" params="n:u64" returns="u64">
+    <let name="product" type="u64" value="1"/>
+    <while test="n &gt; 1" max="8">
+      <set name="product" value="product * n"/>
+      <set name="n" value="n - 1"/>
+    </while>
+    <return value="product"/>
+  </function>
+  <onboot>
+    <print>M2 tasks</print>
+    <!-- 1: operator precedence -->
+    <print value="2 + 3 * 4"/>
+    <!-- 2: summation via typed variables and a bounded loop -->
+    <let name="i" type="u64" value="1"/>
+    <let name="total" type="u64" value="0"/>
+    <while test="i &lt;= 5" max="6">
+      <set name="total" value="total + i"/>
+      <set name="i" value="i + 1"/>
+    </while>
+    <print value="total"/>
+    <!-- 3: pure function with loop and return -->
+    <print value="factorial(5)"/>
+    <!-- 4: signed comparison and both branches -->
+    <let name="signed" type="i64" value="-7"/>
+    <if test="signed &lt; 0">
+      <print>negative</print>
+      <else><print>positive</print></else>
+    </if>
+    <!-- 5: find the maximum using checked array reads -->
+    <array name="items" type="u64" length="4"/>
+    <store name="items" index="0" value="4"/>
+    <store name="items" index="1" value="12"/>
+    <store name="items" index="2" value="9"/>
+    <store name="items" index="3" value="3"/>
+    <let name="best" type="u64" value="items[0]"/>
+    <let name="j" type="u64" value="1"/>
+    <while test="j &lt; 4" max="4">
+      <if test="items[j] &gt; best">
+        <set name="best" value="items[j]"/>
+      </if>
+      <set name="j" value="j + 1"/>
+    </while>
+    <print value="best"/>
+    <print>M2 PASS</print>
+    <halt/>
+  </onboot>
+</kernel>

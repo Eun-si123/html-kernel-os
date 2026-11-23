@@ -1,0 +1,24 @@
+<kernel arch="x86_64">
+  <function name="sum_local" params="" returns="u64">
+    <array name="cells" type="u64" length="3"/>
+    <store name="cells" index="0" value="5"/>
+    <store name="cells" index="1" value="cells[0] + 7"/>
+    <return value="cells[0] + cells[1] + cells[2]"/>
+  </function>
+  <onboot>
+    <print>Checked array native!</print>
+    <array name="items" type="u64" length="4"/>
+    <let name="i" type="u64" value="0"/>
+    <while test="i &lt; 4" max="4">
+      <store name="items" index="i" value="i * 3"/>
+      <set name="i" value="i + 1"/>
+    </while>
+    <print value="items[0]"/>
+    <print value="items[1]"/>
+    <print value="items[2]"/>
+    <print value="items[3]"/>
+    <print value="sum_local()"/>
+    <print>array PASS</print>
+    <halt/>
+  </onboot>
+</kernel>

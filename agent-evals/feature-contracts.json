@@ -21,7 +21,8 @@
         "tests/test_bitwise.py",
         "tests/test_loop_control.py",
         "tests/test_while.py",
-        "tests/test_division.py"
+        "tests/test_division.py",
+        "tests/test_arrays.py"
       ],
       "fieldEvidence": [
         "docs/VALIDATION.md",
@@ -36,7 +37,9 @@
         "scripts/test_integer_oracle.py",
         "scripts/test_while.py",
         "scripts/test_division.py",
-        "scripts/test_division_oracle.py"
+        "scripts/test_division_oracle.py",
+        "scripts/test_arrays.py",
+        "scripts/test_m2_gate.py"
       ]
     },
     {

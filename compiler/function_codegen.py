@@ -10,13 +10,13 @@ from collections import Counter
 if __package__:
     from .language import (
         FunctionDef, MAX_FUNCTION_DEPTH, MAX_RUNTIME_STEPS,
-        expression, fail, validate_name,
+        expression, fail, validate_name, array_code, array_details,
     )
     from .numeric_types import c_type
 else:
     from language import (
         FunctionDef, MAX_FUNCTION_DEPTH, MAX_RUNTIME_STEPS,
-        expression, fail, validate_name,
+        expression, fail, validate_name, array_code, array_details,
     )
     from numeric_types import c_type
 
@@ -102,11 +102,34 @@ def compile_functions(functions: dict[str, FunctionDef]) -> tuple[list[str], dic
                     ctype = c_type(typ)
                     code.extend((f"{pad}{ctype} {symbol} = {value};",
                                  f"{pad}(void){symbol};"))
+                elif node.tag == "array":
+                    name = validate_name(node)
+                    if name in scopes[-1]:
+                        fail(node, f"variable {name!r} already declared in this scope")
+                    typ = node.attrs["type"]
+                    size = int(node.attrs["length"])
+                    symbol = f"htmlk_local_{fn.name}_{bindings}"
+                    bindings += 1
+                    scopes[-1][name] = symbol
+                    type_scopes[-1][name] = array_code(typ, size)
+                    code.extend((f"{pad}{c_type(typ)} {symbol}[{size}] = {{0}};",
+                                 f"{pad}(void){symbol};"))
+                elif node.tag == "store":
+                    name = validate_name(node)
+                    detail = array_details(resolve_types().get(name, ""))
+                    if detail is None:
+                        fail(node, f"undefined array {name!r}; declare <array> first")
+                    element, _ = detail
+                    location = checked(f"{name}[{node.attrs['index']}]", expected_type=element)
+                    value = checked(node.attrs["value"], expected_type=element)
+                    code.append(f"{pad}{location} = {value};")
                 elif node.tag == "set":
                     name = validate_name(node)
                     variables = resolve()
                     if name not in variables:
                         fail(node, f"undefined variable {name!r}")
+                    if array_details(resolve_types()[name]) is not None:
+                        fail(node, f"array {name!r} requires an indexed element; use <store>")
                     code.append(f"{pad}{variables[name]} = "
                                 f"{checked(node.attrs['value'], expected_type=resolve_types()[name])};")
                 elif node.tag == "if":
