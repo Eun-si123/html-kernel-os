@@ -60,6 +60,8 @@ jobs:
         run: python scripts/test_division.py
       - name: Verify checked arrays in Linux and actual BIOS QEMU, including OOB failures
         run: python scripts/test_arrays.py
+      - name: Verify M2 five representative beginner tasks in Linux and QEMU
+        run: python scripts/test_m2_gate.py
       - name: Assemble standalone, non-test boot images
         run: |
           python scripts/build_boot.py --out build/html-kernel.iso
@@ -72,6 +74,7 @@ jobs:
           python scripts/build_boot.py --source examples/while-kernel.html --out build/html-kernel-while.iso
           python scripts/build_boot.py --source examples/division-kernel.html --out build/html-kernel-division.iso
           python scripts/build_boot.py --source examples/array-kernel.html --out build/html-kernel-array.iso
+          python scripts/build_boot.py --source examples/m2-exercises-kernel.html --out build/html-kernel-m2-exercises.iso
       - uses: actions/upload-artifact@v4
         with:
           name: html-kernel-os-native-iso
@@ -96,3 +99,5 @@ jobs:
             build/html-kernel-division.elf
             build/html-kernel-array.iso
             build/html-kernel-array.elf
+            build/html-kernel-m2-exercises.iso
+            build/html-kernel-m2-exercises.elf
