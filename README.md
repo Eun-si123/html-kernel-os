@@ -86,6 +86,18 @@ python3 scripts/test_m5_html_user.py
 
 In the real QEMU COM1 shell, `run /apps/hello.hke` executes **independent HTML-derived machine code in Ring 3**, prints its numeric result and returns to the prompt with user frames reclaimed. This is a trusted build-time ROMFS application with **one unsigned numeric report (0..9999)**; it is not an HTML web page, nor a text/graphics API or a general ELF loader. See [M5-F1 native end-to-end contract](docs/M5_HTML_USER_PROGRAM.md).
 
+## Print a checked ASCII string from a real native HTML user app (M5-F2)
+
+The same HTML source format can now also write one **printable ASCII literal** through a carefully validated Ring3-to-kernel syscall: the kernel permits at most 96 bytes entirely inside the user's read-only code page, checks all bytes first, then sends them to the genuine guest COM1 UART (not a browser simulation). Try:
+
+```sh
+python3 scripts/run_m5_console.py --html-user-app examples/user-programs/html-message.html
+# In QEMU: run /apps/hello.hke, then help or exit
+python3 scripts/test_m5_html_user_text.py
+```
+
+A bad supervisor pointer, overflowing length, or terminal escape causes **that user program** to be terminated with `M5_ERR_USER_SYSCALL`; the live shell continues and can run a correct app again. This is build-time trusted ASCII, **not** arbitrary userspace pointer/string access, Unicode printing or general-purpose process security. The real QEMU + negative evidence is in [M5-F2 contract](docs/M5_HTML_USER_TEXT.md).
+
 ## Run a separate ROMFS user program in native Ring 3 (M5-C1)
 
 This opt-in test assembles `examples/user-programs/hello.S` into a small, checked `HKEX` executable and embeds it as `/apps/hello.hke` in the native kernel's immutable ROMFS. After bounded file validation the kernel loads **actual independent machine-code bytes** into a private CPL3 code page, checks register-only system calls, returns to generated HTML code and reclaims the user frames. To reproduce:

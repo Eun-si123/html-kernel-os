@@ -476,6 +476,32 @@
         "scripts/test_m5_interactive_run.py",
         "docs/M5_HTML_USER_PROGRAM.md"
       ]
+    },
+    {
+      "id": "m5-checked-user-text-syscall",
+      "source": [
+        "boot/user_text_policy.c",
+        "boot/user_text_policy.h",
+        "boot/user_probe.c",
+        "compiler/htmlk.py",
+        "scripts/build_html_user_image.py",
+        "scripts/user_program.ld",
+        "scripts/build_boot.py",
+        "examples/user-programs/html-message.html",
+        "examples/user-programs/bad-text-pointer.S",
+        "examples/user-programs/bad-text-length.S",
+        "examples/user-programs/bad-text-control.S"
+      ],
+      "regressions": [
+        "tests/test_html_user_text.py",
+        "tests/test_user_text_policy.py",
+        "tests/test_html_user_target.py"
+      ],
+      "fieldEvidence": [
+        "tests/native/test_user_text_policy.c",
+        "scripts/test_m5_html_user_text.py",
+        "docs/M5_HTML_USER_TEXT.md"
+      ]
     }
   ]
 }

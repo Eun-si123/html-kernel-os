@@ -5,6 +5,9 @@
 #ifdef HTMLK_M5_USER_LOADER
 #include "romfs.h"
 #include "user_image.h"
+#ifdef HTMLK_M5_USER_TEXT
+#include "user_text_policy.h"
+#endif
 #ifdef HTMLK_M5_USER_FAULT_RECOVER
 #include "user_fault_policy.h"
 #ifdef HTMLK_M5_USER_TIMEOUT
@@ -54,6 +57,15 @@ static void log_decimal(uint32_t number) {
 }
 #endif
 static uint64_t user_code_length;
+#ifdef HTMLK_M5_USER_TEXT
+static void user_text_emit_byte(uint8_t byte) {
+#ifdef HTMLK_M5_INTERACTIVE_RUN
+    htmlk_m5_console_byte(byte);
+#else
+    __asm__ volatile("outb %0,%1" :: "a"(byte), "Nd"((uint16_t)0xe9));
+#endif
+}
+#endif
 
 struct user_irq_frame {
     uint64_t r15,r14,r13,r12,r11,r10,r9,r8;
@@ -119,6 +131,24 @@ void htmlk_m4_syscall_dispatch(void *raw_frame) {
         log_text("\n");
         return;
     }
+#ifdef HTMLK_M5_USER_TEXT
+    if (id == 3U && syscall_seen && !user_reported && !user_exited &&
+        htmlk_m5_user_text_range(f->rdi, f->rsi, user_code_length)) {
+        const volatile uint8_t *text = (const volatile uint8_t *)(uintptr_t)f->rdi;
+        /* Validate *every byte* before printing, no partial prompt injection. */
+        bool printable = text[f->rsi-1U] == (uint8_t)'\n';
+        for (uint64_t i=0; printable && i+1U<f->rsi; ++i) {
+            const uint8_t byte = text[i];
+            if (byte < 32U || byte > 126U) printable=false;
+        }
+        if (printable) {
+            user_reported = true;
+            log_text("M5_F2_USER_TEXT=");
+            for (uint64_t i=0; i<f->rsi; ++i) user_text_emit_byte(text[i]);
+            return;
+        }
+    }
+#endif
 #endif
     if (id == 1U && f->rdi == 0U && syscall_seen && !user_exited
 #ifdef HTMLK_M5_USER_LOADER

@@ -44,3 +44,7 @@ The `user` backend never emits privileged OUTB, CLI or HLT for normal user-mode 
 ## Explicitly open
 
 Only one fixed-width, register-only numeric report is currently supported, with a maximum 4KiB user code page and one user stack page. No text printing or user pointers/copyin, arbitrary ELF/DLL loading, dynamically writable files, I/O privilege, FS/GS/FPU/SMP support, calibrated timer, UEFI/real device evidence, or general untrusted code execution. The native browser Boot Lab uses a **different M1 ISO** and was not modified in this slice. Further HTML usability and full M5-E3/F gates remain open.
+
+## Subsequent opt-in extension
+
+[M5-F2](M5_HTML_USER_TEXT.md) adds a separate bounded printable-ASCII user text-report syscall with a page-validated RO-code pointer. The numeric-only restriction above describes the original M5-F1 slice, not the entire later feature set.
