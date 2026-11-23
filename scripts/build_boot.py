@@ -66,7 +66,10 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
         kernel = build_dir / "kernel.elf"
         iso_root = build_dir / "iso_root"
         run(sys.executable, ROOT / "compiler/htmlk.py", source.resolve(), "--out", generated)
-        flags = ["-std=c11", "-O2", "-ffreestanding", "-fno-builtin",
+        # Deterministic guest ISA: hosted GCC may target BMI2 (SHLX),
+        # but baseline QEMU qemu64 deliberately lacks that extension.
+        flags = ["-std=c11", "-O2", "-march=x86-64", "-mtune=generic",
+                 "-mno-bmi2", "-ffreestanding", "-fno-builtin",
                  "-fno-stack-protector", "-fno-pie", "-fno-pic", "-fno-common",
                  "-mno-red-zone", "-mcmodel=kernel", "-mgeneral-regs-only",
                  "-fcf-protection=none", "-Wall", "-Wextra", "-Werror"]
