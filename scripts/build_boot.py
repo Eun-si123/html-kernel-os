@@ -59,7 +59,8 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
           exception_idt: bool = False, fault_test: str | None = None,
           paging_probe: bool = False, paging_fault_test: bool = False,
           paging_recover_test: bool = False, owned_frame_test: bool = False,
-          tss_ist: bool = False, double_fault_test: bool = False) -> None:
+          tss_ist: bool = False, double_fault_test: bool = False,
+          multi_page_test: bool = False, multi_page_fault_test: bool = False) -> None:
     dist, header = get_limine(cache)
     work_root.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="htmlk-boot-", dir=work_root) as temp:
@@ -78,6 +79,16 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
                  "-mno-red-zone", "-mcmodel=kernel", "-mgeneral-regs-only",
                  "-fcf-protection=none", "-Wall", "-Wextra", "-Werror"]
         define = ["-DHTMLK_QEMU_TEST_EXIT"] if test_exit else []
+        if multi_page_test and not paging_probe:
+            raise ValueError("multi-page test requires paging probe")
+        if multi_page_fault_test and not (multi_page_test and exception_idt and test_exit):
+            raise ValueError("multi-page fault test requires mapping, IDT and test-exit")
+        if multi_page_fault_test and paging_recover_test:
+            raise ValueError("multi-page revocation and recovery tests are exclusive")
+        if multi_page_test:
+            define.append("-DHTMLK_M3_MULTI_PAGE_TEST")
+        if multi_page_fault_test:
+            define.append("-DHTMLK_M3_MULTI_PAGE_FAULT_TEST")
         if tss_ist and not exception_idt:
             raise ValueError("TSS/IST needs an installed exception IDT")
         if double_fault_test and not (tss_ist and exception_idt and test_exit):
@@ -205,8 +216,18 @@ def main() -> None:
     parser.add_argument("--tss-ist", action="store_true",
                         help="Opt-in x86-64 GDT/TSS IST1 #DF and IST2 #PF stacks; needs IDT")
     parser.add_argument("--double-fault-test", action="store_true",
-                        help="Test-only corrupted RSP -> real #DF; requires IDT/TSS/test-exit")
+                        help="Test-only corrupted IST2 -> real #DF; requires IDT/TSS/test-exit")
+    parser.add_argument("--multi-page-test", action="store_true",
+                        help="Opt-in M3 three extra private 4KiB aliases and reclaimed frames")
+    parser.add_argument("--multi-page-fault-test", action="store_true",
+                        help="Real #PF after reclaiming additional page; needs IDT and test-exit")
     a = parser.parse_args()
+    if a.multi_page_test and not a.paging_probe:
+        parser.error("--multi-page-test requires --paging-probe")
+    if a.multi_page_fault_test and not (a.multi_page_test and a.exception_idt and a.test_exit):
+        parser.error("--multi-page-fault-test requires --multi-page-test, --exception-idt and --test-exit")
+    if a.multi_page_fault_test and a.paging_recover_test:
+        parser.error("--multi-page-fault-test conflicts with --paging-recover-test")
     if a.tss_ist and not a.exception_idt:
         parser.error("--tss-ist requires --exception-idt")
     if a.double_fault_test and not (a.tss_ist and a.exception_idt and a.test_exit):
@@ -232,7 +253,8 @@ def main() -> None:
           a.video_console, a.video_test, a.exception_idt, a.fault_test,
           a.paging_probe, a.paging_fault_test,
           a.paging_recover_test, a.owned_frame_test,
-          a.tss_ist, a.double_fault_test)
+          a.tss_ist, a.double_fault_test,
+          a.multi_page_test, a.multi_page_fault_test)
 
 
 if __name__ == "__main__":
