@@ -37,9 +37,9 @@ static void failed(const char *marker) {
 }
 
 #ifdef HTMLK_M3_PAGING_RECOVER_TEST
-static struct htmlk_frame_registry *recovery_registry;
-static volatile uint64_t *recovery_table;
-static uint64_t recovery_cr3_phys, recovery_hhdm;
+static struct htmlk_frame_registry * volatile recovery_registry;
+static volatile uint64_t * volatile recovery_table;
+static volatile uint64_t recovery_cr3_phys, recovery_hhdm;
 static volatile uint64_t recovery_frame;
 /* The handler changes these asynchronously across a faulting volatile load.
  * A compiler must re-read them after architectural iretq. */
@@ -171,6 +171,9 @@ void htmlk_paging_probe(const struct limine_memmap_response *map,
     recovery_count = 0;
     recovery_frame = 0;
     recovery_armed = true;
+    /* The known CPU fault is asynchronous to normal C control flow.
+     * Make all ISR-shared state globally observable before the first read. */
+    __asm__ volatile ("" : : : "memory");
     /* This actual CPU load #PFs. The IDT installs one zeroed DATA page,
      * iretq retries the load, and execution resumes with value zero. */
     const uint64_t zero = *virtual_alias;
