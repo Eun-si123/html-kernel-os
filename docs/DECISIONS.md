@@ -17,6 +17,9 @@ Only user-confirmed decisions belong under **Confirmed**. Proposals are not blan
 
 ## Proposals / not yet authorizations
 
+- **M3 private x86-64 page table experiment (PR #41):** accept only one reserved canonical PML4 slot in a newly allocated private root; leave Limine's original table immutable. Use five USABLE 4KiB frames, supervisor-only PTEs and a host+QEMU invalid-mapping check. General memory managers, process memory protection, TSS/IST and boot-on-real-PC remain future decisions. No automatic enabling of this probe in default kernels.
+
+
 - **M3 CPU exception semantics (experimental PR #40):** enable an opt-in x86-64 IDT for CPU exceptions with distinct real QEMU #DE/#UD/#GP/#PF negative controls; log RIP/error/CR2 and halt rather than trying to resume at a corrupted instruction. No IRQ enabling, TSS/IST, physical PC claims or automatic installation to legacy images without a separately validated acceptance gate.
 
 

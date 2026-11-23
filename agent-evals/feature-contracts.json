@@ -101,6 +101,24 @@
         "scripts/test_exception_idt.py",
         "docs/M3_EXCEPTION_IDT.md"
       ]
+    },
+    {
+      "id": "m3-private-paging",
+      "source": [
+        "boot/paging_tables.c",
+        "boot/paging_probe.c",
+        "boot/paging_probe.h",
+        "boot/kernel_entry.c",
+        "scripts/build_boot.py"
+      ],
+      "regressions": [
+        "tests/test_paging_tables.py"
+      ],
+      "fieldEvidence": [
+        "tests/native/test_paging_tables.c",
+        "scripts/test_paging_probe.py",
+        "docs/M3_PRIVATE_PAGING.md"
+      ]
     }
   ]
 }

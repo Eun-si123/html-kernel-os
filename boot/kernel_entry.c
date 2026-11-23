@@ -10,6 +10,9 @@
 #ifdef HTMLK_M3_MEMORY_PROBE
 #include "memory_probe.h"
 #endif
+#ifdef HTMLK_M3_PAGING_PROBE
+#include "paging_probe.h"
+#endif
 
 __attribute__((used, section(".limine_requests_start")))
 static volatile uint64_t start_marker[] = LIMINE_REQUESTS_START_MARKER;
@@ -20,9 +23,9 @@ static volatile uint64_t base_revision[] = LIMINE_BASE_REVISION(6);
 __attribute__((used, section(".limine_requests_end")))
 static volatile uint64_t end_marker[] = LIMINE_REQUESTS_END_MARKER;
 
-#ifdef HTMLK_M3_MEMORY_PROBE
+#if defined(HTMLK_M3_MEMORY_PROBE) || defined(HTMLK_M3_PAGING_PROBE)
 /* Opt-in requests reside within the pinned Limine request marker section.
- * Production/default boot tests remain untouched unless --memory-probe is set.
+ * Production/default boot tests remain untouched unless M3 memory/paging is enabled.
  */
 __attribute__((used, section(".limine_requests")))
 static volatile struct limine_memmap_request m3_memmap_request = {
@@ -85,6 +88,9 @@ void kmain(void) {
 #endif
 #ifdef HTMLK_M3_MEMORY_PROBE
     htmlk_memory_probe(m3_memmap_request.response, m3_hhdm_request.response);
+#endif
+#ifdef HTMLK_M3_PAGING_PROBE
+    htmlk_paging_probe(m3_memmap_request.response, m3_hhdm_request.response);
 #endif
 #ifdef HTMLK_FB_CONSOLE
     configure_framebuffer();
