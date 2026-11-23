@@ -25,6 +25,10 @@ python3 scripts/build_boot.py --out build/html-kernel.iso  # normal, non-test im
 
 Requires QEMU x86-64, GCC, make, xorriso, Python 3.12+; pinned Limine dependencies are SHA-256 checked. A QEMU test image exits with status 33 after verified serial/debugcon output; a normal boot image halts. Browser emulation and physical-machine tests are separate evidence classes. See [STATUS.md](STATUS.md) for observed current results and the exact CI run.
 
+## M4-C1 Ring3 and syscall evidence (2026-11-23 local)
+
+`python3 scripts/test_m4_user.py` builds an independent opt-in ISO using `--exception-idt --tss-ist --user-probe`; a real BIOS QEMU CPU must execute code and stack stores at CPL3, enter CPL0 through INT0x80/TSS.RSP0, return to CPL3, then exit back to the original kernel CR3 and run changed-source HTML output. The test asserts two clean normal boots and source-mutation image provenance. Negative isolates are CPU-observed: unknown syscall exits 53; attempted CPL3 OUTB emits #GP (vector13, exit45); supervisor kernel read #PF has error 0x5, CR2 0xFFFFFFFF80001000; user RO-code write #PF has error 0x7, CR2 0x0000400000000000. Both #PF events must use the M3 IST2 emergency stack. Invalid builder combinations are rejected. `tests/test_user_pages.py` runs the pure page permission helper and invalid-frame cases under GCC -O0/-O3 UBSan. These observations **do not prove safe user fault cleanup, concurrent isolated tasks, UEFI or hardware**, and no combination with M4-B2 preemption is asserted. See [M4_RING3_C1.md](M4_RING3_C1.md).
+
 ## Observed QEMU and browser boot results (2026-11-22)
 
 - Real x86-64 BIOS QEMU, source alteration and negative controls **PASS**, PR #13 CI run `45027891902`, main run `45029073618`.

@@ -191,6 +191,12 @@
       "source": ["boot/preempt_x2apic.c", "boot/preempt_x2apic.h", "boot/preempt_switch.S", "boot/exception_idt.c", "boot/kernel_entry.c", "scripts/build_boot.py"],
       "regressions": ["tests/test_m4_preempt_frame.py"],
       "fieldEvidence": ["scripts/test_m4_preempt.py", "tests/native/test_preempt_frame.c", "docs/M4_X2APIC_PREEMPT.md"]
+    },
+    {
+      "id": "m4-ring3-user-syscall",
+      "source": ["boot/user_pages.h", "boot/user_pages.c", "boot/user_probe.h", "boot/user_probe.c", "boot/user_entry.S", "boot/tss_ist.c", "boot/exception_idt.c", "boot/kernel_entry.c", "scripts/build_boot.py"],
+      "regressions": ["tests/test_user_pages.py"],
+      "fieldEvidence": ["scripts/test_m4_user.py", "tests/native/test_user_pages.c", "docs/M4_RING3_C1.md"]
     }
   ]
 }

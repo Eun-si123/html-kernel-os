@@ -64,7 +64,10 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
           task_probe: bool = False, task_negative_test: bool = False,
           timer_probe: bool = False, timer_mask_test: bool = False,
           preempt_probe: bool = False, preempt_timer_mask: bool = False,
-          preempt_bad_frame: bool = False) -> None:
+          preempt_bad_frame: bool = False,
+          user_probe: bool = False, user_bad_syscall: bool = False,
+          user_privileged_io: bool = False, user_read_kernel: bool = False,
+          user_write_code: bool = False) -> None:
     dist, header = get_limine(cache)
     work_root.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="htmlk-boot-", dir=work_root) as temp:
@@ -83,6 +86,27 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
                  "-mno-red-zone", "-mcmodel=kernel", "-mgeneral-regs-only",
                  "-fcf-protection=none", "-Wall", "-Wextra", "-Werror"]
         define = ["-DHTMLK_QEMU_TEST_EXIT"] if test_exit else []
+        if user_probe and (not exception_idt or not tss_ist or
+                           memory_probe or paging_probe or video_console or
+                           task_probe or timer_probe or preempt_probe or
+                           fault_test is not None or double_fault_test):
+            raise ValueError("M4 user probe requires only IDT and TSS/IST")
+        user_negatives = (user_bad_syscall, user_privileged_io,
+                          user_read_kernel, user_write_code)
+        if any(user_negatives) and not (user_probe and test_exit):
+            raise ValueError("M4 user negatives require --user-probe --test-exit")
+        if sum(bool(x) for x in user_negatives) > 1:
+            raise ValueError("M4 ring3 negative controls are exclusive")
+        if user_probe:
+            define.append("-DHTMLK_M4_USER_PROBE")
+        if user_bad_syscall:
+            define.append("-DHTMLK_M4_USER_BAD_SYSCALL")
+        if user_privileged_io:
+            define.append("-DHTMLK_M4_USER_PRIVILEGED_IO")
+        if user_read_kernel:
+            define.append("-DHTMLK_M4_USER_READ_KERNEL")
+        if user_write_code:
+            define.append("-DHTMLK_M4_USER_WRITE_CODE")
         if preempt_probe and (not exception_idt or task_probe or timer_probe or
                               paging_probe or memory_probe or video_console or
                               tss_ist or fault_test is not None):
@@ -172,8 +196,8 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
         run("gcc", *flags, *define, "-I", header.parent, "-c",
             ROOT / "boot/kernel_entry.c", "-o", entry_obj)
         extra_objects: list[Path] = []
-        if memory_probe or video_console or exception_idt or paging_probe or tss_ist or task_probe or preempt_probe:
-            sources = (["page_pool"] if (memory_probe or paging_probe) else [])
+        if memory_probe or video_console or exception_idt or paging_probe or tss_ist or task_probe or preempt_probe or user_probe:
+            sources = (["page_pool"] if (memory_probe or paging_probe or user_probe) else [])
             if memory_probe:
                 sources.append("memory_probe")
             if task_probe:
@@ -184,6 +208,8 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
                 sources.append("preempt_x2apic")
             if paging_probe:
                 sources.extend(("frame_owner", "paging_tables", "paging_probe"))
+            if user_probe:
+                sources.extend(("frame_owner", "user_pages", "user_probe"))
             if exception_idt:
                 sources.append("exception_idt")
             if tss_ist:
@@ -204,6 +230,11 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
                 obj = build_dir / "preempt_switch.o"
                 run("gcc", "-c", "-m64", "-fno-pie", "-fno-pic",
                     ROOT / "boot/preempt_switch.S", "-o", obj)
+                extra_objects.append(obj)
+            if user_probe:
+                obj = build_dir / "user_entry.o"
+                run("gcc", "-c", "-m64", "-fno-pie", "-fno-pic",
+                    *define, ROOT / "boot/user_entry.S", "-o", obj)
                 extra_objects.append(obj)
         run("gcc", "-nostdlib", "-no-pie", "-Wl,--build-id=none",
             "-Wl,-z,max-page-size=0x1000", "-Wl,-T," + str(ROOT / "boot/linker.ld"),
@@ -283,7 +314,28 @@ def main() -> None:
                         help="M4-B2 QEMU negative: mask x2APIC timer interrupt")
     parser.add_argument("--preempt-bad-frame", action="store_true",
                         help="M4-B2 QEMU negative: reject intentionally misaligned task context")
+    parser.add_argument("--user-probe", action="store_true",
+                        help="Opt-in M4-C1 real ring3 int80 proof (IDT + TSS required)")
+    parser.add_argument("--user-bad-syscall", action="store_true",
+                        help="QEMU negative: unrecognized CPL3 syscall")
+    parser.add_argument("--user-privileged-io", action="store_true",
+                        help="QEMU negative: CPL3 attempts forbidden port I/O")
+    parser.add_argument("--user-read-kernel", action="store_true",
+                        help="M4 negative: ring3 read of supervisor kernel #PF")
+    parser.add_argument("--user-write-code", action="store_true",
+                        help="M4 negative: ring3 write to read-only user code #PF")
     a = parser.parse_args()
+    if a.user_probe and (not a.exception_idt or not a.tss_ist or
+                         a.memory_probe or a.paging_probe or a.video_console or
+                         a.task_probe or a.timer_probe or a.preempt_probe or
+                         a.fault_test is not None or a.double_fault_test):
+        parser.error("--user-probe needs --exception-idt --tss-ist only")
+    user_negatives = (a.user_bad_syscall, a.user_privileged_io,
+                      a.user_read_kernel, a.user_write_code)
+    if any(user_negatives) and not (a.user_probe and a.test_exit):
+        parser.error("M4 user negative probes require --user-probe --test-exit")
+    if sum(bool(x) for x in user_negatives) > 1:
+        parser.error("M4 user negative probes cannot be combined")
     if a.preempt_probe and (not a.exception_idt or a.task_probe or a.timer_probe or
                             a.paging_probe or a.memory_probe or a.video_console or
                             a.tss_ist or a.fault_test is not None):
@@ -333,7 +385,9 @@ def main() -> None:
           a.multi_page_test, a.multi_page_fault_test,
           a.task_probe, a.task_negative_test,
           a.timer_probe, a.timer_mask_test,
-          a.preempt_probe, a.preempt_timer_mask, a.preempt_bad_frame)
+          a.preempt_probe, a.preempt_timer_mask, a.preempt_bad_frame,
+          a.user_probe, a.user_bad_syscall, a.user_privileged_io,
+          a.user_read_kernel, a.user_write_code)
 
 
 if __name__ == "__main__":
