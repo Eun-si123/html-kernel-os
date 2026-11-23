@@ -136,6 +136,8 @@ jobs:
         run: python -m unittest tests.test_user_timeout_frame tests.test_console_runner -v
       - name: Native QEMU M5-E2 nonyielding CPL3 timeout, surviving UART shell and masked timer negatives
         run: python scripts/test_m5_user_timeout.py
+      - name: M5-E3 mixed Ring3 process lifecycle and owner reuse under real QEMU x2APIC
+        run: python scripts/test_m5_process_lifecycle_stress.py
       - name: Assemble standalone, non-test boot images
         run: |
           python scripts/build_boot.py --out build/html-kernel.iso

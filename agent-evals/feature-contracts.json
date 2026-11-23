@@ -444,7 +444,9 @@
       "fieldEvidence": [
         "tests/native/test_user_timeout_frame.c",
         "scripts/test_m5_user_timeout.py",
-        "docs/M5_USER_TIMEOUT.md"
+        "docs/M5_USER_TIMEOUT.md",
+        "scripts/test_m5_process_lifecycle_stress.py",
+        "docs/M5_PROCESS_LIFECYCLE_STRESS.md"
       ]
     }
   ]
