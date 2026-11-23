@@ -16,7 +16,14 @@ class FeatureContractTests(unittest.TestCase):
         cls.real = json.loads(MAP.read_text(encoding="utf-8"))
 
     def test_mapping_has_existing_sources_and_regressions(self):
-        self.assertEqual(len(validate(self.real)), 2)
+        self.assertEqual({entry["id"] for entry in validate(self.real)},
+                         {"html-grammar-codegen", "static-site", "m3-memory-bootstrap"})
+
+    def test_changed_m3_c_source_maps_native_regressions(self):
+        report = summarize(validate(self.real), ["boot/page_pool.c"])
+        self.assertEqual(report["affectedFeatures"][0]["feature"], "m3-memory-bootstrap")
+        self.assertIn("tests/test_m3_memory.py", report["affectedFeatures"][0]["existingRegressionTests"])
+        self.assertEqual(report["affectedFeatures"][0]["automatedEvidence"], "not-run")
 
     def test_changed_compiler_reports_tests_but_not_pass(self):
         changes = summarize(validate(self.real), ["compiler/htmlk.py"])
