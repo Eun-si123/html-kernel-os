@@ -1,0 +1,6 @@
+<!-- M5-F5: genuine >32-bit and full unsigned u64 outputs in native Ring3. -->
+<kernel arch="x86_64"><onboot>
+  <repeat times="2"><print value="4294967296"/></repeat>
+  <print value="18446744073709551615"/>
+  <halt code="7"/>
+</onboot></kernel>

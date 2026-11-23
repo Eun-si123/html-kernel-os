@@ -277,3 +277,7 @@ For Ubuntu with QEMU and GCC, run `python3 scripts/run_m5_console.py --with-user
 ### M5-F4 — read a user program's exit code
 
 A trusted HTML user program can finish with `<halt code="7"/>` (ASCII decimal `0..255`). Compile it using `python3 scripts/run_m5_console.py --html-user-app path/to/user.html`, then enter `run /apps/hello.hke` on QEMU COM1. After private Ring3 task cleanup, status `0` keeps `M5_RUN_DONE`; status `7` prints `M5_RUN_EXIT_CODE=7`. Bad or out-of-range exit statuses are rejected without killing the guarded UART shell. [Exact QEMU tests and limitations](docs/M5_HTML_EXIT_STATUS.md).
+
+### M5-F5 — print the entire unsigned 64-bit range from HTML
+
+The optional HTML user-program target can now emit full `u64` numeric results through actual Ring3 `INT 0x80` and native COM1, including `18446744073709551615`. Try `python3 scripts/run_m5_console.py --html-user-app examples/user-programs/html-u64-report.html` and enter `run /apps/hello.hke`. The kernel still limits each app to eight reports and rejects invalid code and non-owned user memory; legacy assembly modes keep their older <=9999 ABI. [Real QEMU test, implementation and caveats](docs/M5_HTML_U64_OUTPUT.md).

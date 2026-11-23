@@ -1,6 +1,6 @@
 # M5-F4 — HTML user-program exit status on the real native UART shell
 
-**Scope:** an opt-in, build-time trusted HTML-to-HKEX CPL3 user executable on single-vCPU QEMU BIOS. Local host+real-QEMU acceptance PASS; new PR exact-head GitHub CI/security scan and merge are separate gates. This is **not** a general-purpose POSIX process ABI or untrusted-code sandbox.
+**Scope:** an opt-in, build-time trusted HTML-to-HKEX CPL3 user executable on single-vCPU QEMU BIOS. Local host+real-QEMU acceptance PASS. PR #92 exact-head GitHub QEMU Actions `45143179141`/`45143187104` and Gitleaks `45143183668` PASS; merged into main as `162aa4c`. This is **not** a general-purpose POSIX process ABI or untrusted-code sandbox.
 
 ## Use it
 

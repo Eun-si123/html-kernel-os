@@ -53,3 +53,5 @@ When a feature changes, update the **one authoritative** owner, then fix any con
 - [M5-E3-D independently owned Ring3 x2APIC malformed user stack IRQ recovery](M5_USER_BAD_IRQ.md).
 
 - [M5-F4 HTML Ring3 user program exit status and live UART result](M5_HTML_EXIT_STATUS.md).
+
+- [M5-F5 full unsigned u64 from HTML user code to native COM1](M5_HTML_U64_OUTPUT.md).

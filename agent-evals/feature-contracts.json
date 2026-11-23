@@ -552,6 +552,22 @@
         "scripts/test_m5_html_exit_status.py",
         "docs/M5_HTML_EXIT_STATUS.md"
       ]
+    },
+    {
+      "id": "m5-html-user-u64-output",
+      "source": [
+        "boot/user_probe.c",
+        "scripts/build_boot.py",
+        "examples/user-programs/html-u64-report.html",
+        "examples/user-programs/report-ten-thousand.S"
+      ],
+      "regressions": [
+        "tests/test_html_user_u64_output.py"
+      ],
+      "fieldEvidence": [
+        "scripts/test_m5_html_u64_output.py",
+        "docs/M5_HTML_U64_OUTPUT.md"
+      ]
     }
   ]
 }
