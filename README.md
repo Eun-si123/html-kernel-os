@@ -57,6 +57,7 @@ python3 scripts/test_signed_bits.py
 python3 scripts/test_division.py
 python3 scripts/test_division_oracle.py
 python3 scripts/test_arrays.py
+python3 scripts/test_m2_gate.py
 python3 scripts/test_integer_oracle.py
 python3 scripts/build_boot.py --source examples/math-kernel.html --out build/html-kernel-math.iso
 python3 scripts/build_boot.py --source examples/functions-kernel.html --out build/html-kernel-functions.iso
@@ -66,6 +67,7 @@ python3 scripts/build_boot.py --source examples/u32-kernel.html --out build/html
 python3 scripts/build_boot.py --source examples/signed-bits-kernel.html --out build/html-kernel-signed.iso
 python3 scripts/build_boot.py --source examples/division-kernel.html --out build/html-kernel-division.iso
 python3 scripts/build_boot.py --source examples/array-kernel.html --out build/html-kernel-array.iso
+python3 scripts/build_boot.py --source examples/m2-exercises-kernel.html --out build/html-kernel-m2-exercises.iso
 ~~~
 
 The [language contract](docs/M2_LANGUAGE_CONTRACT.md) documents syntax, safety bounds and unsupported expressions. The public [web boot lab](https://eun-si123.github.io/html-kernel-os/play.html) provides real x86-64 kernel examples for arithmetic, functions, scoped bodies, `if/else` branches u32/u64 native types and signed/bitwise/loop control (each ISO is generated and validated independently).
