@@ -1,6 +1,6 @@
 # M5-A — bounded read-only embedded filesystem (opt-in)
 
-**Status:** M5-A local host + genuine QEMU BIOS proof PASS on the development branch. This is an independently testable **preparatory M5 slice**, not completion of M4 or M5. Exact-head GitHub Actions must still pass before merge.
+**Status:** merged as PR [#62](https://github.com/Eun-si123/html-kernel-os/pull/62) at main commit `4512f1d`. Actual QEMU BIOS, host UBSan and GitHub Actions PR run `45121533786` / merged-main run `45121995144` PASS; merged-main Gitleaks run `45121995124` PASS. This is a **preparatory M5 slice**, not completion of M4 or M5.
 
 ## Architecture and limitations
 
@@ -26,7 +26,7 @@ The native test builds and boots actual BIOS ISOs with QEMU exit checks: origina
 
 ## Remaining M5 phases / gates
 
-- **M5-B:** command input from an actual keyboard/console device; no fake scripted success path.
+- **M5-B:** implemented as opt-in **real 16550 COM1 UART input** with `help`/`ls`/`cat`/`exit`, independently QEMU/CI-verified in [M5-B proof](M5_SERIAL_CONSOLE.md) and merged in PR #66. No USB/physical keyboard has been verified.
 - **M5-C:** independent user program image and bounded loader using proven M4-D memory/privilege protection; reject invalid ELF/bad syscall/user pointers without kernel panic.
 - **M5-D:** native interactive sequence `command → read ROMFS file → run separate program → invalid command rejected` with QEMU repeatability and clear rollback, before claiming M5 complete.
 

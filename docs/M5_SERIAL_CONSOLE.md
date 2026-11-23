@@ -1,6 +1,6 @@
 # M5-B — real x86-64 BIOS guest UART console and read-only file commands
 
-**Gate:** preparatory local M5-B **PASS under native BIOS QEMU**. Tests and source are included on an independent feature branch; a passing exact GitHub PR CI run is necessary before claiming integration. This remains separate from M4-D and does **not** complete M5: independent CPL3 user program loading is not implemented.
+**Gate:** preparatory M5-B **main merged / actual native BIOS QEMU PASS / CI PASS**. PR [#66](https://github.com/Eun-si123/html-kernel-os/pull/66) merged as `6dd69ca` after PR CI `45122358516` and Gitleaks; merged-main CI `45122622108`, Gitleaks `45122622015`, Pages `45122622025` SUCCESS. This remains separate from M4-D and does **not** complete M5: independent CPL3 user program loading is not implemented.
 
 ## Native execution path
 
@@ -13,10 +13,14 @@
 ## Reproduce / evidence classes
 
 ```sh
-python3 -m unittest tests.test_serial_command -v
+python3 -m unittest tests.test_serial_command tests.test_console_runner -v
 python3 scripts/test_m5_console.py
 python3 scripts/build_boot.py --romfs-console --out build/html-kernel-m5-console.iso
+# With an interactive terminal on a machine with x86-64 QEMU:
+python3 scripts/run_m5_console.py
 ```
+
+The one-command launcher compiles a test-exit ISO, starts **actual headless QEMU** with a UART attached to the terminal, no host disks or network, and translates the expected QEMU debug-exit code 33 into host process success. Type `help`, `ls`, `cat /welcome.txt`, then `exit`. It writes diagnostic debugcon output to `build/m5-interactive-debugcon.log`. Requires a real interactive TTY, GCC, xorriso and the checksum-pinned Limine cache (auto-fetch if absent). If you lack a TTY or want repeatable noninteractive verification, use `scripts/test_m5_console.py` instead. This is **not** the browser Boot Lab or a real PC boot.
 
 `tests/native/test_serial_command.c` is compiled with host GCC `-O0/-O3` and UBSan: command classifications, canonical paths, oversized/invalid line recovery, backspaces and control bytes. This is **not** proof of UART hardware.
 
