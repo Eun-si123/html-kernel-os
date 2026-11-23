@@ -87,3 +87,41 @@
   .lab-status-bar { background:#222b25; border-color:var(--rule); }
   .lab-grid { background:#56685b; }
 }
+
+
+/* Live evidence panels: raw SeaBIOS VGA text, raw COM1 bytes, and actual HTML source. */
+.trace-grid { display:grid; grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr); border-top:1px solid #415249; gap:1px; background:#415249; }
+.trace-panel { min-width:0; background:var(--code-deep); color:var(--code-ink); }
+.trace-panel h3 { display:flex; align-items:center; flex-wrap:wrap; gap:10px; min-height:53px; margin:0; padding:12px 18px; border-bottom:1px solid #415249; font-size:13px; font-weight:650; }
+.trace-panel h3 small { min-width:0; margin-left:auto; color:#a9b8ad; font:10px/1.5 var(--mono); overflow-wrap:anywhere; }
+.boot-events { height:276px; overflow:auto; margin:0; padding:8px 16px 8px 16px; list-style:none; background:#0e1712; }
+.boot-events li { display:grid; grid-template-columns:56px 95px minmax(0,1fr); gap:9px; padding:8px 0; border-bottom:1px solid #2b3a31; color:#c6d6ca; font:11px/1.5 var(--mono); overflow-wrap:anywhere; }
+.boot-events time { color:#a4b29d; font-variant-numeric:tabular-nums; }
+.boot-events strong { color:#e2f0dc; font-size:10px; font-weight:600; }
+.boot-events span { min-width:0; }
+.trace-explainer { margin:0; padding:10px 16px 14px; font-size:11px; line-height:1.65; color:#bbc9bf; border-top:1px solid #415249; }
+.source-note { min-height:53px; padding:13px 16px; margin:0; color:#bfd0c4; font:11px/1.6 var(--mono); border-bottom:1px solid #415249; }
+.source-view { height:266px; overflow:auto; background:#101915; padding:9px 0; font:12px/1.8 var(--mono); tab-size:2; }
+.source-view:focus-visible { outline:2px solid #95c99d; outline-offset:-3px; }
+.source-row { display:grid; grid-template-columns:48px minmax(0,1fr); padding:1px 14px 1px 0; min-width:0; }
+.source-line-number { text-align:right; padding-right:12px; user-select:none; color:#82988a; border-right:1px solid #34463b; }
+.source-code { padding-left:11px; white-space:pre; overflow-wrap:normal; color:#d7e4d7; min-width:max-content; }
+.source-view:has(.source-active) .source-row.source-active { background:#244232; border-left:3px solid #9cdeaa; }
+.source-active .source-line-number { color:#d2f0cb; }
+.source-active .source-code { color:#e2ffe2; font-weight:650; }
+#live-tag { color:#c8efad; font:inherit; }
+#vm-pause { min-width:96px; }
+@media(max-width:800px) {
+  .trace-grid { grid-template-columns:minmax(0,1fr); }
+  .boot-events { height:190px; }
+  .source-view { height:230px; }
+}
+@media(max-width:480px) {
+  .trace-panel h3 { padding:12px; }
+  .trace-panel h3 small { width:100%; margin-left:0; }
+  .source-row { grid-template-columns:38px minmax(0,1fr); }
+  .source-line-number { padding-right:8px; }
+  .boot-events { padding:8px 12px; }
+  .boot-events li { grid-template-columns:46px 77px minmax(0,1fr); gap:6px; font-size:10px; }
+  .boot-events strong { font-size:10px; }
+}
