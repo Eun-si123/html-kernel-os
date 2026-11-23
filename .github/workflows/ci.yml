@@ -158,6 +158,8 @@ jobs:
         run: python scripts/test_m5_html_exit_status.py
       - name: M5-F5 native QEMU full uint64 HTML user output, report budget and legacy rejection
         run: python scripts/test_m5_html_u64_output.py
+      - name: M5-E3-E genuine CPL3 UD2 with poisoned user RSP, owner-safe fault and UART recovery
+        run: python scripts/test_m5_user_bad_ud_stack.py
       - name: Assemble standalone, non-test boot images
         run: |
           python scripts/build_boot.py --out build/html-kernel.iso
