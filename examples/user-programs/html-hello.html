@@ -1,0 +1,14 @@
+<!-- Reuse kernel+Linux language parser for one separate native user app. -->
+<kernel arch="x86_64">
+  <function name="triple" params="n:u64" returns="u64">
+    <return value="n * 3"/>
+  </function>
+  <onboot>
+    <let name="score" type="u64" value="1000"/>
+    <repeat times="3">
+      <set name="score" value="score + 8"/>
+    </repeat>
+    <print value="triple(score) - 1046"/>
+    <halt/>
+  </onboot>
+</kernel>

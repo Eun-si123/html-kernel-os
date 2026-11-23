@@ -88,7 +88,16 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
           interactive_run: bool = False,
           user_fault_recover: bool = False,
           user_timeout: bool = False,
-          user_timeout_mask: bool = False) -> None:
+          user_timeout_mask: bool = False,
+          user_app_html: Path | None = None) -> None:
+    if sum(p is not None for p in
+           (user_app_html,user_app_source,user_app_image)) > 1:
+        raise ValueError("M5 user app HTML, assembly and binary are exclusive")
+    if user_app_html is not None and (
+        user_app_html.is_symlink() or not user_app_html.is_file()):
+        raise ValueError("M5 user HTML source must be a regular non-symlink file")
+    if user_app_html is not None and not (user_loader or interactive_run):
+        raise ValueError("M5 user HTML source requires a user loader or run console")
     if user_timeout and not (user_fault_recover and interactive_run and
                              exception_idt and tss_ist):
         raise ValueError("M5-E2 requires full M5-E1 interactive mode")
@@ -411,6 +420,10 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
                         if len(image) > 4096:
                             raise ValueError("M5-C1 prebuilt image too large")
                         app_file.write_bytes(image)
+                    elif user_app_html is not None:
+                        run(sys.executable, ROOT / "scripts/build_html_user_image.py",
+                            "--source", user_app_html.resolve(),
+                            "--out", app_file)
                     else:
                         run(sys.executable, ROOT / "scripts/build_user_image.py",
                             "--source", (user_app_source or ROOT / "examples/user-programs/hello.S").resolve(),
@@ -589,6 +602,8 @@ def main() -> None:
                         help="M5-C1 load a standalone bounded ROMFS HKEX binary into actual CPL3")
     parser.add_argument("--user-app-source", type=Path,
                         help="M5-C1 relocation-free x86-64 assembly for external Ring3 program")
+    parser.add_argument("--user-app-html", type=Path,
+                        help="M5-F1 compile shared typed HTML-like language into a separate Ring3 HKEX app")
     parser.add_argument("--user-app-image", type=Path,
                         help="M5-C1 prebuilt HKEX file (guest validates integrity/format)")
     parser.add_argument("--user-fault-recover", action="store_true",
@@ -608,6 +623,11 @@ def main() -> None:
     parser.add_argument("--romfs-root", type=Path, default=ROOT / "examples/romfs",
                         help="Trusted ROMFS input (16 files, up to 4KiB each)")
     a = parser.parse_args()
+    if sum(x is not None for x in (a.user_app_html, a.user_app_source,
+                                    a.user_app_image)) > 1:
+        parser.error("--user-app-html, --user-app-source and --user-app-image are exclusive")
+    if a.user_app_html is not None and not (a.user_loader_probe or a.romfs_run_console):
+        parser.error("--user-app-html requires --user-loader-probe or --romfs-run-console")
     if a.user_timeout and not (a.user_fault_recover and a.romfs_run_console and
                                a.exception_idt and a.tss_ist):
         parser.error("M5-E2 needs --user-fault-recover plus interactive IDT/TSS")
@@ -765,7 +785,8 @@ def main() -> None:
           a.romfs_console, a.user_loader_probe,
           a.user_app_source, a.user_app_image,
           a.romfs_run_console, a.user_fault_recover,
-          a.user_timeout, a.user_timeout_mask)
+          a.user_timeout, a.user_timeout_mask,
+          a.user_app_html)
 
 
 if __name__ == "__main__":
