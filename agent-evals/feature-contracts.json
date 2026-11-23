@@ -594,7 +594,9 @@
       "fieldEvidence": [
         "scripts/test_live_site.py",
         "docs/M5_WEB_LIVE.md",
-        "scripts/test_live_source_mutation.py"
+        "scripts/test_live_source_mutation.py",
+        "scripts/test_local_live_iso.py",
+        "docs/M5_WEB_LOCAL_ISO.md"
       ]
     },
     {
