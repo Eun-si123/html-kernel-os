@@ -220,6 +220,8 @@ def compile_html(source: str, *, target: str = "kernel") -> str:
                 name = validate_name(node)
                 if name not in variables:
                     fail(node, f"undefined variable {name!r}")
+                if array_details(variable_types[name]) is not None:
+                    fail(node, f"array {name!r} requires an indexed element; use <store>")
                 value = checked(node.attrs["value"], expected_type=variable_types[name])
                 lines.append(f"{pad}htmlk_{name} = {value};")
             elif tag == "if":
