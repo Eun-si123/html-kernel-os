@@ -51,6 +51,17 @@ python3 scripts/run_m5_console.py
 
 Enter `help`, `ls`, `cat /welcome.txt`, `cat /config/build.txt`, then `exit`. This command builds the native ISO with actual immutable ROMFS source bytes and starts a QEMU COM1 **serial-input** session. It is independent of the browser boot lab, and is **not** a general interactive OS: commands still run in the privileged kernel and no separate user program is loaded. See [M5-B full QEMU acceptance evidence](docs/M5_SERIAL_CONSOLE.md). Automated, noninteractive equivalent: `python3 scripts/test_m5_console.py`.
 
+## Run a separate ROMFS user program in native Ring 3 (M5-C1)
+
+This opt-in test assembles `examples/user-programs/hello.S` into a small, checked `HKEX` executable and embeds it as `/apps/hello.hke` in the native kernel's immutable ROMFS. After bounded file validation the kernel loads **actual independent machine-code bytes** into a private CPL3 code page, checks register-only system calls, returns to generated HTML code and reclaims the user frames. To reproduce:
+
+```sh
+python3 scripts/build_boot.py --exception-idt --tss-ist --user-loader-probe --test-exit --out build/html-kernel-m5-user.iso
+python3 scripts/test_m5_user_loader.py
+```
+
+This is **not** HTML-to-user-executable compilation, an ELF loader, or M5-B's interactive shell. Actual QEMU boots include independent source mutations and CPU fault negative controls; see [M5-C1 contract](docs/M5_USER_LOADER.md).
+
 ## Test real M2 language features
 
 The experimental language now supports **signed i32/i64 and unsigned u32/u64**, fixed-width wrapping arithmetic, defined integer division/remainder with divide-by-zero traps, zero-initialized fixed-size typed arrays with checked indexes, explicit conversions, unsigned bitwise/shift operations, bounded repeat and capped conditional `while` loops with `break`/`continue`, `if/else` and scoped typed functions (up to four parameters). The compiler's signed arithmetic avoids undefined C signed-overflow behavior. For example, [signed-bits-kernel.html](examples/signed-bits-kernel.html) prints the signed minimum values, safely wrapped results and loop-control output from an actual native kernel. The **same HTML source compiles to x86-64 kernel or an unprivileged Linux executable**. Neither functions nor ordinary source can directly access arbitrary hardware, I/O or memory; recursion and unbounded loops remain unavailable. **M2 is partially implemented, not a complete OS.**

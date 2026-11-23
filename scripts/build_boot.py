@@ -82,7 +82,27 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
           user_preempt_revoke_b: bool = False,
           romfs_probe: bool = False, romfs_negative: bool = False,
           romfs_root: Path | None = None,
-          romfs_console: bool = False) -> None:
+          romfs_console: bool = False,
+          user_loader: bool = False, user_app_source: Path | None = None,
+          user_app_image: Path | None = None) -> None:
+    if user_loader:
+        if not (exception_idt and tss_ist) or any((
+            memory_probe, video_console, paging_probe, task_probe,
+            timer_probe, preempt_probe, user_probe, isolation_probe,
+            user_preempt, romfs_probe, romfs_console,
+            fault_test is not None, double_fault_test,
+            paging_fault_test, paging_recover_test, romfs_negative,
+            user_bad_syscall, user_privileged_io, user_read_kernel,
+            user_write_code, isolation_gp, isolation_ro,
+            isolation_forged, isolation_survivor_fault,
+            user_preempt_mask, user_preempt_bad_frame,
+            user_preempt_fault, user_preempt_survivor_fault,
+            user_preempt_fault_gp, user_preempt_fault_ro)):
+            raise ValueError("M5-C1 requires IDT+TSS only, no other probes")
+        if user_app_source is not None and user_app_image is not None:
+            raise ValueError("M5-C1 source and prebuilt image are exclusive")
+    elif user_app_source is not None or user_app_image is not None:
+        raise ValueError("M5-C1 app parameters require --user-loader-probe")
     if romfs_console and romfs_probe:
         raise ValueError("M5-A probe and M5-B console are exclusive")
     if romfs_negative and not (romfs_probe and test_exit):
@@ -110,6 +130,8 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
                  "-mno-red-zone", "-mcmodel=kernel", "-mgeneral-regs-only",
                  "-fcf-protection=none", "-Wall", "-Wextra", "-Werror"]
         define = ["-DHTMLK_QEMU_TEST_EXIT"] if test_exit else []
+        if user_loader:
+            define.append("-DHTMLK_M5_USER_LOADER")
         if romfs_probe:
             define.append("-DHTMLK_M5_ROMFS_PROBE")
         if romfs_console:
@@ -292,14 +314,16 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
         run("gcc", *flags, *define, "-I", header.parent, "-c",
             ROOT / "boot/kernel_entry.c", "-o", entry_obj)
         extra_objects: list[Path] = []
-        if memory_probe or video_console or exception_idt or paging_probe or tss_ist or task_probe or preempt_probe or user_probe or isolation_probe or user_preempt or romfs_probe or romfs_console:
-            sources = (["page_pool"] if (memory_probe or paging_probe or user_probe or isolation_probe or user_preempt) else [])
+        if memory_probe or video_console or exception_idt or paging_probe or tss_ist or task_probe or preempt_probe or user_probe or isolation_probe or user_preempt or romfs_probe or romfs_console or user_loader:
+            sources = (["page_pool"] if (memory_probe or paging_probe or user_probe or isolation_probe or user_preempt or user_loader) else [])
             if memory_probe:
                 sources.append("memory_probe")
             if romfs_probe:
                 sources.extend(("romfs", "romfs_probe"))
             if romfs_console:
                 sources.extend(("romfs", "serial_command", "serial_console"))
+            if user_loader:
+                sources.extend(("romfs", "user_image", "frame_owner", "user_pages", "user_probe"))
             if task_probe:
                 sources.extend(("task_model", "task_runtime"))
             if timer_probe:
@@ -326,11 +350,35 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
                 run("gcc", *flags, *define, "-I", header.parent, "-I", ROOT / "boot",
                     "-c", ROOT / "boot" / (source_name + ".c"), "-o", obj)
                 extra_objects.append(obj)
-            if romfs_probe or romfs_console:
+            if romfs_probe or romfs_console or user_loader:
                 generated_romfs = build_dir / "romfs_generated.c"
+                selected_root = (romfs_root or ROOT / "examples/romfs").resolve()
+                if user_loader:
+                    # Preserve the existing ROMFS source directory unchanged.
+                    # Keep symlinks as symlinks so gen_romfs rejects them.
+                    selected_root = build_dir / "romfs_with_app"
+                    shutil.copytree((romfs_root or ROOT / "examples/romfs").resolve(),
+                                    selected_root, symlinks=True)
+                    app_dir = selected_root / "apps"
+                    if app_dir.exists() or app_dir.is_symlink():
+                        raise ValueError("M5-C1 ROMFS apps/ is reserved for the image builder")
+                    app_dir.mkdir()
+                    app_file = app_dir / "hello.hke"
+                    if user_app_image is not None:
+                        chosen = user_app_image.resolve()
+                        if not chosen.is_file() or chosen.stat().st_size > 4096:
+                            raise ValueError("M5-C1 prebuilt image must be <=4096 bytes")
+                        with chosen.open("rb") as handle:
+                            image = handle.read(4097)
+                        if len(image) > 4096:
+                            raise ValueError("M5-C1 prebuilt image too large")
+                        app_file.write_bytes(image)
+                    else:
+                        run(sys.executable, ROOT / "scripts/build_user_image.py",
+                            "--source", (user_app_source or ROOT / "examples/user-programs/hello.S").resolve(),
+                            "--out", app_file)
                 run(sys.executable, ROOT / "scripts/gen_romfs.py",
-                    "--root", (romfs_root or ROOT / "examples/romfs").resolve(),
-                    "--out", generated_romfs)
+                    "--root", selected_root, "--out", generated_romfs)
                 generated_romfs_obj = build_dir / "romfs_generated.o"
                 run("gcc", *flags, *define, "-I", ROOT / "boot", "-c",
                     generated_romfs, "-o", generated_romfs_obj)
@@ -345,7 +393,7 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
                 run("gcc", "-c", "-m64", "-fno-pie", "-fno-pic",
                     ROOT / "boot/preempt_switch.S", "-o", obj)
                 extra_objects.append(obj)
-            if user_probe or isolation_probe:
+            if user_probe or isolation_probe or user_loader:
                 obj = build_dir / "user_entry.o"
                 run("gcc", "-c", "-m64", "-fno-pie", "-fno-pic",
                     *define, ROOT / "boot/user_entry.S", "-o", obj)
@@ -479,6 +527,12 @@ def main() -> None:
                         help="M4-D hardening: wrong active CR3 owner rejected in APIC IRQ")
     parser.add_argument("--user-preempt-revoke-b", action="store_true",
                         help="M4-D hardening: revoked B code causes #PF after CR3 reload")
+    parser.add_argument("--user-loader-probe", action="store_true",
+                        help="M5-C1 load a standalone bounded ROMFS HKEX binary into actual CPL3")
+    parser.add_argument("--user-app-source", type=Path,
+                        help="M5-C1 relocation-free x86-64 assembly for external Ring3 program")
+    parser.add_argument("--user-app-image", type=Path,
+                        help="M5-C1 prebuilt HKEX file (guest validates integrity/format)")
     parser.add_argument("--romfs-probe", action="store_true",
                         help="M5-A opt-in bounded read-only files in native ELF")
     parser.add_argument("--romfs-console", action="store_true",
@@ -488,6 +542,19 @@ def main() -> None:
     parser.add_argument("--romfs-root", type=Path, default=ROOT / "examples/romfs",
                         help="Trusted ROMFS input (16 files, up to 4KiB each)")
     a = parser.parse_args()
+    if a.user_loader_probe:
+        if not (a.exception_idt and a.tss_ist) or any((
+            a.memory_probe, a.video_console, a.paging_probe,
+            a.task_probe, a.timer_probe, a.preempt_probe,
+            a.user_probe, a.user_isolation_probe, a.user_preempt_probe,
+            a.romfs_probe, a.romfs_console, a.fault_test is not None,
+            a.double_fault_test, a.romfs_negative,
+            a.user_preempt_fault_gp, a.user_preempt_fault_ro)):
+            parser.error("M5-C1 loader requires IDT+TSS only, no other probes")
+        if a.user_app_source and a.user_app_image:
+            parser.error("M5-C1 source and image options are exclusive")
+    elif a.user_app_source or a.user_app_image:
+        parser.error("M5-C1 app options require --user-loader-probe")
     if a.romfs_console and a.romfs_probe:
         parser.error("--romfs-console and --romfs-probe are exclusive")
     if a.romfs_negative and not (a.romfs_probe and a.test_exit):
@@ -611,7 +678,8 @@ def main() -> None:
           a.user_preempt_corrupt_gpr, a.user_preempt_bad_cr3,
           a.user_preempt_revoke_b,
           a.romfs_probe, a.romfs_negative, a.romfs_root,
-          a.romfs_console)
+          a.romfs_console, a.user_loader_probe,
+          a.user_app_source, a.user_app_image)
 
 
 if __name__ == "__main__":

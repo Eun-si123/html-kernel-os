@@ -347,6 +347,29 @@
         "scripts/test_m5_console.py",
         "docs/M5_SERIAL_CONSOLE.md"
       ]
+    },
+    {
+      "id": "m5-romfs-user-executable",
+      "source": [
+        "boot/user_image.h",
+        "boot/user_image.c",
+        "boot/user_probe.c",
+        "boot/user_entry.S",
+        "boot/kernel_entry.c",
+        "scripts/build_boot.py",
+        "scripts/build_user_image.py",
+        "examples/user-programs/hello.S",
+        "examples/user-programs/bad-syscall.S",
+        "examples/user-programs/privileged-io.S"
+      ],
+      "regressions": [
+        "tests/test_user_image.py"
+      ],
+      "fieldEvidence": [
+        "tests/native/test_user_image.c",
+        "scripts/test_m5_user_loader.py",
+        "docs/M5_USER_LOADER.md"
+      ]
     }
   ]
 }
