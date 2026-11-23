@@ -7,10 +7,11 @@
 #include "user_image.h"
 #ifdef HTMLK_M5_USER_FAULT_RECOVER
 #include "user_fault_policy.h"
+#include "user_syscall_policy.h"
+#include "tss_ist.h"
 #ifdef HTMLK_M5_USER_TIMEOUT
 #include "user_timeout.h"
 #include "user_timeout_frame.h"
-#include "tss_ist.h"
 #endif
 #endif
 #endif
@@ -85,6 +86,45 @@ static bool canonical(uint64_t value) {
     const uint64_t top = value >> 48U;
     return top == (((value >> 47U) & 1U) ? UINT64_C(0xffff) : 0U);
 }
+/* A user can change its RSP without touching memory and then INT80.
+ * An invalid saved user stack/RIP is therefore *not* evidence of a kernel
+ * fault. Abandon it only if the CPU/TSS stack, Ring3 selectors, live owner
+ * registry and current CR3 all independently match the active user task.
+ * Do not dereference an unproven user RSP or RIP. */
+__attribute__((noreturn))
+static void invalid_syscall_frame(struct user_irq_frame *f,const char *message) {
+#ifdef HTMLK_M5_USER_FAULT_RECOVER
+    /* CPL0-origin INT80 has only a 3-word CPU frame. Never read user SS
+     * until the real CS value proves this was a CPL3 privilege transition. */
+    if (f && f->cs==user_cs) {
+        uint64_t active_root;
+        __asm__ volatile("mov %%cr3,%0":"=r"(active_root));
+        const struct htmlk_m5_syscall_provenance ctx = {
+            .frame_address=(uint64_t)(uintptr_t)f,
+            .tss_rsp0=htmlk_tss_rsp0(),
+            .cs=f->cs, .ss=f->ss, .rflags=f->rflags,
+            .active_cr3=active_root, .owned_cr3=frames[0],
+            .saved_cr3=htmlk_m4_saved_cr3,
+            .saved_main_rsp=(uint64_t)(uintptr_t)htmlk_m4_saved_main_rsp,
+            .live_frames=frames_registry.live,
+            .has_active_app=selected_app_path!=0,
+            .already_terminated=user_faulted || user_bad_syscall || user_exited
+#ifdef HTMLK_M5_USER_TIMEOUT
+                || user_timed_out
+#endif
+        };
+        if (htmlk_m5_bad_syscall_frame_is_owned(&ctx)) {
+            user_bad_syscall=true;
+            log_text("M5_E_USER_BAD_SYSCALL_FRAME\n");
+            htmlk_m4_user_return();
+        }
+    }
+#else
+    (void)f;
+#endif
+    reject(message);
+}
+
 void htmlk_m4_syscall_dispatch(void *raw_frame) {
     struct user_irq_frame *f = raw_frame;
     if (f == 0 || f->cs != user_cs || f->ss != user_ss ||
@@ -93,12 +133,12 @@ void htmlk_m4_syscall_dispatch(void *raw_frame) {
         f->rsp <= HTMLK_M4_USER_BASE + HTMLK_PAGE_SIZE ||
         f->rsp > HTMLK_M4_USER_STACK ||
         !canonical(f->rip) || !canonical(f->rsp))
-        reject("M4_BAD_RING3_SYSCALL_FRAME\n");
+        invalid_syscall_frame(f,"M4_BAD_RING3_SYSCALL_FRAME\n");
 #ifdef HTMLK_M5_USER_LOADER
     uint64_t running_cr3;
     __asm__ volatile ("mov %%cr3,%0" : "=r"(running_cr3));
     if (running_cr3 != frames[0] || (f->rflags & (UINT64_C(3) << 12)) != 0)
-        reject("M5_C_INVALID_SYSCALL_ADDRESS_SPACE\n");
+        invalid_syscall_frame(f,"M5_C_INVALID_SYSCALL_ADDRESS_SPACE\n");
 #endif
     const uint64_t id = f->rax;
     if (id == 0U && f->rdi == UINT64_C(0x1234) && !syscall_seen) {

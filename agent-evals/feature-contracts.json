@@ -411,17 +411,23 @@
         "examples/user-programs/bad-argument.S",
         "examples/user-programs/fault-de.S",
         "examples/user-programs/fault-db.S",
-        "examples/user-programs/fault-bp.S"
+        "examples/user-programs/fault-bp.S",
+        "boot/user_syscall_policy.h",
+        "boot/user_syscall_policy.c"
       ],
       "regressions": [
         "tests/test_user_fault_policy.py",
-        "tests/test_console_runner.py"
+        "tests/test_console_runner.py",
+        "tests/test_user_syscall_policy.py"
       ],
       "fieldEvidence": [
         "tests/native/test_user_fault_policy.c",
         "scripts/test_m5_user_fault_recovery.py",
         "docs/M5_USER_FAULT_RECOVERY.md",
-        "scripts/test_m5_user_trap_containment.py"
+        "scripts/test_m5_user_trap_containment.py",
+        "tests/native/test_user_syscall_policy.c",
+        "scripts/test_m5_user_syscall_frame.py",
+        "docs/M5_USER_SYSCALL_FRAME.md"
       ]
     },
     {

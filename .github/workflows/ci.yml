@@ -142,6 +142,10 @@ jobs:
         run: python scripts/test_m5_user_trap_containment.py
       - name: M5-F1 native HTML-derived HKEX from shared compiler, real CPL3 UART run and source provenance
         run: python scripts/test_m5_html_user.py
+      - name: M5-E3-C syscall origin/owner frame guard UBSan O0 O3
+        run: python -m unittest tests.test_user_syscall_policy -v
+      - name: M5-E3-C genuine CPL3 malformed stack INT80 recovery and HTML user reruns in QEMU
+        run: python scripts/test_m5_user_syscall_frame.py
       - name: Assemble standalone, non-test boot images
         run: |
           python scripts/build_boot.py --out build/html-kernel.iso
