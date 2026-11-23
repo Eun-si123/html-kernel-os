@@ -172,7 +172,11 @@ bool htmlk_fb_init(const struct htmlk_fb_mode *mode) {
 #ifdef HTMLK_FB_TEST
     report("FB_STATE3\n");
 #endif
-    if (mode == 0 || mode->address == 0 ||
+    if (mode == 0) return false;
+#ifdef HTMLK_FB_TEST
+    report("FB_CHECK_MODEPTR_OK\n");
+#endif
+    if (mode->address == 0 ||
         mode->memory_model != 1 || mode->bpp != 32 ||
         mode->width < 320 || mode->width > 4096 ||
         mode->height < 200 || mode->height > 2160 ||
@@ -183,12 +187,27 @@ bool htmlk_fb_init(const struct htmlk_fb_mode *mode) {
         mode->red_size != 8 || mode->green_size != 8 || mode->blue_size != 8 ||
         mode->red_shift > 24 || mode->green_shift > 24 ||
         mode->blue_shift > 24) {
+#ifdef HTMLK_FB_TEST
+        report("FB_UNSUPPORTED_GEOMETRY\n");
+#endif
         return false;
     }
+#ifdef HTMLK_FB_TEST
+    report("FB_GEOMETRY_OK\n");
+#endif
+#ifdef HTMLK_FB_TEST
+    report("FB_CHECK_MASKS\n");
+#endif
     const uint32_t r = UINT32_C(0xff) << mode->red_shift;
     const uint32_t g = UINT32_C(0xff) << mode->green_shift;
     const uint32_t b = UINT32_C(0xff) << mode->blue_shift;
     if ((r & g) || (g & b) || (b & r)) return false;
+#ifdef HTMLK_FB_TEST
+    report("FB_MASKS_OK\n");
+#endif
+#ifdef HTMLK_FB_TEST
+    report("FB_CHECK_SIZE\n");
+#endif
     if (mode->pitch > UINT64_MAX / mode->height ||
         mode->pitch * mode->height > 96 * UINT64_C(1024) * 1024) return false;
     const uintptr_t address = (uintptr_t)mode->address;
