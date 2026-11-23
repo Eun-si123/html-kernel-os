@@ -116,12 +116,16 @@ void htmlk_tss_ist_install(void) {
 #ifdef HTMLK_M3_DOUBLE_FAULT_TEST
 __attribute__((noreturn, noinline))
 void htmlk_tss_inject_double_fault(void) {
-    /* First raise an authentic #PF with a VALID kernel stack. The test-only
-     * #PF handler then deliberately raises a second #PF before returning;
-     * the CPU must enter #DF on the independent IST1 emergency stack.
+    /* Deliberately corrupt *only* test image's IST2 pointer, not the
+     * current stack. A genuine unmapped read raises #PF; delivery cannot
+     * push its frame on IST2, so the CPU must enter #DF on intact IST1.
+     * This tests faults *during exception delivery*, not recursive faults
+     * while a handler is already running.
      */
+    tss.ist[1] = UINT64_C(0x0000000040000000);
+    __asm__ volatile ("" : : : "memory");
     __asm__ volatile (
-        "movabs $0x0000000040000000, %%rax\n\t"
+        "movabs $0x0000000050000000, %%rax\n\t"
         "mov (%%rax), %%rax\n\t"
         : : : "rax", "memory"
     );
