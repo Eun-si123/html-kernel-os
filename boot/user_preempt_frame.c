@@ -17,7 +17,8 @@ bool htmlk_m4_d1_frame_guard(const struct htmlk_m4_d1_irq_frame *f,
         f->rip-HTMLK_M4_USER_BASE>=code_len ||
         f->rsp<=HTMLK_M4_USER_BASE+HTMLK_PAGE_SIZE ||
         f->rsp>HTMLK_M4_USER_STACK ||
-        (f->rflags&0x202U)!=0x202U) return false;
+        (f->rflags&0x202U)!=0x202U ||
+        (f->rflags&((3U<<12)|(1U<<14)|(1U<<17)))!=0U) return false;
     if (f->rip>=HTMLK_M4_USER_BASE+loop_offset &&
         (f->rbx!=rbx || f->r12!=r12)) return false;
     return true;

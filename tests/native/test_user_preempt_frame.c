@@ -20,6 +20,9 @@ int main(void) {
     f->cs=0x08;assert(!OK);f->cs=0x2b;
     f->ss=0x10;assert(!OK);f->ss=0x33;
     f->rflags=0x02;assert(!OK);f->rflags=0x202;
+    f->rflags=0x3202;assert(!OK);f->rflags=0x202; /* IOPL3 forbidden */
+    f->rflags=0x4202;assert(!OK);f->rflags=0x202; /* NT forbidden */
+    f->rflags=0x20202;assert(!OK);f->rflags=0x202; /* VM forbidden */
     f->rsp=HTMLK_M4_USER_BASE;assert(!OK);
     f->rsp=HTMLK_M4_USER_STACK-16;
     f->rip=HTMLK_M4_USER_BASE+200;assert(!OK);

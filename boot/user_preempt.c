@@ -110,6 +110,10 @@ static bool valid(unsigned i,const struct htmlk_m4_d1_irq_frame *f) {
 struct htmlk_m4_d1_irq_frame *htmlk_m4_d1_on_irq(
     struct htmlk_m4_d1_irq_frame *f) {
     const unsigned i=active;
+#ifdef HTMLK_M4_D1_WRONG_CR3
+    if (i==1U && progress[0]==1U && progress[1]==0U)
+        __asm__ volatile("mov %0,%%cr3"::"r"(old_cr3):"memory");
+#endif
     if (i>=2 || cr3_now()!=phys[i][0] ||
         htmlk_tss_rsp0()!=top(i) || !valid(i,f))
         fail("M4_D1_IRQ_CONTEXT_INVALID\n");
@@ -129,6 +133,12 @@ struct htmlk_m4_d1_irq_frame *htmlk_m4_d1_on_irq(
         out(0xe9U,(uint8_t)('0'+progress[i]));out(0xe9U,'\n');
         ++progress[i];
     }
+#ifdef HTMLK_M4_D1_REVOKE_B_CODE
+    if (i==0U && progress[0]==2U && progress[1]==1U) {
+        volatile uint64_t *bpt=(void *)(uintptr_t)(hhdm+phys[1][3]);
+        bpt[0]&=~1ULL; /* post-B0 revoke; CR3 reload must flush old TLB */
+    }
+#endif
 #ifdef HTMLK_M4_D2_FAULT
     if (!retired_a && progress[0]>=2 && progress[1]>=2)
         set_slot(0U,56U,1U); /* A must fault on its next ring3 time slice */
@@ -201,6 +211,11 @@ static void task_init(unsigned i,const unsigned char *begin,
     kstack[i][0]=CANARY;
     saved[i]=(struct htmlk_m4_d1_irq_frame *)(uintptr_t)
         (top(i)-sizeof(*saved[i]));
+    /* Distinct per-task sentinels for all 15 saved GPRs, checked by
+     * actual CPL3 instructions each loop; RBX/R12 are then set in user. */
+    uint64_t *gprs=(uint64_t *)saved[i];
+    for (unsigned reg=0;reg<15U;reg++)
+        gprs[reg]=(i==0U?0x100U:0x200U)+reg;
     saved[i]->rip=HTMLK_M4_USER_BASE;
     saved[i]->cs=0x2bU;
     saved[i]->rflags=0x202U;
@@ -250,6 +265,9 @@ void htmlk_m4_user_preempt_probe(const struct limine_memmap_response *map,
     task_init(1,htmlk_m4_d1_b_begin,htmlk_m4_d1_b_end,
               htmlk_m4_d1_b_loop,original);
     active=0;ticks=switches=0;
+#ifdef HTMLK_M4_D1_CORRUPT_GPR
+    saved[0]->r15^=1U; /* a real user #UD, not a mocked C guard */
+#endif
 #ifdef HTMLK_M4_D2_FAULT
     retired_a=false;
 #endif

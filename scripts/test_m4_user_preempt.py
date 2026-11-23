@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """M4-D1: native QEMU CPL3 timer preemption of never-yielding tasks."""
 import os
+import re
 from pathlib import Path
 import subprocess
 import sys
@@ -94,7 +95,42 @@ def main():
             raise AssertionError(
                 f"masked timer unexpectedly finished: {result.returncode} {txt(result)}")
 
+        corrupted = work / "corrupt-gpr.iso"
+        build(original_source, corrupted, work, ("--user-preempt-corrupt-gpr",))
+        r = boot(corrupted)
+        expected = (START + "M3_EXCEPTION V=06\n"
+                    "M3_RIP=0x[0-9A-F]{16}\n"
+                    "M3_ERROR=0x0000000000000000\n")
+        assert r.returncode == 45 and re.fullmatch(expected, txt(r)), (
+            r.returncode, txt(r))
+        print("M4-D1 REAL CPU CHECKS ALL 15 GPR; R15 CORRUPTION PRODUCES #UD")
+
+        wrong_root = work / "wrong-cr3.iso"
+        build(original_source, wrong_root, work, ("--user-preempt-bad-cr3",))
+        r = boot(wrong_root)
+        assert (r.returncode, txt(r)) == (
+            57, START + "M4_D1_USER_A_0\nM4_D1_IRQ_CONTEXT_INVALID\n"), (
+            r.returncode, txt(r))
+        print("M4-D1 WRONG ACTIVE CR3 IS REJECTED IN REAL TIMER IRQ")
+
+        revoked = work / "revoked-code.iso"
+        build(original_source, revoked, work, ("--user-preempt-revoke-b",))
+        r = boot(revoked)
+        pattern = (START + "M4_D1_USER_A_0\nM4_D1_USER_B_0\n"
+                   "M4_D1_USER_A_1\nM3_IST_PF_STACK_OK\n"
+                   "M3_EXCEPTION V=0E\nM3_RIP=0x(?P<rip>[0-9A-F]{16})\n"
+                   "M3_ERROR=0x0000000000000014\n"
+                   "M3_CR2=0x(?P<cr2>[0-9A-F]{16})\n")
+        observed = re.fullmatch(pattern, txt(r))
+        assert r.returncode == 45 and observed, (r.returncode, txt(r))
+        assert observed["rip"] == observed["cr2"] and (
+            0x400000000000 <= int(observed["cr2"], 16) < 0x400000001000)
+        print("M4-D1 REVOKED B EXECUTABLE PTE CAUSES TRUE INSTRUCTION #PF AFTER CR3 FLUSH")
+
         for extra in (
+                ("--user-preempt-corrupt-gpr",),
+                ("--user-preempt-bad-cr3",),
+                ("--user-preempt-revoke-b",),
                 ("--user-preempt-probe",),
                 ("--user-preempt-mask",),
                 ("--user-preempt-bad-frame",),
@@ -105,6 +141,12 @@ def main():
                  "--user-isolation-probe"),
                 ("--user-preempt-probe", "--exception-idt", "--tss-ist",
                  "--user-preempt-mask", "--user-preempt-bad-frame"),
+                ("--user-preempt-probe", "--exception-idt", "--tss-ist",
+                 "--test-exit", "--user-preempt-corrupt-gpr",
+                 "--user-preempt-revoke-b"),
+                ("--user-preempt-probe", "--exception-idt", "--tss-ist",
+                 "--test-exit", "--user-preempt-fault",
+                 "--user-preempt-bad-cr3"),
         ):
             path = work / "invalid.iso"
             r = subprocess.run([
