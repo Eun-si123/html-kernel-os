@@ -150,3 +150,14 @@ python3 scripts/build_boot.py --exception-idt --out build/html-kernel-m3-excepti
 ```
 
 See [M3_EXCEPTION_IDT.md](docs/M3_EXCEPTION_IDT.md). Real hardware/UEFI and browser testing for this new feature are NOT RUN; the public Boot Lab remains on its existing seven older demos.
+
+## M3 isolated virtual mapping proof (not a general VM manager)
+
+The opt-in `--paging-probe` builds **a private page-table root**, copies the active Limine PML4 without changing it, and maps one 4KiB USABLE physical frame to a fixed supervisor-only virtual alias. In BIOS QEMU the kernel verifies alias read/write, clears the PTE, invalidates the TLB and restores the original CR3 before source-generated HTML executes. A separate real CPU post-unmap access must raise #PF; the opt-in `--exception-idt` records CR2 and exits the test kernel with non-success 45. This is an **M3 experimental mapping slice**, not general-purpose virtual allocation, page-fault recovery, process isolation, TSS/IST or physical-PC verification.
+
+```sh
+python3 scripts/test_paging_probe.py
+python3 scripts/build_boot.py --exception-idt --paging-probe --out build/html-kernel-m3-paging.iso
+```
+
+See [M3_PRIVATE_PAGING.md](docs/M3_PRIVATE_PAGING.md). The existing public browser Boot Lab is unchanged.
