@@ -119,6 +119,24 @@
         "scripts/test_paging_probe.py",
         "docs/M3_PRIVATE_PAGING.md"
       ]
+    },
+    {
+      "id": "m3-owned-fault-recovery",
+      "source": [
+        "boot/frame_owner.c",
+        "boot/frame_owner.h",
+        "boot/paging_probe.c",
+        "boot/exception_idt.c",
+        "scripts/build_boot.py"
+      ],
+      "regressions": [
+        "tests/test_frame_owner.py"
+      ],
+      "fieldEvidence": [
+        "tests/native/test_frame_owner.c",
+        "scripts/test_paging_recovery.py",
+        "docs/M3_FAULT_RECOVERY.md"
+      ]
     }
   ]
 }

@@ -3,13 +3,17 @@
  */
 #include "paging_probe.h"
 #include "page_pool.h"
+#include "frame_owner.h"
 #include "limine.h"
 #include <stdint.h>
 
-#ifdef HTMLK_M3_PAGING_UNMAP_FAULT_TEST
+#if defined(HTMLK_M3_PAGING_UNMAP_FAULT_TEST) || defined(HTMLK_M3_PAGING_RECOVER_TEST)
 #ifndef HTMLK_M3_EXCEPTION_IDT
-#error "unmapped-alias fault test requires an installed exception IDT"
+#error "paging fault injection or recovery requires an installed exception IDT"
 #endif
+#endif
+#if defined(HTMLK_M3_PAGING_UNMAP_FAULT_TEST) && defined(HTMLK_M3_PAGING_RECOVER_TEST)
+#error "recovery and fail-stop fault tests are mutually exclusive"
 #endif
 
 static void report(const char *message) {
@@ -31,6 +35,41 @@ static void failed(const char *marker) {
     __asm__ volatile ("cli" ::: "memory");
     for (;;) __asm__ volatile ("hlt" ::: "memory");
 }
+
+#ifdef HTMLK_M3_PAGING_RECOVER_TEST
+static struct htmlk_frame_registry * volatile recovery_registry;
+static volatile uint64_t * volatile recovery_table;
+static volatile uint64_t recovery_cr3_phys, recovery_hhdm;
+static volatile uint64_t recovery_frame;
+/* The handler changes these asynchronously across a faulting volatile load.
+ * A compiler must re-read them after architectural iretq. */
+static volatile bool recovery_armed;
+static volatile unsigned recovery_count;
+
+/* Called only by the IDT #PF handler. Fail closed on any unsolicited fault,
+ * wrong CR3, wrong address, protection violation or repeated invocation. */
+bool htmlk_paging_recover_page_fault(uint64_t fault_address, uint64_t error) {
+    if (!recovery_armed || recovery_count != 0 ||
+        fault_address != HTMLK_PAGING_VADDR || error != 0 ||
+        recovery_registry == 0 || recovery_table == 0 ||
+        recovery_table[0] != 0) return false;
+    uint64_t cr3;
+    __asm__ volatile ("mov %%cr3, %0" : "=r"(cr3));
+    if ((cr3 & HTMLK_PAGING_PHYS_MASK) != recovery_cr3_phys) return false;
+    uint64_t phys = UINT64_MAX;
+    if (!htmlk_frame_claim(recovery_registry, HTMLK_FRAME_DATA, &phys) ||
+        recovery_hhdm > UINT64_MAX - phys - HTMLK_PAGE_SIZE) return false;
+    volatile uint64_t *raw = (volatile uint64_t *)(uintptr_t)(recovery_hhdm + phys);
+    for (unsigned i = 0; i < HTMLK_PAGE_SIZE / 8; ++i) raw[i] = 0;
+    recovery_frame = phys;
+    recovery_table[0] = phys | HTMLK_PAGING_ENTRY_RW;
+    __asm__ volatile ("invlpg (%0)" : : "r"((uintptr_t)HTMLK_PAGING_VADDR) : "memory");
+    recovery_armed = false;
+    recovery_count++;
+    report("M3_PF_RECOVERED\n");
+    return true; /* GCC interrupt ABI emits iretq, CPU retries faulted load. */
+}
+#endif
 
 void htmlk_paging_probe(const struct limine_memmap_response *map,
                         const struct limine_hhdm_response *hhdm) {
@@ -63,9 +102,15 @@ void htmlk_paging_probe(const struct limine_memmap_response *map,
         hhdm->offset > UINT64_MAX - old_root_phys) {
         failed("M3_PAGING_BAD_HHDM_OR_CR3\n");
     }
+    struct htmlk_frame_registry registry = {0};
+    if (!htmlk_frames_init(&registry, &pool)) {
+        failed("M3_PAGING_OWNER_INIT_FAILED\n");
+    }
     uint64_t frames[5];
     for (unsigned i = 0; i < 5; ++i) {
-        if (!htmlk_page_take(&pool, &frames[i]) ||
+        const enum htmlk_frame_owner owner =
+            i == 4 ? HTMLK_FRAME_DATA : HTMLK_FRAME_TABLE;
+        if (!htmlk_frame_claim(&registry, owner, &frames[i]) ||
             frames[i] == 0 ||
             frames[i] > HTMLK_PAGING_PHYS_MASK ||
             hhdm->offset > UINT64_MAX - frames[i] - HTMLK_PAGE_SIZE) {
@@ -114,13 +159,86 @@ void htmlk_paging_probe(const struct limine_memmap_response *map,
     report("M3_PAGING_UNMAPPED\n");
 
 #ifdef HTMLK_M3_PAGING_UNMAP_FAULT_TEST
-    /* CPU raises a real #PF (P=0); the previously installed IDT
-     * reports CR2=0xffffa00000000000 and exits QEMU non-success 45. */
+    /* Genuine unauthorized #PF must still fail-stop; not auto-recovered. */
     volatile uint64_t must_fault = *virtual_alias;
     (void)must_fault;
     failed("M3_PAGING_BAD_UNMAP_ALLOWED\n");
-#else
+#elif defined(HTMLK_M3_PAGING_RECOVER_TEST)
+    recovery_registry = &registry;
+    recovery_table = pt;
+    recovery_cr3_phys = frames[0];
+    recovery_hhdm = offset;
+    recovery_count = 0;
+    recovery_frame = 0;
+    recovery_armed = true;
+    /* The known CPU fault is asynchronous to normal C control flow.
+     * Make all ISR-shared state globally observable before the first read. */
+    __asm__ volatile ("" : : : "memory");
+    /* This actual CPU load #PFs. The IDT installs one zeroed DATA page,
+     * iretq retries the load, and execution resumes with value zero. */
+    const uint64_t zero = *virtual_alias;
+    if (zero != 0)
+        failed("M3_PAGING_RECOVERY_NONZERO\n");
+    if (recovery_armed)
+        failed("M3_PAGING_RECOVERY_STILL_ARMED\n");
+    if (recovery_count != 1)
+        failed("M3_PAGING_RECOVERY_COUNT_WRONG\n");
+    if (recovery_frame == 0)
+        failed("M3_PAGING_RECOVERY_FRAME_MISSING\n");
+    /* CPU may set Accessed (bit 5) and Dirty (bit 6) on a valid
+     * leaf PTE after it retries the fault. Validate physical address
+     * and required permissions, not exact raw PTE equality. */
+    const uint64_t post_retry_pte = pt[0];
+    if ((post_retry_pte & HTMLK_PAGING_PHYS_MASK) != recovery_frame ||
+        (post_retry_pte & HTMLK_PAGING_ENTRY_RW) != HTMLK_PAGING_ENTRY_RW ||
+        (post_retry_pte & UINT64_C(4)) != 0)
+        failed("M3_PAGING_RECOVERY_PTE_MISMATCH\n");
+    *virtual_alias = UINT64_C(0x123456789ABCDEF0);
+    volatile uint64_t *recovered_phys =
+        (volatile uint64_t *)(uintptr_t)(offset + recovery_frame);
+    if (*recovered_phys != UINT64_C(0x123456789ABCDEF0))
+        failed("M3_PAGING_RECOVERY_ALIAS_BAD\n");
+    report("M3_PAGING_RETRY_OK\n");
+    pt[0] = 0;
+    __asm__ volatile ("invlpg (%0)" : : "r"(virtual_alias) : "memory");
+    recovery_table = 0;
+    recovery_registry = 0;
+#endif
+#ifndef HTMLK_M3_PAGING_UNMAP_FAULT_TEST
     __asm__ volatile ("mov %0, %%cr3" : : "r"(old_cr3) : "memory");
     report("M3_PAGING_RESTORED\n");
+#ifdef HTMLK_M3_PAGING_RECOVER_TEST
+    if (!htmlk_frame_release(&registry, HTMLK_FRAME_DATA, recovery_frame))
+        failed("M3_PAGING_RECOVERED_FRAME_LEAK\n");
+#endif
+    if (!htmlk_frame_release(&registry, HTMLK_FRAME_DATA, frames[4]))
+        failed("M3_PAGING_ORIGINAL_FRAME_LEAK\n");
+    for (unsigned i = 0; i < 4; ++i) {
+        if (!htmlk_frame_release(&registry, HTMLK_FRAME_TABLE, frames[i]))
+            failed("M3_PAGING_TABLE_LEAK\n");
+    }
+    if (registry.live != 0)
+        failed("M3_PAGING_OWNER_LEAK\n");
+#ifdef HTMLK_M3_OWNED_FRAME_TEST
+    /* Actual boot-time negative controls: reclaimed pages are deterministic,
+     * double-free/wrong-owner are rejected, 17th claim must fail. */
+    uint64_t reclaimed[HTMLK_POOL_PAGES];
+    for (unsigned i = 0; i < HTMLK_POOL_PAGES; ++i) {
+        if (!htmlk_frame_claim(&registry, HTMLK_FRAME_DATA, &reclaimed[i]) ||
+            reclaimed[i] != pool.first_phys + (uint64_t)i * HTMLK_PAGE_SIZE)
+            failed("M3_PAGING_RECLAIM_WRONG\n");
+    }
+    uint64_t sentinel = UINT64_MAX;
+    if (htmlk_frame_claim(&registry, HTMLK_FRAME_DATA, &sentinel) ||
+        sentinel != UINT64_MAX ||
+        htmlk_frame_release(&registry, HTMLK_FRAME_TABLE, reclaimed[0]))
+        failed("M3_PAGING_OWNER_NEGATIVE_MISSED\n");
+    for (unsigned i = 0; i < HTMLK_POOL_PAGES; ++i) {
+        if (!htmlk_frame_release(&registry, HTMLK_FRAME_DATA, reclaimed[i]) ||
+            htmlk_frame_release(&registry, HTMLK_FRAME_DATA, reclaimed[i]))
+            failed("M3_PAGING_DOUBLE_FREE_ALLOWED\n");
+    }
+    report("M3_FRAME_OWNERSHIP_OK\n");
+#endif
 #endif
 }

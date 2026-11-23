@@ -18,7 +18,8 @@ class FeatureContractTests(unittest.TestCase):
     def test_mapping_has_existing_sources_and_regressions(self):
         self.assertEqual({entry["id"] for entry in validate(self.real)},
                          {"html-grammar-codegen", "static-site", "m3-memory-bootstrap",
-                          "m3-exception-idt", "m3-private-paging"})
+                          "m3-exception-idt", "m3-private-paging",
+                          "m3-owned-fault-recovery"})
 
     def test_changed_m3_c_source_maps_native_regressions(self):
         report = summarize(validate(self.real), ["boot/page_pool.c"])
@@ -30,7 +31,7 @@ class FeatureContractTests(unittest.TestCase):
         report = summarize(validate(self.real), ["boot/exception_idt.c"])
         self.assertEqual(
             [item["feature"] for item in report["affectedFeatures"]],
-            ["m3-exception-idt"])
+            ["m3-exception-idt", "m3-owned-fault-recovery"])
         self.assertIn("tests/test_exception_idt.py",
                       report["affectedFeatures"][0]["existingRegressionTests"])
         self.assertIn("scripts/test_exception_idt.py",
@@ -41,10 +42,21 @@ class FeatureContractTests(unittest.TestCase):
         report = summarize(validate(self.real), ["boot/paging_probe.c"])
         self.assertEqual(
             [item["feature"] for item in report["affectedFeatures"]],
-            ["m3-private-paging"])
+            ["m3-private-paging", "m3-owned-fault-recovery"])
         self.assertIn("tests/test_paging_tables.py",
                       report["affectedFeatures"][0]["existingRegressionTests"])
         self.assertIn("scripts/test_paging_probe.py",
+                      report["affectedFeatures"][0]["fieldEvidence"])
+        self.assertEqual(report["affectedFeatures"][0]["automatedEvidence"], "not-run")
+
+    def test_owner_registry_maps_to_genuine_qemu_fault_recovery(self):
+        report = summarize(validate(self.real), ["boot/frame_owner.c"])
+        self.assertEqual(
+            [item["feature"] for item in report["affectedFeatures"]],
+            ["m3-owned-fault-recovery"])
+        self.assertIn("tests/test_frame_owner.py",
+                      report["affectedFeatures"][0]["existingRegressionTests"])
+        self.assertIn("scripts/test_paging_recovery.py",
                       report["affectedFeatures"][0]["fieldEvidence"])
         self.assertEqual(report["affectedFeatures"][0]["automatedEvidence"], "not-run")
 

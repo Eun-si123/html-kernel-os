@@ -57,7 +57,8 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
           memory_probe: bool = False, memory_probe_badmap: bool = False,
           video_console: bool = False, video_test: bool = False,
           exception_idt: bool = False, fault_test: str | None = None,
-          paging_probe: bool = False, paging_fault_test: bool = False) -> None:
+          paging_probe: bool = False, paging_fault_test: bool = False,
+          paging_recover_test: bool = False, owned_frame_test: bool = False) -> None:
     dist, header = get_limine(cache)
     work_root.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="htmlk-boot-", dir=work_root) as temp:
@@ -80,6 +81,16 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
             raise ValueError("CPU fault injection requires the opt-in exception IDT")
         if paging_fault_test and not (paging_probe and exception_idt):
             raise ValueError("paging fault injection needs paging probe and exception IDT")
+        if paging_recover_test and not (paging_probe and exception_idt):
+            raise ValueError("paging recovery needs paging probe and exception IDT")
+        if paging_fault_test and paging_recover_test:
+            raise ValueError("paging fail-stop and recovery test modes are mutually exclusive")
+        if owned_frame_test and not paging_probe:
+            raise ValueError("owned frame test needs paging probe")
+        if paging_recover_test:
+            define.append("-DHTMLK_M3_PAGING_RECOVER_TEST")
+        if owned_frame_test:
+            define.append("-DHTMLK_M3_OWNED_FRAME_TEST")
         if paging_probe:
             define.append("-DHTMLK_M3_PAGING_PROBE")
         if paging_fault_test:
@@ -112,7 +123,7 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
             if memory_probe:
                 sources.append("memory_probe")
             if paging_probe:
-                sources.extend(("paging_tables", "paging_probe"))
+                sources.extend(("frame_owner", "paging_tables", "paging_probe"))
             if exception_idt:
                 sources.append("exception_idt")
             if video_console:
@@ -174,7 +185,17 @@ def main() -> None:
                         help="Opt-in M3 private 4KiB CR3 mapping, alias and unmap probe")
     parser.add_argument("--paging-fault-test", action="store_true",
                         help="Real post-unmap #PF; needs --paging-probe and --exception-idt")
+    parser.add_argument("--paging-recover-test", action="store_true",
+                        help="One-shot lazy #PF recovery; requires paging probe and IDT")
+    parser.add_argument("--owned-frame-test", action="store_true",
+                        help="QEMU negative frame ownership/reclaim/exhaustion oracle")
     a = parser.parse_args()
+    if a.paging_recover_test and not (a.paging_probe and a.exception_idt):
+        parser.error("--paging-recover-test requires --paging-probe and --exception-idt")
+    if a.paging_fault_test and a.paging_recover_test:
+        parser.error("--paging-fault-test and --paging-recover-test are mutually exclusive")
+    if a.owned_frame_test and not a.paging_probe:
+        parser.error("--owned-frame-test requires --paging-probe")
     if a.paging_fault_test and not (a.paging_probe and a.exception_idt):
         parser.error("--paging-fault-test requires --paging-probe and --exception-idt")
     if a.fault_test is not None and not a.exception_idt:
@@ -186,7 +207,8 @@ def main() -> None:
     build(a.source, a.out, a.cache_dir, a.work_dir, a.test_exit,
           a.memory_probe, a.memory_probe_badmap,
           a.video_console, a.video_test, a.exception_idt, a.fault_test,
-          a.paging_probe, a.paging_fault_test)
+          a.paging_probe, a.paging_fault_test,
+          a.paging_recover_test, a.owned_frame_test)
 
 
 if __name__ == "__main__":

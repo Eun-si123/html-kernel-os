@@ -130,3 +130,12 @@ python3 scripts/test_paging_probe.py      # real BIOS QEMU independent normal/mo
 ```
 
 A positive mapping proof requires a genuine CPU virtual-address load/store after writing a private CR3, equality with the Limine HHDM physical address, PTE clearing, TLB invalidation and **successful return to the original CR3** before executing an HTML source-derived kernel. An invalid-mapping proof requires actual CPU #PF after unmap, reported CR2 `FFFFA00000000000` and non-success exit 45, never a fake diagnostic call. The combined source boot must keep the existing physical pool + IDT + native RGB framebuffer working. Branch real QEMU CI `45097571139` and merged-main run `45097936323` passed, but this isolated test is **not** an arbitrary map/unmap, concurrency, recovery, browser or physical-hardware proof.
+
+## M3 controlled CPU page-fault recovery (not general paging)
+
+```sh
+python3 -m unittest tests.test_frame_owner -v   # owner allocation/reclaim and exhaustion, GCC UBSan -O0/-O3
+python3 scripts/test_paging_recovery.py        # actual CPU #PF, one-shot mapping and iretq retry
+```
+
+The positive gate is an **actual page fault followed by reexecution of the original memory load**, verified as zero-fill, then cross-checked through the HHDM physical alias. QEMU must also show deterministic owner reclaim/exhaustion, 16-pages limit and valid source-derived HTML after original CR3 restoration. Negative gate: unarmed wrong-address #PF still prints vector/RIP/CR2 and exits **non-success 45**; wrong CLI flag combos must fail before building. The CPU may set Accessed/Dirty PTE bits after replay: compare address/required flags, not exact raw 64-bit PTE value. The mini-PC Linux/QEMU test passed against branch code at `1b790d2` (before docs). UEFI, browser and real PC NOT RUN for M3 recovery.
