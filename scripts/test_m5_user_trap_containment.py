@@ -65,6 +65,32 @@ def prove_full_guest(iso:Path,*,timer:bool)->None:
               '6 user CPU traps + 6 healthy reruns + clean exit PASS',flush=True)
 
 
+def prove_html_user_cross_target(work:Path,cache:Path,romfs:Path)->None:
+    """Prove newly merged F1 HTML compiler and E3-B trap handler share a guest."""
+    iso=work/'html-user-plus-traps.iso'
+    build_timer(ROOT/'examples/kernel.html',iso,work,cache,
+                '--romfs-root',str(romfs),
+                '--user-app-html',str(ROOT/'examples/user-programs/html-hello.html'))
+    good=APP_TRACE.replace(b'M5_C_USER_PAGES_READY\n',
+                           b'M5_C_USER_PAGES_READY\n'+TIMER)
+    trace,uart=exercise(iso,[
+        (b'run /apps/fault-de.hke\r',b'M5_ERR_USER_FAULT'),
+        (b'run /apps/hello.hke\r',good),
+        (b'run /apps/fault-bp.hke\r',b'M5_ERR_USER_FAULT'),
+        (b'run /apps/hello.hke\r',good),
+        (b'run /apps/spin.hke\r',b'M5_ERR_USER_TIMEOUT'),
+        (b'run /apps/hello.hke\r',good),
+        (b'exit\r',b'M5_CONSOLE_EXIT\n'+HTML)],HTML,cpu=CPU)
+    assert trace.count(b'M5_E_USER_DE\n')==1 and trace.count(b'M5_E_USER_BP\n')==1
+    assert trace.count(b'M5_E_FAULT_FRAMES_RECLAIMED\n')==2
+    assert trace.count(b'M5_E2_TIMEOUT_FRAMES_RECLAIMED\n')==1
+    assert trace.count(b'M5_C_USER_FRAMES_RECLAIMED\n')==3
+    assert trace.count(good)==3 and uart.count(b'M5_C_USER_VALUE=2026')==3
+    assert trace.count(TIMER)==6
+    assert trace.endswith(b'M5_CONSOLE_EXIT\n'+HTML)
+    print('M5-E3-B+F1 REAL QEMU: HTML-COMPILED HKEX RERUNS AFTER #DE/#BP AND x2APIC TIMEOUT PASS',flush=True)
+
+
 def prove_legacy_fail_stop(work:Path,cache:Path)->None:
     for name,vector in (('de',b'00'),('db',b'01'),('bp',b'0D')):
         # Without --user-fault-recover even a *genuine* CPL3 trap must not
@@ -122,6 +148,7 @@ def main()->None:
             build_user_image(asm,romfs/(f'end-{mnemonic}.hke'))
         prove_full_guest(build_guest(work,cache,romfs,timer=False),timer=False)
         prove_full_guest(build_guest(work,cache,romfs,timer=True),timer=True)
+        prove_html_user_cross_target(work,cache,romfs)
         prove_legacy_fail_stop(work,cache)
     print('M5-E3-B CPU TRAP CONTAINMENT, REAL TIMER, BOUNDARY RIP, FAIL-STOP ACCEPTANCE PASS')
 

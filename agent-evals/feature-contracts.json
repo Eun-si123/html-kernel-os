@@ -452,6 +452,30 @@
         "scripts/test_m5_process_lifecycle_stress.py",
         "docs/M5_PROCESS_LIFECYCLE_STRESS.md"
       ]
+    },
+    {
+      "id": "m5-html-language-user-program",
+      "source": [
+        "compiler/htmlk.py",
+        "compiler/language.py",
+        "compiler/function_codegen.py",
+        "scripts/build_html_user_image.py",
+        "scripts/user_program.ld",
+        "scripts/user_program_entry.S",
+        "scripts/build_boot.py",
+        "examples/user-programs/html-hello.html"
+      ],
+      "regressions": [
+        "tests/test_html_user_target.py",
+        "tests/test_compiler.py",
+        "tests/test_language.py",
+        "tests/test_user_image.py"
+      ],
+      "fieldEvidence": [
+        "scripts/test_m5_html_user.py",
+        "scripts/test_m5_interactive_run.py",
+        "docs/M5_HTML_USER_PROGRAM.md"
+      ]
     }
   ]
 }

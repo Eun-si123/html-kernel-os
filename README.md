@@ -71,6 +71,21 @@ python3 scripts/run_m5_console.py --with-user-program --recover-user-faults
 
 Run `run /apps/fault-io.hke`, `run /apps/fault-pf.hke`, `run /apps/fault-ro.hke` or `run /apps/fault-ud.hke`: each must cause a **real Ring3 CPU exception**, reclaim its own user memory and return to the original UART command prompt. Then `run /apps/hello.hke` still runs normally. A valid user image that calls an unsupported `INT 0x80` ID or invalid argument now also fails **only that program** (`M5_ERR_USER_SYSCALL`), with the same console and next `run` still usable. This is a separate opt-in experiment, **not** a sandbox for untrusted binaries: an infinite loop is not yet interruptible here. See [M5-E1 exact QEMU evidence and restrictions](docs/M5_USER_FAULT_RECOVERY.md).
 
+## Compile an HTML-like program into its own native Ring 3 app (M5-F1)
+
+The **same HTML parser and typed expression compiler** used for the kernel and Linux targets can now also generate a bounded user-mode executable. Try [`examples/user-programs/html-hello.html`](examples/user-programs/html-hello.html), which calculates and reports `2026` using a typed function, variable and repeat loop:
+
+```sh
+# Direct interactive console on Ubuntu:
+python3 scripts/run_m5_console.py --html-user-app examples/user-programs/html-hello.html
+# Or generate the native image and run automated QEMU evidence:
+python3 scripts/build_html_user_image.py --source examples/user-programs/html-hello.html --out build/html-hello.hke
+python3 scripts/build_boot.py --exception-idt --tss-ist --romfs-run-console --user-fault-recover --user-timeout --user-app-html examples/user-programs/html-hello.html --out build/m5-html-user.iso
+python3 scripts/test_m5_html_user.py
+```
+
+In the real QEMU COM1 shell, `run /apps/hello.hke` executes **independent HTML-derived machine code in Ring 3**, prints its numeric result and returns to the prompt with user frames reclaimed. This is a trusted build-time ROMFS application with **one unsigned numeric report (0..9999)**; it is not an HTML web page, nor a text/graphics API or a general ELF loader. See [M5-F1 native end-to-end contract](docs/M5_HTML_USER_PROGRAM.md).
+
 ## Run a separate ROMFS user program in native Ring 3 (M5-C1)
 
 This opt-in test assembles `examples/user-programs/hello.S` into a small, checked `HKEX` executable and embeds it as `/apps/hello.hke` in the native kernel's immutable ROMFS. After bounded file validation the kernel loads **actual independent machine-code bytes** into a private CPL3 code page, checks register-only system calls, returns to generated HTML code and reclaims the user frames. To reproduce:

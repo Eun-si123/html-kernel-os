@@ -16,7 +16,7 @@ else:
 
 
 def compile_html(source: str, *, target: str = "kernel") -> str:
-    if target not in ("kernel", "linux"):
+    if target not in ("kernel", "linux", "user"):
         raise CompileError(f"unknown compiler target {target!r}")
     parsed = parse(source)
     program = parsed.statements
@@ -31,6 +31,24 @@ def compile_html(source: str, *, target: str = "kernel") -> str:
             contains_arrays |= node.tag == "array"
             scan(node.children)
     scan(program)
+    if target == "user":
+        # One M2 grammar and typed expression checker across all targets.
+        # String output needs a separate kernel-validated user pointer API.
+        def ensure_numeric_only(nodes: list[Node]) -> None:
+            for node in nodes:
+                if node.tag == "print" and "value" not in node.attrs:
+                    fail(node, "user target requires <print value=.../>; string syscalls not supported")
+                ensure_numeric_only(node.children)
+        ensure_numeric_only(program)
+        prints = [i for i, node in enumerate(program) if node.tag == 'print']
+        def contains_nested_print(nodes: list[Node]) -> bool:
+            return any(child.tag == 'print' or contains_nested_print(child.children)
+                       for node in nodes for child in node.children)
+        nested = contains_nested_print(program)
+        # M5-C1 syscall sequence intentionally accepts just one numeric
+        # report; reject unsupported source shapes *before* building an ISO.
+        if len(prints) != 1 or nested or prints[0] != len(program) - 2:
+            raise CompileError("user target requires exactly one top-level final numeric <print value=.../> before <halt/>")
     for fn in functions.values():
         scan(fn.body)
 
@@ -62,11 +80,23 @@ def compile_html(source: str, *, target: str = "kernel") -> str:
         "#endif",
         "}",
         ]
-    else:
+    elif target == "linux":
         lines += [
             "#include <stdio.h>",
             "static inline void outb(unsigned char v) {",
             "  (void)putchar((int)v); /* Linux userspace stdout, NOT port I/O */",
+            "}",
+        ]
+    else:
+        lines += [
+            "/* x86-64 CPL3 register-only int80 ABI; no raw I/O instructions. */",
+            "static inline void htmlk_user_call(uint64_t id, uint64_t arg) {",
+            '  __asm__ volatile ("int $0x80" :: "a"(id), "D"(arg) : "memory", "cc");',
+            "}",
+            "static inline __attribute__((noreturn)) void htmlk_user_abort(void) {",
+            "  htmlk_user_call(UINT64_C(99), UINT64_C(0));",
+            '  __asm__ volatile ("ud2");',
+            "  __builtin_unreachable();",
             "}",
         ]
     # Division and remainder must never invoke C undefined behavior. The
@@ -83,12 +113,18 @@ def compile_html(source: str, *, target: str = "kernel") -> str:
             '  for (;;) __asm__ volatile ("hlt");',
             "}",
         ]
-    else:
+    elif target == "linux":
         lines += [
             "#include <stdlib.h>",
             "static inline __attribute__((noreturn)) void htmlk_divide_by_zero(void) {",
             '  (void)fputs("HTMLK_DIVIDE_BY_ZERO\\n", stderr);',
             "  exit(65);",
+            "}",
+        ]
+    if target == "user":
+        lines += [
+            "static inline __attribute__((noreturn)) void htmlk_divide_by_zero(void) {",
+            "  htmlk_user_abort();",
             "}",
         ]
     if contains_arrays:
@@ -104,11 +140,17 @@ def compile_html(source: str, *, target: str = "kernel") -> str:
                 '  for (;;) __asm__ volatile ("hlt");',
                 "}",
             ]
-        else:
+        elif target == "linux":
             lines += [
                 "static inline __attribute__((noreturn)) void htmlk_array_bounds_fault(void) {",
                 '  (void)fputs("HTMLK_ARRAY_BOUNDS\\n", stderr);',
                 "  exit(66);",
+                "}",
+            ]
+        else:
+            lines += [
+                "static inline __attribute__((noreturn)) void htmlk_array_bounds_fault(void) {",
+                "  htmlk_user_abort();",
                 "}",
             ]
         lines += [
@@ -118,7 +160,7 @@ def compile_html(source: str, *, target: str = "kernel") -> str:
             "}",
         ]
     lines.extend(c_helpers())
-    if contains_numeric_print:
+    if contains_numeric_print and target != "user":
         lines += [
             "static void htmlk_print_u64(uint64_t value) {",
             "  unsigned char buffer[20];",
@@ -141,10 +183,17 @@ def compile_html(source: str, *, target: str = "kernel") -> str:
         ]
     definitions, costs = compile_functions(functions)
     lines.extend(definitions)
-    lines.append("void kernel_main(void) {" if target == "kernel"
-                 else "int main(void) {")
+    lines.append("void kernel_main(void) {" if target == "kernel" else
+                 "int main(void) {" if target == "linux" else
+                 "__attribute__((noreturn)) void htmlk_user_main(void) {")
     if target == "kernel":
         lines.append("  serial_init();")
+    elif target == "user":
+        lines += [
+            "  volatile uint64_t htmlk_user_stack_probe = UINT64_C(0x1234);",
+            "  if (htmlk_user_stack_probe != UINT64_C(0x1234)) htmlk_user_abort();",
+            "  htmlk_user_call(UINT64_C(0), htmlk_user_stack_probe);",
+        ]
     variables: set[str] = set()
     variable_types: dict[str, str] = {}
     loop_id = 0
@@ -176,7 +225,11 @@ def compile_html(source: str, *, target: str = "kernel") -> str:
                 if "value" in node.attrs:
                     detected: list[str] = []
                     value = checked(node.attrs["value"], type_out=detected)
-                    if detected[0] in {"i32", "i64"}:
+                    if target == "user":
+                        if detected[0] in {"i32", "i64"}:
+                            fail(node, "user numeric report must have unsigned u32/u64 type")
+                        lines.append(f"{pad}htmlk_user_call(UINT64_C(2), (uint64_t)({value}));")
+                    elif detected[0] in {"i32", "i64"}:
                         lines.append(f"{pad}htmlk_print_i64((int64_t)({value}));")
                     else:
                         lines.append(f"{pad}htmlk_print_u64({value});")
@@ -286,8 +339,14 @@ def compile_html(source: str, *, target: str = "kernel") -> str:
         '  __asm__ volatile ("cli");',
         '  for (;;) __asm__ volatile ("hlt");',
         ]
-    else:
+    elif target == "linux":
         lines += ["  return fflush(stdout) == EOF || ferror(stdout) ? 1 : 0;"]
+    else:
+        lines += [
+            "  htmlk_user_call(UINT64_C(1), UINT64_C(0));",
+            '  __asm__ volatile ("ud2");',
+            "  __builtin_unreachable();",
+        ]
     lines += ["}", ""]
     return "\n".join(lines)
 
@@ -296,8 +355,8 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="Compile HTML Kernel source to native kernel or Linux C")
     ap.add_argument("input", type=Path)
     ap.add_argument("--out", type=Path, required=True)
-    ap.add_argument("--target", choices=("kernel", "linux"), default="kernel",
-                    help="Kernel: privileged I/O and halt; Linux: stdout and normal exit")
+    ap.add_argument("--target", choices=("kernel", "linux", "user"), default="kernel",
+                    help="Kernel: privileged I/O; Linux: stdout; user: numeric register syscalls")
     args = ap.parse_args()
     try:
         generated = compile_html(args.input.read_text(encoding="utf-8"),
