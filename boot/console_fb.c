@@ -91,6 +91,9 @@ struct fb_state {
 };
 
 static struct fb_state fb;
+#ifdef HTMLK_FB_TEST
+static void report(const char *message);
+#endif
 
 static void paint(uint64_t x, uint64_t y, uint32_t color) {
     volatile uint32_t *pixel = (volatile uint32_t *)(void *)
@@ -153,6 +156,9 @@ static void fill_body(void) {
 }
 
 bool htmlk_fb_init(const struct htmlk_fb_mode *mode) {
+#ifdef HTMLK_FB_TEST
+    report("FB_DRIVER_ENTRY\n");
+#endif
     fb.active = false;
     fb.pixels = 0;
     fb.glyphs = 0;
@@ -179,6 +185,9 @@ bool htmlk_fb_init(const struct htmlk_fb_mode *mode) {
     const uintptr_t address = (uintptr_t)mode->address;
     if (mode->pitch * mode->height > UINTPTR_MAX - address) return false;
 
+#ifdef HTMLK_FB_TEST
+    report("FB_DRIVER_VALID_MODE\n");
+#endif
     fb.pixels = mode->address;
     fb.width = mode->width;
     fb.height = mode->height;
@@ -191,9 +200,15 @@ bool htmlk_fb_init(const struct htmlk_fb_mode *mode) {
     fb.y = BODY_Y;
     fb.active = true;
 
+#ifdef HTMLK_FB_TEST
+    report("FB_DRIVER_CLEAR_START\n");
+#endif
     for (uint64_t y = 0; y < fb.height; ++y) {
         for (uint64_t x = 0; x < fb.width; ++x) paint(x, y, fb.bg);
     }
+#ifdef HTMLK_FB_TEST
+    report("FB_DRIVER_CLEAR_DONE\n");
+#endif
     for (uint64_t y = 0; y < 4; ++y) {
         for (uint64_t x = 0; x < fb.width; ++x) paint(x, y, fb.accent);
     }
@@ -202,6 +217,9 @@ bool htmlk_fb_init(const struct htmlk_fb_mode *mode) {
     for (uint64_t x = MARGIN_X; x + MARGIN_X < fb.width; ++x) {
         paint(x, 70, fb.muted);
     }
+#ifdef HTMLK_FB_TEST
+    report("FB_DRIVER_DRAW_DONE\n");
+#endif
     return true;
 }
 
