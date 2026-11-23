@@ -1,6 +1,6 @@
 # M3 — first physical-memory bootstrap (opt-in, partial)
 
-**Status:** an auditable experimental M3 *bootstrap slice*, not the M3 completion gate or a production allocator. The first implementation was actually executed under headless QEMU BIOS in GitHub CI run `45092535635` using the pinned Limine 12.11.1 boot protocol. The integrated M2+M3 branch has its own checks. UEFI, physical hardware, virtual-memory page-table management, faults/interrupt handlers, concurrent tasks and real application memory isolation remain **NOT VERIFIED / NOT IMPLEMENTED**.
+**Status:** an auditable experimental M3 *bootstrap slice*, not the M3 completion gate or a production allocator. The first implementation was actually executed under headless QEMU BIOS in GitHub CI run `45092535635` using the pinned Limine 12.11.1 boot protocol. The integrated M2+M3 PR run `45093041196` completed SUCCESS at `51e91ad`; it includes all previous M2 CI steps. UEFI, physical hardware, virtual-memory page-table management, faults/interrupt handlers, concurrent tasks and real application memory isolation remain **NOT VERIFIED / NOT IMPLEMENTED**.
 
 ## What is executable
 
