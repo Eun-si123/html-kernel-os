@@ -185,6 +185,12 @@
         "scripts/test_multimap.py",
         "docs/M3_MULTIPAGE.md"
       ]
+    },
+    {
+      "id": "m4-x2apic-preemption",
+      "source": ["boot/preempt_x2apic.c", "boot/preempt_x2apic.h", "boot/preempt_switch.S", "boot/exception_idt.c", "boot/kernel_entry.c", "scripts/build_boot.py"],
+      "regressions": ["tests/test_m4_preempt_frame.py"],
+      "fieldEvidence": ["scripts/test_m4_preempt.py", "tests/native/test_preempt_frame.c", "docs/M4_X2APIC_PREEMPT.md"]
     }
   ]
 }

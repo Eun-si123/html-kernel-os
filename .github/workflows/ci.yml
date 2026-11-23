@@ -86,6 +86,8 @@ jobs:
         run: python scripts/test_m4_tasks.py
       - name: Verify real M4 PIT/PIC IRQ0 pacing, APIC rejection and masked IRQ timeout
         run: python scripts/test_m4_timer.py
+      - name: Verify real x2APIC timer preemption of never-yielding ring-0 tasks in QEMU
+        run: python scripts/test_m4_preempt.py
       - name: Assemble standalone, non-test boot images
         run: |
           python scripts/build_boot.py --out build/html-kernel.iso
@@ -106,6 +108,7 @@ jobs:
           python scripts/build_boot.py --exception-idt --tss-ist --out build/html-kernel-m3-ist.iso
           python scripts/build_boot.py --exception-idt --tss-ist --paging-probe --multi-page-test --out build/html-kernel-m3-multimap.iso
           python scripts/build_boot.py --task-probe --out build/html-kernel-m4-tasks.iso
+          python scripts/build_boot.py --exception-idt --preempt-probe --out build/html-kernel-m4-preempt.iso
           python scripts/build_boot.py --source examples/framebuffer-kernel.html --video-console --out build/html-kernel-video.iso
       - uses: actions/upload-artifact@v4
         with:
@@ -147,6 +150,8 @@ jobs:
             build/html-kernel-m3-multimap.elf
             build/html-kernel-m4-tasks.iso
             build/html-kernel-m4-tasks.elf
+            build/html-kernel-m4-preempt.iso
+            build/html-kernel-m4-preempt.elf
             build/html-kernel-video.iso
             build/html-kernel-video.elf
             build/html-kernel-video-visible-screen.png

@@ -30,6 +30,7 @@ independently running user tasks plus forbidden memory access rejection.
 
 Next phases: B1 legacy real QEMU PIT/PIC IRQ0 delivery and cooperative
 pacing (see [M4 PIT IRQ](M4_PIT_IRQ.md), opt-in/no-APIC only); B2 proper
-APIC/IOAPIC delivery and actual timer-driven preemption; C — ring-3
+x2APIC local timer and actual timer-driven ring-0 preemption (QEMU-only,
+[M4-B2 proof](M4_X2APIC_PREEMPT.md)); C — ring-3
 GDT/IDT syscall entry with TSS.RSP0, separate user mappings; D — negative
 read/write privilege fault controls and safe task cleanup.

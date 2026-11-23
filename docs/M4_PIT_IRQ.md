@@ -35,5 +35,7 @@ Status after B1: M4-A cooperative task contexts verified, M4-B1 legacy timer
 interrupt delivery and opt-in tick-based cooperative pacing verified. Still
 **NO preemption, timeslice save of interrupt context, ring-3 userspace,
 syscalls, protected per-task address spaces or hardware generality**.
-Next B2: APIC/IOAPIC route and genuine timer-driven preemption with a
-safe IRQ context + FPU/FS/GS plan. Then M4-C ring3 and M4-D memory isolation.
+Phase B2 now uses an **independent x2APIC local timer** (not the legacy
+PIC routing in B1) for genuine ring-0 task preemption. See the
+[M4-B2 proof](M4_X2APIC_PREEMPT.md). Both B1/B2 remain opt-in; M4-C ring3
+and M4-D protected memory access are still required.
