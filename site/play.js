@@ -210,6 +210,15 @@ import V86 from './vendor/libv86.mjs';
       const text = await response.text();
       if (currentDemo !== demo) return;
       drawSource(text);
+      // The guest can finish before the source fetch; reconcile only with
+      // already received real COM1 lines, not a guessed instruction pointer.
+      const lines = serial.trimEnd().split('\n');
+      for (let i = lines.length - 1; i >= 0; i--) {
+        if (sourceLineForLiteral(lines[i]) !== -1) {
+          highlightLiteral(lines[i]);
+          break;
+        }
+      }
     } catch (error) {
       if (currentDemo !== demo) return;
       sourceView.textContent = '원본 HTML을 불러올 수 없어: ' + String(error?.message || error);
