@@ -456,6 +456,9 @@ import V86 from './vendor/libv86.mjs';
         await machine.run();
         logEvent('CPU 재개', 'v86.run() · 가상 CPU 실제 실행 재개');
         pauseButton.textContent = '일시 정지';
+        setStatus(serialVerified ?
+          '실제 가상 CPU 실행 재개 · 검증된 COM1 기록과 BIOS 이벤트는 유지돼.' :
+          '실제 가상 CPU 실행 재개 · 새 COM1 출력은 실시간으로 표시돼.');
       } catch (error) {
         userPaused = true;
         setStatus('CPU 실행 재개 실패: ' + String(error?.message || error));
