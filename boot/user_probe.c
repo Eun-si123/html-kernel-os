@@ -563,6 +563,47 @@ bool htmlk_m5_accept_bad_user_rsp_noerr(unsigned vector,
     return true;
 }
 
+/* M5-E3-G: strictly vector 13 CPU-error-code frame on TSS.RSP0.
+ * Do not reuse the #UD/#DE 40-byte layout: #GP has an 8-byte error word,
+ * though the GCC interrupt_frame * points at the following RIP. */
+bool htmlk_m5_accept_bad_user_rsp_gp(uintptr_t cpu_frame,
+                                  uintptr_t cpu_error_word,
+                                  uint64_t rip, uint64_t cs, uint64_t flags,
+                                  uint64_t user_rsp, uint64_t ss,
+                                  uint64_t error) {
+    uint64_t active_cr3;
+    __asm__ volatile("mov %%cr3,%0" : "=r"(active_cr3));
+    const struct htmlk_m5_bad_gp_owner proof = {
+        .frame = {
+            .frame_address=(uint64_t)cpu_frame,
+            .tss_rsp0=htmlk_tss_rsp0(),
+            .rip=rip,.cs=cs,.ss=ss,.rflags=flags,.user_rsp=user_rsp,
+            .active_cr3=active_cr3,.owned_cr3=frames[0],
+            .saved_cr3=htmlk_m4_saved_cr3,
+            .saved_main_rsp=(uint64_t)(uintptr_t)htmlk_m4_saved_main_rsp,
+            .code_bytes=user_code_length,
+            .live_frames=frames_registry.live,
+            .has_active_app=selected_app_path != 0,
+            .already_terminated=user_faulted || user_bad_syscall || user_exited
+#ifdef HTMLK_M5_USER_TIMEOUT
+                || user_timed_out
+#endif
+            ,
+#ifdef HTMLK_M5_USER_TIMEOUT
+            .expected_if=true,
+#else
+            .expected_if=false,
+#endif
+        },
+        .error_word_address=(uint64_t)cpu_error_word,
+        .error_code=error,
+    };
+    if (!htmlk_m5_bad_gp_stack_owned(&proof)) return false;
+    user_faulted=true;
+    log_text("M5_E3_USER_GP_BAD_RSP_RETIRED\n");
+    return true;
+}
+
 bool htmlk_m5_accept_user_fault(unsigned vector, uint64_t rip,
                                 uint64_t cs, uint64_t flags,
                                 uint64_t rsp, uint64_t ss,
