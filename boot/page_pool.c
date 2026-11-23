@@ -4,8 +4,14 @@
  * the bootloader must explicitly label it USABLE. */
 bool htmlk_page_pool_init(const struct htmlk_phys_range *regions,
                           uint64_t count, struct htmlk_page_pool *pool) {
-    if (regions == 0 || pool == 0 ||
-        count == 0 || count > HTMLK_MAX_MEMORY_REGIONS) {
+    if (pool == 0) {
+        return false;
+    }
+    /* A failed reinitialization must never leave a stale allocatable pool. */
+    pool->first_phys = 0;
+    pool->next_phys = 0;
+    pool->end_phys = 0;
+    if (regions == 0 || count == 0 || count > HTMLK_MAX_MEMORY_REGIONS) {
         return false;
     }
     for (uint64_t i = 0; i < count; ++i) {
