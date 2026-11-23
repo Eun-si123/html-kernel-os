@@ -53,7 +53,8 @@ def get_limine(cache: Path) -> tuple[Path, Path]:
             tar.extractall(dist, filter="data")
         run("make", "-C", dist / "limine-binary")
     return dist / "limine-binary", header
-def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool) -> None:
+def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool,
+          memory_probe: bool = False, memory_probe_badmap: bool = False) -> None:
     dist, header = get_limine(cache)
     work_root.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="htmlk-boot-", dir=work_root) as temp:
@@ -69,12 +70,25 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
                  "-mno-red-zone", "-mcmodel=kernel", "-mgeneral-regs-only",
                  "-fcf-protection=none", "-Wall", "-Wextra", "-Werror"]
         define = ["-DHTMLK_QEMU_TEST_EXIT"] if test_exit else []
+        if memory_probe_badmap and not memory_probe:
+            raise ValueError("bad-map injection requires an explicit M3 memory probe")
+        if memory_probe:
+            define.append("-DHTMLK_M3_MEMORY_PROBE")
+        if memory_probe_badmap:
+            define.append("-DHTMLK_M3_BAD_MAP_TEST")
         run("gcc", *flags, *define, "-c", generated, "-o", generated_obj)
         run("gcc", *flags, *define, "-I", header.parent, "-c",
             ROOT / "boot/kernel_entry.c", "-o", entry_obj)
+        extra_objects: list[Path] = []
+        if memory_probe:
+            for source_name in ("page_pool", "memory_probe"):
+                obj = build_dir / (source_name + ".o")
+                run("gcc", *flags, *define, "-I", header.parent, "-I", ROOT / "boot",
+                    "-c", ROOT / "boot" / (source_name + ".c"), "-o", obj)
+                extra_objects.append(obj)
         run("gcc", "-nostdlib", "-no-pie", "-Wl,--build-id=none",
             "-Wl,-z,max-page-size=0x1000", "-Wl,-T," + str(ROOT / "boot/linker.ld"),
-            "-o", kernel, entry_obj, generated_obj)
+            "-o", kernel, entry_obj, generated_obj, *extra_objects)
         run("readelf", "-h", kernel)
         out.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(kernel, out.with_suffix(".elf"))
@@ -108,8 +122,15 @@ def main() -> None:
         "HTMLK_WORK_DIR", str(ROOT / "build"))))
     parser.add_argument("--test-exit", action="store_true",
                         help="Enable QEMU debug-exit port for deterministic CI assertion")
+    parser.add_argument("--memory-probe", action="store_true",
+                        help="Opt-in M3 Limine map + 16-page HHDM allocator test")
+    parser.add_argument("--memory-probe-badmap", action="store_true",
+                        help="M3 negative test only; corrupt a local map copy")
     a = parser.parse_args()
-    build(a.source, a.out, a.cache_dir, a.work_dir, a.test_exit)
+    if a.memory_probe_badmap and not a.memory_probe:
+        parser.error("--memory-probe-badmap requires --memory-probe")
+    build(a.source, a.out, a.cache_dir, a.work_dir, a.test_exit,
+          a.memory_probe, a.memory_probe_badmap)
 
 
 if __name__ == "__main__":
