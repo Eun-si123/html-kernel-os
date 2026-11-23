@@ -20,7 +20,10 @@ MANIFEST = "html-kernel-live.json"
 def sha(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
-def build(out_dir: Path) -> tuple[Path, Path]:
+def build(out_dir: Path, *, source: Path | None = None) -> tuple[Path, Path]:
+    selected = source if source is not None else APP
+    if selected.is_symlink() or not selected.is_file():
+        raise ValueError("source must be a regular, non-symlink HTML file")
     if out_dir.is_symlink():
         raise ValueError("refusing symlink output directory")
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -33,7 +36,7 @@ def build(out_dir: Path) -> tuple[Path, Path]:
     # Embed the *exact same* read-only HTML source bytes visible in Pages.
     # Do not mutate the shared examples/romfs tree or link through files from
     # outside this trusted source checkout. ROMFS validates size/path bounds.
-    source_bytes = APP.read_bytes()
+    source_bytes = selected.read_bytes()
     if len(source_bytes) > 4096:
         raise ValueError("HTML source exceeds one bounded ROMFS file (4096 bytes)")
     with tempfile.TemporaryDirectory(prefix="htmlk-live-romfs-") as temp:
@@ -56,7 +59,8 @@ def build(out_dir: Path) -> tuple[Path, Path]:
         "image_bytes": iso.stat().st_size,
         "kernel_source": "examples/kernel.html",
         "kernel_source_sha256": sha(KERNEL),
-        "user_source": "examples/user-programs/html-u64-report.html",
+        "user_source": ("examples/user-programs/html-u64-report.html"
+                        if source is None else "local/" + selected.name),
         "user_source_sha256": hashlib.sha256(source_bytes).hexdigest(), "git_revision": revision,
         "embedded_source_path": "/source.html",
         "embedded_source_sha256": hashlib.sha256(source_bytes).hexdigest(),
@@ -73,8 +77,12 @@ def build(out_dir: Path) -> tuple[Path, Path]:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out-dir", type=Path, default=ROOT / "build/live-site")
+    parser.add_argument("--source", type=Path, help="custom HTML-shaped user source:"
+                        " compiled locally into the real native guest ISO")
     args = parser.parse_args()
-    build(args.out_dir.resolve())
+    # Preserve final symlink identity so build() can reject symlink paths.
+    build(args.out_dir.absolute(), source=args.source.absolute()
+          if args.source is not None else None)
 
 if __name__ == "__main__":
     main()
