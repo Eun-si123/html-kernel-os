@@ -50,3 +50,5 @@ When a feature changes, update the **one authoritative** owner, then fix any con
 - [M5-E3-C guarded malformed Ring3 syscall frame process-only abort](M5_USER_SYSCALL_FRAME.md).
 
 - [M5-E3 guarded last-instruction Ring3 INT80 EOF and safe terminal exit](M5_USER_SYSCALL_EOF.md).
+
+- [M5-F4 HTML Ring3 user program exit status and live UART result](M5_HTML_EXIT_STATUS.md).

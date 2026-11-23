@@ -107,6 +107,8 @@ The marker `— NEXT` is a **planning recommendation**, not an authoritative com
 
 **M5-F3 (local proof):** using the same HTML language, repeated numeric or ASCII `<print>` results inside capped loops/branches now compile to Ring3 code. The frontend statically caps worst-case reports at eight; independently the actual CPL3 syscall handler counts up to eight per user process and retires a handcrafted ninth-call executable without killing the native COM1 shell. Three real QEMU boots (each two HTML programs, ninth-call rejection, real x2APIC timeout and original kernel return), altered user text and kernel HTML native ISO/output proofs PASS. Exact new PR-head CI and merge pending. See [M5-F3 repeated user output](M5_HTML_MULTI_REPORT.md).
 
+**M5-F4 HTML user exit status (local branch):** a bounded optional `<halt code="0..255"/>` now compiles through the same M2 HTML source to the real CPL3 syscall-1 exit argument and reports nonzero status to the native COM1 shell after reclaim. Three repeat QEMU boots with a real invalid-exit-256 program, final-byte syscall-7, CPU fault, x2APIC timeout and independent healthy reruns PASS; 0/7/255 each build a distinct ISO, and legacy/kernel/Linux semantics remain unchanged. See [M5-F4 exit status proof](M5_HTML_EXIT_STATUS.md). Exact PR-head CI and merge remain separate requirements; full M5 process security and M6 physical boot still OPEN.
+
 - Prioritize an input/output terminal and deterministic RAM-backed or embedded filesystem before broad hardware drivers.
 - Add a simple user program loader, error reporting and minimal command interaction.
 - **Gate:** boot the image, enter a command, read an embedded file, execute a separate program, and report controlled invalid-input behavior.

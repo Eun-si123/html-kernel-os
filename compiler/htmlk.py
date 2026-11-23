@@ -69,6 +69,8 @@ def compile_html(source: str, *, target: str = "kernel") -> str:
             raise CompileError("user target requires a final unconditional top-level <print> before <halt/>")
         if not 1 <= report_budget(program) <= 8:
             raise CompileError("user target requires 1..8 bounded report events")
+    if target != "user" and program and "code" in program[-1].attrs:
+        fail(program[-1], "halt code is only valid for native Ring3 user programs")
     for fn in functions.values():
         scan(fn.body)
 
@@ -373,8 +375,9 @@ def compile_html(source: str, *, target: str = "kernel") -> str:
     elif target == "linux":
         lines += ["  return fflush(stdout) == EOF || ferror(stdout) ? 1 : 0;"]
     else:
+        exit_code = int(program[-1].attrs.get("code", "0"))
         lines += [
-            "  htmlk_user_call(UINT64_C(1), UINT64_C(0));",
+            f"  htmlk_user_call(UINT64_C(1), UINT64_C({exit_code}));",
             '  __asm__ volatile ("ud2");',
             "  __builtin_unreachable();",
         ]

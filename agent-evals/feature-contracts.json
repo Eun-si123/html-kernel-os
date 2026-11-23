@@ -529,6 +529,26 @@
         "scripts/test_m5_html_multi_report.py",
         "docs/M5_HTML_MULTI_REPORT.md"
       ]
+    },
+    {
+      "id": "m5-html-user-exit-status",
+      "source": [
+        "compiler/language.py",
+        "compiler/htmlk.py",
+        "scripts/build_boot.py",
+        "boot/user_probe.c",
+        "boot/user_probe.h",
+        "boot/serial_console.c",
+        "examples/user-programs/bad-exit-code.S",
+        "examples/user-programs/exit-seven-eof.S"
+      ],
+      "regressions": [
+        "tests/test_html_user_exit_status.py"
+      ],
+      "fieldEvidence": [
+        "scripts/test_m5_html_exit_status.py",
+        "docs/M5_HTML_EXIT_STATUS.md"
+      ]
     }
   ]
 }

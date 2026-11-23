@@ -166,6 +166,7 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
         if user_app_html is not None:
             define.append("-DHTMLK_M5_USER_TEXT")
             define.append("-DHTMLK_M5_USER_MULTI_REPORT")
+            define.append("-DHTMLK_M5_USER_EXIT_STATUS")
         if user_loader or interactive_run:
             define.append("-DHTMLK_M5_USER_LOADER")
         if interactive_run:

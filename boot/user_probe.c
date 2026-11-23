@@ -32,6 +32,10 @@ static volatile bool syscall_seen;
 static volatile bool user_exited;
 #ifdef HTMLK_M5_USER_LOADER
 static volatile bool user_reported;
+#ifdef HTMLK_M5_USER_EXIT_STATUS
+/* Only HTML-derived opt-in apps may submit a bounded 8-bit exit status. */
+static volatile uint8_t user_exit_code;
+#endif
 #ifdef HTMLK_M5_USER_MULTI_REPORT
 /* Actual per-task syscall budget, independent of source-level loop estimates.
  * Enforced even if a crafted executable bypasses the shared HTML compiler. */
@@ -176,8 +180,13 @@ void htmlk_m4_syscall_dispatch(void *raw_frame) {
      * legitimate CPL3 protocol error into a fatal kernel exception.
      * A valid terminating syscall may end at code end: it never IRETs. */
     if (at_user_code_end &&
-        !(id == 1U && f->rdi == 0U && syscall_seen && user_reported &&
-          !user_exited)) {
+        !(id == 1U &&
+#ifdef HTMLK_M5_USER_EXIT_STATUS
+          f->rdi <= UINT64_C(255) &&
+#else
+          f->rdi == 0U &&
+#endif
+          syscall_seen && user_reported && !user_exited)) {
         if (selected_app_path && frames_registry.live == 6U &&
             !user_faulted && !user_bad_syscall && !user_exited &&
 #ifdef HTMLK_M5_USER_TIMEOUT
@@ -244,12 +253,21 @@ void htmlk_m4_syscall_dispatch(void *raw_frame) {
     }
 #endif
 #endif
-    if (id == 1U && f->rdi == 0U && syscall_seen && !user_exited
+    if (id == 1U &&
+#ifdef HTMLK_M5_USER_EXIT_STATUS
+        f->rdi <= UINT64_C(255) &&
+#else
+        f->rdi == 0U &&
+#endif
+        syscall_seen && !user_exited
 #ifdef HTMLK_M5_USER_LOADER
         && user_reported
 #endif
         ) {
         user_exited = true;
+#ifdef HTMLK_M5_USER_EXIT_STATUS
+        user_exit_code = (uint8_t)f->rdi;
+#endif
 #ifdef HTMLK_M5_USER_LOADER
         log_text("M5_C_RING3_EXIT_OK\n");
 #else
@@ -377,6 +395,9 @@ void htmlk_m4_user_probe(const struct limine_memmap_response *map,
     syscall_seen = user_exited = false;
 #ifdef HTMLK_M5_USER_LOADER
     user_reported = false;
+#ifdef HTMLK_M5_USER_EXIT_STATUS
+    user_exit_code = 0U;
+#endif
 #ifdef HTMLK_M5_USER_MULTI_REPORT
     user_report_count = 0U;
 #endif
@@ -458,6 +479,9 @@ void htmlk_m4_user_probe(const struct limine_memmap_response *map,
 #ifdef HTMLK_M5_USER_FAULT_RECOVER
 bool htmlk_m5_user_last_faulted(void) { return user_faulted; }
 bool htmlk_m5_user_last_bad_syscall(void) { return user_bad_syscall; }
+#ifdef HTMLK_M5_USER_EXIT_STATUS
+uint8_t htmlk_m5_user_last_exit_status(void) { return user_exit_code; }
+#endif
 #ifdef HTMLK_M5_USER_TIMEOUT
 bool htmlk_m5_user_last_timed_out(void) { return user_timed_out; }
 bool htmlk_m5_timeout_irq_context_valid(const struct htmlk_m4_d1_irq_frame *f) {

@@ -50,7 +50,7 @@ CHILDREN = {"kernel": {None}, "onboot": {"kernel"},
 ALLOWED = {"kernel": {"arch"}, "onboot": set(), "print": {"value"},
            "let": {"name", "type", "value"}, "set": {"name", "value"},
            "array": {"name", "type", "length"}, "store": {"name", "index", "value"},
-           "if": {"test"}, "repeat": {"times"}, "while": {"test", "max"}, "halt": set(),
+           "if": {"test"}, "repeat": {"times"}, "while": {"test", "max"}, "halt": {"code"},
            "function": {"name", "params", "returns"}, "return": {"value"},
            "else": set(), "break": set(), "continue": set()}
 REQUIRED = {"let": {"name", "type", "value"}, "set": {"name", "value"},
@@ -178,6 +178,13 @@ class KernelParser(HTMLParser):
                 fail(node, f"at most {MAX_ARRAY_DECLS} bounded arrays are supported")
         elif tag in {"set", "store"}:
             validate_name(node)
+        elif tag == "halt" and "code" in pairs:
+            # M5-F4: bounded numeric user exit status. The backend rejects
+            # the attribute on kernel/Linux targets, never silently ignores.
+            value = pairs["code"]
+            if not (value.isascii() and value.isdecimal() and
+                    len(value) <= 3 and 0 <= int(value) <= 255):
+                fail(node, "halt code must be a decimal integer between 0 and 255")
         elif tag in {"repeat", "while"}:
             limit_attr = "times" if tag == "repeat" else "max"
             count = pairs[limit_attr]
