@@ -17,6 +17,9 @@ Only user-confirmed decisions belong under **Confirmed**. Proposals are not blan
 
 ## Proposals / not yet authorizations
 
+- **M2 integer division semantics (2026-11-23, proposed, implemented in an unmerged branch):** use C-style integer `/` (truncate toward zero) and `%` (remainder matches dividend sign), reject literal zero, trap dynamic zero, define `INT_MIN/-1` wrap and zero remainder. Tests and a source-derived QEMU artifact demonstrate behavior but do not by themselves finalize the language specification. Python `//` remains unsupported due to conflicting rounding expectations. See [M2_LANGUAGE_CONTRACT.md](M2_LANGUAGE_CONTRACT.md) and the PR before standardizing this choice.
+
+
 - **Future compiler backend** (C-as-IR versus LLVM/native code generation): not decided. The *current* boot path uses pinned Limine v12.11.1 with a verified x86-64 BIOS QEMU boot; UEFI and physical hardware support are still unverified.
 - **Benchmark threshold and protocol specifics:** a numeric C++/Rust ratio, allowed toolchain versions and workloads require representative implemented constructs and measured baselines; nothing has yet been benchmarked.
 - Exact language grammar and Python-level usability target: syntax rules, error behavior, expressions, type/ownership/unsafe contract, safe kernel libraries, and required novice comparison. See [LANGUAGE_DESIGN.md](LANGUAGE_DESIGN.md); example proposed tags are **not implemented**.
