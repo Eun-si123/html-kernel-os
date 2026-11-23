@@ -37,6 +37,9 @@ bool htmlk_tss_descriptor_make(struct htmlk_tss_descriptor *out,
 
 /* Privileged real CPU GDT/TSS setup, BEFORE IDT with IST gate flags. */
 void htmlk_tss_ist_install(void);
+/* Kernel-only single-CPU scheduler changes TSS.RSP0 before user IRET. */
+uint64_t htmlk_tss_rsp0(void);
+void htmlk_tss_set_rsp0(uint64_t stack_top);
 bool htmlk_tss_on_double_fault_stack(uint64_t current_rsp);
 bool htmlk_tss_on_page_fault_stack(uint64_t current_rsp);
 

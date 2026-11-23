@@ -22,6 +22,9 @@ extern void htmlk_m5_serial_console(void);
 #ifdef HTMLK_M4_USER_ISOLATION
 #include "user_isolation.h"
 #endif
+#ifdef HTMLK_M4_USER_PREEMPT
+#include "user_preempt.h"
+#endif
 #ifdef HTMLK_M4_TIMER_PROBE
 #include "timer_irq.h"
 #endif
@@ -51,7 +54,8 @@ __attribute__((used, section(".limine_requests_end")))
 static volatile uint64_t end_marker[] = LIMINE_REQUESTS_END_MARKER;
 
 #if defined(HTMLK_M3_MEMORY_PROBE) || defined(HTMLK_M3_PAGING_PROBE) || \
-    defined(HTMLK_M4_USER_PROBE) || defined(HTMLK_M4_USER_ISOLATION)
+    defined(HTMLK_M4_USER_PROBE) || defined(HTMLK_M4_USER_ISOLATION) || \
+    defined(HTMLK_M4_USER_PREEMPT)
 /* Opt-in requests reside within the pinned Limine request marker section.
  * Production/default boot tests remain untouched unless M3 memory/paging is enabled.
  */
@@ -148,8 +152,12 @@ void kmain(void) {
     htmlk_m4_user_isolation_probe(m3_memmap_request.response,
                                   m3_hhdm_request.response);
 #endif
+#ifdef HTMLK_M4_USER_PREEMPT
+    htmlk_m4_user_preempt_probe(m3_memmap_request.response,
+                                 m3_hhdm_request.response);
+#endif
 #ifdef HTMLK_M5_ROMFS_PROBE
-    htmlk_m5_romfs_probe(); /* Real immutable ELF .rodata bytes, not UI. */
+    htmlk_m5_romfs_probe(); /* Native ELF .rodata file data. */
 #endif
 #ifdef HTMLK_M5_SERIAL_CONSOLE
     htmlk_m5_serial_console(); /* Real 16550 UART RX, bounded ROMFS commands. */

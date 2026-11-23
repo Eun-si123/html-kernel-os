@@ -3,15 +3,42 @@
   "features": [
     {
       "id": "m4-pit-irq-pacing",
-      "source": ["boot/timer_irq.h", "boot/timer_irq.c", "boot/exception_idt.c", "boot/task_runtime.c", "boot/kernel_entry.c", "scripts/build_boot.py"],
-      "regressions": ["tests/test_m4_pit_divisor.py"],
-      "fieldEvidence": ["scripts/test_m4_timer.py", "tests/native/test_pit_divisor.c", "docs/M4_PIT_IRQ.md"]
+      "source": [
+        "boot/timer_irq.h",
+        "boot/timer_irq.c",
+        "boot/exception_idt.c",
+        "boot/task_runtime.c",
+        "boot/kernel_entry.c",
+        "scripts/build_boot.py"
+      ],
+      "regressions": [
+        "tests/test_m4_pit_divisor.py"
+      ],
+      "fieldEvidence": [
+        "scripts/test_m4_timer.py",
+        "tests/native/test_pit_divisor.c",
+        "docs/M4_PIT_IRQ.md"
+      ]
     },
     {
       "id": "m4-cooperative-kernel-tasks",
-      "source": ["boot/task_model.h", "boot/task_model.c", "boot/task_runtime.h", "boot/task_runtime.c", "boot/task_switch.S", "boot/kernel_entry.c", "scripts/build_boot.py"],
-      "regressions": ["tests/test_m4_task_model.py"],
-      "fieldEvidence": ["scripts/test_m4_tasks.py", "tests/native/test_task_model.c", "docs/M4_TASKS.md"]
+      "source": [
+        "boot/task_model.h",
+        "boot/task_model.c",
+        "boot/task_runtime.h",
+        "boot/task_runtime.c",
+        "boot/task_switch.S",
+        "boot/kernel_entry.c",
+        "scripts/build_boot.py"
+      ],
+      "regressions": [
+        "tests/test_m4_task_model.py"
+      ],
+      "fieldEvidence": [
+        "scripts/test_m4_tasks.py",
+        "tests/native/test_task_model.c",
+        "docs/M4_TASKS.md"
+      ]
     },
     {
       "id": "html-grammar-codegen",
@@ -188,23 +215,98 @@
     },
     {
       "id": "m4-x2apic-preemption",
-      "source": ["boot/preempt_x2apic.c", "boot/preempt_x2apic.h", "boot/preempt_switch.S", "boot/exception_idt.c", "boot/kernel_entry.c", "scripts/build_boot.py"],
-      "regressions": ["tests/test_m4_preempt_frame.py"],
-      "fieldEvidence": ["scripts/test_m4_preempt.py", "tests/native/test_preempt_frame.c", "docs/M4_X2APIC_PREEMPT.md"]
+      "source": [
+        "boot/preempt_x2apic.c",
+        "boot/preempt_x2apic.h",
+        "boot/preempt_switch.S",
+        "boot/exception_idt.c",
+        "boot/kernel_entry.c",
+        "scripts/build_boot.py"
+      ],
+      "regressions": [
+        "tests/test_m4_preempt_frame.py"
+      ],
+      "fieldEvidence": [
+        "scripts/test_m4_preempt.py",
+        "tests/native/test_preempt_frame.c",
+        "docs/M4_X2APIC_PREEMPT.md"
+      ]
     },
     {
       "id": "m4-ring3-user-syscall",
-      "source": ["boot/user_pages.h", "boot/user_pages.c", "boot/user_probe.h", "boot/user_probe.c", "boot/user_entry.S", "boot/tss_ist.c", "boot/exception_idt.c", "boot/kernel_entry.c", "scripts/build_boot.py"],
-      "regressions": ["tests/test_user_pages.py"],
-      "fieldEvidence": ["scripts/test_m4_user.py", "tests/native/test_user_pages.c", "docs/M4_RING3_C1.md"]
+      "source": [
+        "boot/user_pages.h",
+        "boot/user_pages.c",
+        "boot/user_probe.h",
+        "boot/user_probe.c",
+        "boot/user_entry.S",
+        "boot/tss_ist.c",
+        "boot/exception_idt.c",
+        "boot/kernel_entry.c",
+        "scripts/build_boot.py"
+      ],
+      "regressions": [
+        "tests/test_user_pages.py"
+      ],
+      "fieldEvidence": [
+        "scripts/test_m4_user.py",
+        "tests/native/test_user_pages.c",
+        "docs/M4_RING3_C1.md"
+      ]
     },
     {
       "id": "m4-ring3-fault-containment",
-      "source": ["boot/user_isolation.c", "boot/user_isolation.h", "boot/user_isolation_payload.S", "boot/isolation_policy.c", "boot/isolation_policy.h", "boot/user_pages.c", "boot/user_entry.S", "boot/frame_owner.c", "boot/exception_idt.c", "boot/tss_ist.c", "boot/kernel_entry.c", "scripts/build_boot.py"],
-      "regressions": ["tests/test_isolation_policy.py"],
-      "fieldEvidence": ["scripts/test_m4_isolation.py", "tests/native/test_isolation_policy.c", "docs/M4_FAULT_ISOLATION.md"]
+      "source": [
+        "boot/user_isolation.c",
+        "boot/user_isolation.h",
+        "boot/user_isolation_payload.S",
+        "boot/isolation_policy.c",
+        "boot/isolation_policy.h",
+        "boot/user_pages.c",
+        "boot/user_entry.S",
+        "boot/frame_owner.c",
+        "boot/exception_idt.c",
+        "boot/tss_ist.c",
+        "boot/kernel_entry.c",
+        "scripts/build_boot.py"
+      ],
+      "regressions": [
+        "tests/test_isolation_policy.py"
+      ],
+      "fieldEvidence": [
+        "scripts/test_m4_isolation.py",
+        "tests/native/test_isolation_policy.c",
+        "docs/M4_FAULT_ISOLATION.md"
+      ]
     },
-{
+    {
+      "id": "m4-ring3-preemptive-survival",
+      "source": [
+        "boot/user_preempt.c",
+        "boot/user_preempt.h",
+        "boot/user_preempt_frame.c",
+        "boot/user_preempt_frame.h",
+        "boot/user_preempt_payload.S",
+        "boot/user_preempt_switch.S",
+        "boot/exception_idt.c",
+        "boot/kernel_entry.c",
+        "boot/tss_ist.c",
+        "boot/tss_ist.h",
+        "scripts/build_boot.py",
+        "boot/frame_owner.c",
+        "boot/user_pages.c"
+      ],
+      "regressions": [
+        "tests/test_user_preempt_frame.py"
+      ],
+      "fieldEvidence": [
+        "scripts/test_m4_user_preempt.py",
+        "scripts/test_m4_user_fault_preempt.py",
+        "tests/native/test_user_preempt_frame.c",
+        "docs/M4_RING3_PREEMPT.md"
+      ]
+    },
+    {
       "id": "m5-romfs-readonly",
       "source": [
         "boot/romfs.h",

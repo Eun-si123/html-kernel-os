@@ -23,8 +23,9 @@ class FeatureContractTests(unittest.TestCase):
                           "m3-bounded-multipage", "m4-cooperative-kernel-tasks",
                           "m4-pit-irq-pacing", "m4-x2apic-preemption",
                           "m4-ring3-user-syscall",
-                          "m4-ring3-fault-containment", "m5-romfs-readonly",
-                          "m5-serial-console"})
+                          "m4-ring3-fault-containment",
+                          "m4-ring3-preemptive-survival",
+                          "m5-romfs-readonly", "m5-serial-console"})
 
     def test_changed_m4_scheduler_maps_native_qemu_and_state_oracles(self):
         report = summarize(validate(self.real), ["boot/task_switch.S"])
@@ -66,6 +67,15 @@ class FeatureContractTests(unittest.TestCase):
                       report["affectedFeatures"][0]["fieldEvidence"])
         self.assertEqual(report["affectedFeatures"][0]["automatedEvidence"], "not-run")
 
+    def test_new_user_irq_maps_host_and_real_qemu_evidence(self):
+        report = summarize(validate(self.real), ["boot/user_preempt_switch.S"])
+        self.assertEqual([x["feature"] for x in report["affectedFeatures"]],
+                         ["m4-ring3-preemptive-survival"])
+        self.assertIn("tests/test_user_preempt_frame.py",
+                      report["affectedFeatures"][0]["existingRegressionTests"])
+        self.assertIn("scripts/test_m4_user_fault_preempt.py",
+                      report["affectedFeatures"][0]["fieldEvidence"])
+
     def test_changed_m3_c_source_maps_native_regressions(self):
         report = summarize(validate(self.real), ["boot/page_pool.c"])
         self.assertEqual(report["affectedFeatures"][0]["feature"], "m3-memory-bootstrap")
@@ -79,7 +89,8 @@ class FeatureContractTests(unittest.TestCase):
             ["m4-pit-irq-pacing", "m3-exception-idt",
              "m3-owned-fault-recovery", "m3-tss-ist",
              "m4-x2apic-preemption", "m4-ring3-user-syscall",
-             "m4-ring3-fault-containment"])
+             "m4-ring3-fault-containment",
+             "m4-ring3-preemptive-survival"])
         m3_entry = next(item for item in report["affectedFeatures"]
                         if item["feature"] == "m3-exception-idt")
         self.assertIn("tests/test_exception_idt.py",
@@ -105,7 +116,8 @@ class FeatureContractTests(unittest.TestCase):
         self.assertEqual(
             [item["feature"] for item in report["affectedFeatures"]],
             ["m3-owned-fault-recovery", "m3-bounded-multipage",
-             "m4-ring3-fault-containment"])
+             "m4-ring3-fault-containment",
+             "m4-ring3-preemptive-survival"])
         self.assertIn("tests/test_frame_owner.py",
                       report["affectedFeatures"][0]["existingRegressionTests"])
         self.assertIn("scripts/test_paging_recovery.py",
@@ -117,7 +129,8 @@ class FeatureContractTests(unittest.TestCase):
         self.assertEqual(
             [item["feature"] for item in report["affectedFeatures"]],
             ["m3-tss-ist", "m4-ring3-user-syscall",
-             "m4-ring3-fault-containment"])
+             "m4-ring3-fault-containment",
+             "m4-ring3-preemptive-survival"])
         self.assertIn("tests/test_tss_ist.py",
                       report["affectedFeatures"][0]["existingRegressionTests"])
         self.assertIn("scripts/test_tss_ist.py",

@@ -92,6 +92,10 @@ jobs:
         run: python scripts/test_m4_user.py
       - name: Verify M4-C2 actual Ring 3 fault containment across distinct CR3 tasks in QEMU
         run: python scripts/test_m4_isolation.py
+      - name: Verify M4-D1 real never-yielding CPL3 x2APIC preemption
+        run: python scripts/test_m4_user_preempt.py
+      - name: Verify M4-D2 preempted CPL3 fault containment and survivor
+        run: python scripts/test_m4_user_fault_preempt.py
       - name: Validate M5-A ROMFS bounds under native UBSan O0/O3
         run: |
           for opt in 0 3; do
@@ -131,6 +135,7 @@ jobs:
           python scripts/build_boot.py --exception-idt --preempt-probe --out build/html-kernel-m4-preempt.iso
           python scripts/build_boot.py --exception-idt --tss-ist --user-probe --out build/html-kernel-m4-user.iso
           python scripts/build_boot.py --exception-idt --tss-ist --user-isolation-probe --out build/html-kernel-m4-isolation.iso
+          python scripts/build_boot.py --exception-idt --tss-ist --user-preempt-probe --out build/html-kernel-m4-user-preempt.iso
           python scripts/build_boot.py --romfs-probe --out build/html-kernel-m5-romfs.iso
           python scripts/build_boot.py --romfs-console --out build/html-kernel-m5-console.iso
           python scripts/build_boot.py --source examples/framebuffer-kernel.html --video-console --out build/html-kernel-video.iso

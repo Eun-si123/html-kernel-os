@@ -79,7 +79,7 @@
 ### P5. OS 핵심 기능과 실제 하드웨어 (M3–M6)
 
 - **M3:** 메모리 맵/할당·가상 메모리·예외/인터럽트. **M4:** 태스크·스케줄러·권한 분리.
-- **M4 상세 Phase:** A 커널 태스크 스택·협력형 스위치 → B1 QEMU no-APIC PIT/PIC IRQ0 협력형 진행(제한적, [M4 PIT IRQ](M4_PIT_IRQ.md)) → B2 x2APIC 로컬 타이머 기반 강제 선점(QEMU 한정, [증거와 한계](M4_X2APIC_PREEMPT.md)) → C1 QEMU 실제 CPL3 전환/INT0x80 및 CPU 권한 위반 #GP/#PF 검증([증거](M4_RING3_C1.md)) → C2 별도 CPL3 CR3의 실제 #PF/#GP 격리·생존 태스크·프레임 반환([C2 QEMU 증거](M4_FAULT_ISOLATION.md), 단 순차 실행) → D 사용자 모드 선점형 태스크·TSS.RSP0/CR3/IRQ 안전성·시스템 콜 통합 검증. [M4 구현 계약](M4_TASKS.md). A는 제한된 실험이며 M4 전체 완료가 아님.
+- **M4 상세 Phase:** A 커널 태스크 스택·협력형 스위치 → B1 QEMU no-APIC PIT/PIC IRQ0 협력형 진행(제한적, [M4 PIT IRQ](M4_PIT_IRQ.md)) → B2 x2APIC 로컬 타이머 기반 강제 선점(QEMU 한정, [증거와 한계](M4_X2APIC_PREEMPT.md)) → C1 QEMU 실제 CPL3 전환/INT0x80 및 CPU 권한 위반 #GP/#PF 검증([증거](M4_RING3_C1.md)) → C2 별도 CPL3 CR3의 실제 #PF/#GP 격리·생존 태스크·프레임 반환([C2 QEMU 증거](M4_FAULT_ISOLATION.md), 단 순차 실행) → D1/D2 실제 QEMU x2APIC 링3 태스크 강제 선점·TSS.RSP0/CR3 변경·A #PF 뒤 기존 B 생존 검증([M4-D1/D2 증거](M4_RING3_PREEMPT.md)); 범용 syscall과 FS/GS/SIMD, 무신뢰 프로세스, SMP 등은 여전히 남음. [M4 구현 계약](M4_TASKS.md). A는 제한된 실험이며 M4 전체 완료가 아님.
 - **M5:** 입력 터미널·작은 읽기 전용 파일시스템·별도 프로그램 실행. **M6:** 지원 기종을 한정한 안전한 실기기 검증.
 - 실기기 첫 시험에서 펌웨어를 수정하거나 운영 중 디스크에 자동으로 기록하지 않는다. 복구·롤백 계획 필수.
 - 기존 Linux/Windows 프로그램 호환, 광범위한 GPU/게임·드라이버 생태계, 독자 IDE는 **추후 결정**.
