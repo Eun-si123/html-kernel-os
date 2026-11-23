@@ -58,6 +58,7 @@ python3 scripts/test_u32.py
 python3 scripts/test_signed_bits.py
 python3 scripts/test_while.py
 python3 scripts/test_division.py
+python3 scripts/test_division_oracle.py
 python3 scripts/test_integer_oracle.py
 python3 scripts/build_boot.py --source examples/math-kernel.html --out build/html-kernel-math.iso
 ~~~
