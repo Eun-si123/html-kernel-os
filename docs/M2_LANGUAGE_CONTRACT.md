@@ -6,7 +6,7 @@ This is an **HTML-shaped programming language**, not general HTML. Build-time Py
 
 ## Runnable example
 
-Nine runnable M2 examples are [math-kernel.html](../examples/math-kernel.html), [functions-kernel.html](../examples/functions-kernel.html), [scoped-functions-kernel.html](../examples/scoped-functions-kernel.html), [else-kernel.html](../examples/else-kernel.html), [u32-kernel.html](../examples/u32-kernel.html), [signed-bits-kernel.html](../examples/signed-bits-kernel.html) [while-kernel.html](../examples/while-kernel.html) [division-kernel.html](../examples/division-kernel.html) and [array-kernel.html](../examples/array-kernel.html).
+Ten runnable M2 examples are [math-kernel.html](../examples/math-kernel.html), [functions-kernel.html](../examples/functions-kernel.html), [scoped-functions-kernel.html](../examples/scoped-functions-kernel.html), [else-kernel.html](../examples/else-kernel.html), [u32-kernel.html](../examples/u32-kernel.html), [signed-bits-kernel.html](../examples/signed-bits-kernel.html) [while-kernel.html](../examples/while-kernel.html) [division-kernel.html](../examples/division-kernel.html) [array-kernel.html](../examples/array-kernel.html) and [m2-exercises-kernel.html](../examples/m2-exercises-kernel.html).
 
 ~~~html
 <kernel arch="x86_64">
@@ -60,6 +60,7 @@ python3 scripts/test_while.py
 python3 scripts/test_division.py
 python3 scripts/test_division_oracle.py
 python3 scripts/test_arrays.py
+python3 scripts/test_m2_gate.py
 python3 scripts/test_integer_oracle.py
 python3 scripts/build_boot.py --source examples/math-kernel.html --out build/html-kernel-math.iso
 ~~~
@@ -88,3 +89,7 @@ This is not a full language or operating system. Function-local mutable variable
 `<array name="items" type="u64" length="4"/>` declares a local array of 1..64 typed integers, initialized to zero. At most 16 array declarations are allowed per program. `<store name="items" index="i" value="i * 3"/>` writes a typed element; `items[i]` reads an element in any numeric expression. Indexes are unsigned `u32` or `u64` (or unsigned integer literals); signed indexes, slices, pointers, arrays as scalar values, and passing arrays into functions are not supported. An index outside the array length written as a literal is rejected during compilation. Computed indexes are checked **before every read and write**, with Linux stderr marker `HTMLK_ARRAY_BOUNDS` and exit 66, or kernel COM1/debugcon marker, halt and QEMU non-success exit 37. These are stack-resident, fixed-size, zero-initialized arrays, **not a physical-memory allocator or virtual memory safety proof**. Function-local arrays obey lexical scopes; only function calls can pass values (not arrays).
 
 Browser/UEFI/physical runs for this example are not claimed. Native evidence and incomplete M2 acceptance parts are in [STATUS.md](STATUS.md).
+
+## Five representative constant-input learner exercises
+
+The versioned fixture [`examples/m2-exercises-kernel.html`](../examples/m2-exercises-kernel.html) performs **(1)** expression precedence, **(2)** bounded-loop summation, **(3)** factorial via a typed function, **(4)** signed branch selection, and **(5)** maximum over a checked array. `scripts/test_m2_gate.py` asserts exact outputs in a Linux process and an actual BIOS QEMU boot, changes an array element and proves the output changes, and rejects an out-of-bounds source. These are five *programming exercises*, **not** a five-person novice usability study or a C++/Rust performance benchmark. Compile-time diagnostics remain based on source line/column and CLI input filename; ergonomics and external user trials are open.
