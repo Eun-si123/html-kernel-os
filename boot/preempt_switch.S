@@ -71,4 +71,10 @@ htmlk_m4_enter_first:
     popq %rbx
     retq
 .size htmlk_m4_enter_first, .-htmlk_m4_enter_first
+/* APIC spurious vector requires no EOI; return without nested C work. */
+.global htmlk_m4_x2apic_spurious_entry
+.type htmlk_m4_x2apic_spurious_entry, @function
+htmlk_m4_x2apic_spurious_entry:
+    iretq
+.size htmlk_m4_x2apic_spurious_entry, .-htmlk_m4_x2apic_spurious_entry
 .section .note.GNU-stack,"",@progbits

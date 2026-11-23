@@ -19,6 +19,7 @@ _Static_assert(sizeof(struct htmlk_m4_irq_frame) == 20U * sizeof(uint64_t),
 extern uint64_t *htmlk_m4_main_stack;
 void htmlk_m4_preempt_probe(void);
 void htmlk_m4_x2apic_irq_entry(void);
+void htmlk_m4_x2apic_spurious_entry(void);
 void htmlk_m4_enter_first(uint64_t *stack);
 uint64_t *htmlk_m4_on_timer_irq(uint64_t *irq_stack);
 #endif

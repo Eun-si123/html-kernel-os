@@ -9,6 +9,8 @@ multitasking kernel or completed M4 user-isolation milestone.
 - Single x86-64 virtual CPU, QEMU q35 with explicit qemu64,+x2apic.
 - CPUID/APIC-base MSR checks before enabling x2APIC MSR mode.
 - Local x2APIC periodic timer at vector 0x40; no external IOAPIC/PIC IRQ.
+- A dedicated vector 0xFF spurious-interrupt gate returns with iretq
+  without an unnecessary EOI (preventing a missing-IDT-gate fault).
 - Dedicated 16 KiB kernel stack for each of two ring-0 tasks. Both execute
   busy loops **without** a software yield or scheduler syscall.
 - The assembly timer ISR saves **all 15 general-purpose registers**, retaining
