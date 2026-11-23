@@ -1,6 +1,10 @@
 /* M5-B: real guest CPU 16550 UART RX; no host-simulated command delivery. */
 #include "serial_command.h"
 #include "romfs.h"
+#ifdef HTMLK_M5_INTERACTIVE_RUN
+#include "user_image.h"
+#include "user_probe.h"
+#endif
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -36,6 +40,10 @@ static void send(uint8_t byte) {
     }
     serial_fatal();
 }
+#ifdef HTMLK_M5_INTERACTIVE_RUN
+/* Kernel syscall diagnostics route to COM1 as well as debugcon. */
+void htmlk_m5_console_byte(uint8_t byte) { send(byte); }
+#endif
 static void send_text(const char *text) {
     while (*text) send((uint8_t)*text++);
 }
@@ -84,6 +92,34 @@ static void cat(const char *path) {
     send_text("M5_CAT_END\n");
 }
 
+#ifdef HTMLK_M5_INTERACTIVE_RUN
+void htmlk_m5_serial_console(void);
+static const struct limine_memmap_response *program_map;
+static const struct limine_hhdm_response *program_hhdm;
+static void run_program(const char *path) {
+    uint8_t image[4096];
+    size_t length = 0;
+    if (!htmlk_romfs_read(&htmlk_romfs_image, path, 0,
+                          image, sizeof(image), &length)) {
+        send_text("M5_ERR_NOT_FOUND\n");
+        return;
+    }
+    struct htmlk_hke_program metadata = {0};
+    if (!htmlk_hke_validate(image, length, &metadata)) {
+        send_text("M5_ERR_BAD_EXEC\n");
+        return;
+    }
+    send_text("M5_RUN_START "); send_text(path); send_text("\n");
+    htmlk_m5_user_run(path, program_map, program_hhdm);
+    send_text("M5_RUN_DONE\n");
+}
+void htmlk_m5_serial_console_run(const struct limine_memmap_response *map,
+                                  const struct limine_hhdm_response *hhdm) {
+    program_map = map;
+    program_hhdm = hhdm;
+    htmlk_m5_serial_console();
+}
+#endif
 void htmlk_m5_serial_console(void) {
     if (!htmlk_romfs_validate(&htmlk_romfs_image)) serial_fatal();
     init_uart();
@@ -114,7 +150,12 @@ void htmlk_m5_serial_console(void) {
             const struct htmlk_console_command command = htmlk_console_parse(line.bytes);
             switch (command.kind) {
                 case HTMLK_CONSOLE_HELP:
-                    send_text("M5_HELP help ls cat /path exit\n"); break;
+#ifdef HTMLK_M5_INTERACTIVE_RUN
+                    send_text("M5_HELP help ls cat /path run /path exit\n");
+#else
+                    send_text("M5_HELP help ls cat /path exit\n");
+#endif
+                    break;
                 case HTMLK_CONSOLE_LS:
                     for (size_t i = 0; i < htmlk_romfs_image.count; ++i) {
                         send_text("M5_FILE ");
@@ -123,6 +164,9 @@ void htmlk_m5_serial_console(void) {
                     }
                     break;
                 case HTMLK_CONSOLE_CAT: cat(command.path); break;
+#ifdef HTMLK_M5_INTERACTIVE_RUN
+                case HTMLK_CONSOLE_RUN: run_program(command.path); break;
+#endif
                 case HTMLK_CONSOLE_BAD_PATH:
                     send_text("M5_ERR_INVALID_PATH\n"); break;
                 case HTMLK_CONSOLE_UNKNOWN:

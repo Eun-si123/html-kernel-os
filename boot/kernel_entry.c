@@ -7,7 +7,13 @@
 extern void htmlk_m5_romfs_probe(void);
 #endif
 #ifdef HTMLK_M5_SERIAL_CONSOLE
+struct limine_memmap_response;
+struct limine_hhdm_response;
 extern void htmlk_m5_serial_console(void);
+#ifdef HTMLK_M5_INTERACTIVE_RUN
+extern void htmlk_m5_serial_console_run(const struct limine_memmap_response *map,
+                                        const struct limine_hhdm_response *hhdm);
+#endif
 #endif
 #include "limine.h"
 #ifdef HTMLK_M4_TASK_PROBE
@@ -149,7 +155,7 @@ void kmain(void) {
 #ifdef HTMLK_M4_USER_PROBE
     htmlk_m4_user_probe(m3_memmap_request.response, m3_hhdm_request.response);
 #endif
-#ifdef HTMLK_M5_USER_LOADER
+#if defined(HTMLK_M5_USER_LOADER) && !defined(HTMLK_M5_INTERACTIVE_RUN)
     htmlk_m4_user_probe(m3_memmap_request.response, m3_hhdm_request.response);
 #endif
 #ifdef HTMLK_M4_USER_ISOLATION
@@ -163,7 +169,10 @@ void kmain(void) {
 #ifdef HTMLK_M5_ROMFS_PROBE
     htmlk_m5_romfs_probe(); /* Native ELF .rodata file data. */
 #endif
-#ifdef HTMLK_M5_SERIAL_CONSOLE
+#ifdef HTMLK_M5_INTERACTIVE_RUN
+    htmlk_m5_serial_console_run(m3_memmap_request.response,
+                                m3_hhdm_request.response);
+#elif defined(HTMLK_M5_SERIAL_CONSOLE)
     htmlk_m5_serial_console(); /* Real 16550 UART RX, bounded ROMFS commands. */
 #endif
     kernel_main(); /* Generated from examples/kernel.html. */

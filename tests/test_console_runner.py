@@ -28,6 +28,16 @@ class ConsoleRunnerTests(unittest.TestCase):
         self.assertNotIn("--romfs-probe", cmd)
         self.assertNotIn("--user-preempt-probe", cmd)
 
+    def test_separate_user_run_mode_does_not_activate_legacy_probes(self):
+        cmd = build_command(Path("run.iso"), ROOT / "examples/romfs",
+                            with_user_program=True)
+        self.assertIn("--romfs-run-console", cmd)
+        self.assertIn("--exception-idt", cmd)
+        self.assertIn("--tss-ist", cmd)
+        for forbidden in ("--romfs-console", "--romfs-probe", "--user-loader-probe",
+                          "--user-preempt-probe"):
+            self.assertNotIn(forbidden, cmd)
+
     def test_requires_interactive_tty_without_building(self):
         with patch("sys.stdin.isatty", return_value=False):
             with patch("subprocess.run") as proc:

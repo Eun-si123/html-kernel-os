@@ -51,6 +51,16 @@ python3 scripts/run_m5_console.py
 
 Enter `help`, `ls`, `cat /welcome.txt`, `cat /config/build.txt`, then `exit`. This command builds the native ISO with actual immutable ROMFS source bytes and starts a QEMU COM1 **serial-input** session. It is independent of the browser boot lab, and is **not** a general interactive OS: commands still run in the privileged kernel and no separate user program is loaded. See [M5-B full QEMU acceptance evidence](docs/M5_SERIAL_CONSOLE.md). Automated, noninteractive equivalent: `python3 scripts/test_m5_console.py`.
 
+## Live QEMU console `run` command (M5-D1)
+
+On an Ubuntu host with GCC, QEMU, xorriso and a real terminal, use the existing runner with one flag:
+
+```sh
+python3 scripts/run_m5_console.py --with-user-program
+```
+
+Type `ls`, `cat /welcome.txt`, `run /apps/hello.hke` (repeat it if you like), then `exit`. This is an **actual** guest COM1 serial command launching a separate native program in CPL3 from a read-only ROMFS image; it returns to the shell. Invalid paths, absent and invalid executable files are handled without killing the shell. The original `python3 scripts/run_m5_console.py` remains the simpler M5-B console by default. The trusted app is still embedded at build time: it is not an arbitrary external executable or an HTML-compiled user app. [Exact M5-D1 evidence and limits](docs/M5_INTERACTIVE_RUN.md).
+
 ## Run a separate ROMFS user program in native Ring 3 (M5-C1)
 
 This opt-in test assembles `examples/user-programs/hello.S` into a small, checked `HKEX` executable and embeds it as `/apps/hello.hke` in the native kernel's immutable ROMFS. After bounded file validation the kernel loads **actual independent machine-code bytes** into a private CPL3 code page, checks register-only system calls, returns to generated HTML code and reclaims the user frames. To reproduce:
