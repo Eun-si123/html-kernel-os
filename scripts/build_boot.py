@@ -75,6 +75,8 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
           user_preempt_bad_frame: bool = False,
           user_preempt_fault: bool = False,
           user_preempt_survivor_fault: bool = False,
+          user_preempt_fault_gp: bool = False,
+          user_preempt_fault_ro: bool = False,
           romfs_probe: bool = False, romfs_negative: bool = False,
           romfs_root: Path | None = None,
           romfs_console: bool = False) -> None:
@@ -192,6 +194,17 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
             define.append("-DHTMLK_M4_D2_FAULT")
         if user_preempt_survivor_fault:
             define.append("-DHTMLK_M4_D2_B_FAULT")
+        if (user_preempt_fault_gp or user_preempt_fault_ro) and not (
+                user_preempt_fault and test_exit):
+            raise ValueError("M4 D2 A alternate faults require D2 + test-exit")
+        if (user_preempt_fault_gp and user_preempt_fault_ro) or (
+                user_preempt_survivor_fault and
+                (user_preempt_fault_gp or user_preempt_fault_ro)):
+            raise ValueError("M4 D2 alternate CPU fault probes are exclusive")
+        if user_preempt_fault_gp:
+            define.append("-DHTMLK_M4_D2_A_GP")
+        if user_preempt_fault_ro:
+            define.append("-DHTMLK_M4_D2_A_RO")
         if timer_probe and not (exception_idt and task_probe):
             raise ValueError("M4 PIT timer requires --exception-idt and --task-probe")
         if timer_mask_test and not (timer_probe and test_exit):
@@ -444,6 +457,10 @@ def main() -> None:
                         help="M4-D2: real CPL3 #PF after preemption, surviving ring3 B")
     parser.add_argument("--user-preempt-survivor-fault", action="store_true",
                         help="M4-D2 negative: unexpected B #GP is fail-stop")
+    parser.add_argument("--user-preempt-fault-gp", action="store_true",
+                        help="M4-D2: actual A #GP error0 instead of supervisor read #PF5")
+    parser.add_argument("--user-preempt-fault-ro", action="store_true",
+                        help="M4-D2: actual A read-only code write #PF7")
     parser.add_argument("--romfs-probe", action="store_true",
                         help="M5-A opt-in bounded read-only files in native ELF")
     parser.add_argument("--romfs-console", action="store_true",
@@ -468,6 +485,13 @@ def main() -> None:
         parser.error("M4 D2 faults need --user-preempt-probe --test-exit")
     if a.user_preempt_survivor_fault and not a.user_preempt_fault:
         parser.error("M4 D2 B fault requires A fault")
+    if (a.user_preempt_fault_gp or a.user_preempt_fault_ro) and not (
+            a.user_preempt_fault and a.test_exit):
+        parser.error("M4 D2 alternate A fault requires D2 + test-exit")
+    if (a.user_preempt_fault_gp and a.user_preempt_fault_ro) or (
+            a.user_preempt_survivor_fault and
+            (a.user_preempt_fault_gp or a.user_preempt_fault_ro)):
+        parser.error("M4 D2 alternate fault probes are exclusive")
     if a.user_preempt_fault and (a.user_preempt_mask or a.user_preempt_bad_frame):
         parser.error("M4 D2 faults cannot combine D1 negative controls")
     if a.user_preempt_probe and (
@@ -561,6 +585,7 @@ def main() -> None:
           a.user_isolation_survivor_fault,
           a.user_preempt_probe, a.user_preempt_mask, a.user_preempt_bad_frame,
           a.user_preempt_fault, a.user_preempt_survivor_fault,
+          a.user_preempt_fault_gp, a.user_preempt_fault_ro,
           a.romfs_probe, a.romfs_negative, a.romfs_root,
           a.romfs_console)
 

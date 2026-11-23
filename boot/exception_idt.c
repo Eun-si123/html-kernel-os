@@ -171,6 +171,12 @@ __attribute__((interrupt)) static void vector_12(struct interrupt_frame *f, unsi
 }
 
 __attribute__((interrupt)) static void vector_13(struct interrupt_frame *f, unsigned long code) {
+#if defined(HTMLK_M4_D2_FAULT) && defined(HTMLK_M4_D2_A_GP)
+    struct htmlk_m4_d1_irq_frame *d2_survivor =
+        htmlk_m4_d1_user_fault(13U, f->rip, f->cs, f->rsp, f->ss,
+                                (uint64_t)code, 0U);
+    if (d2_survivor) htmlk_m4_d1_switch_from_fault(d2_survivor);
+#endif
 #ifdef HTMLK_M4_USER_ISOLATION
     if (htmlk_m4_iso_accept_fault(13U, f->rip, f->cs, f->rsp, f->ss,
                                   (uint64_t)code, 0U))
@@ -199,8 +205,8 @@ __attribute__((interrupt)) static void vector_14(struct interrupt_frame *f, unsi
     if (!htmlk_tss_on_page_fault_stack(current_rsp))
         panic(14, f->rip, (uint64_t)code); /* never recover on wrong stack */
     struct htmlk_m4_d1_irq_frame *survivor =
-        htmlk_m4_d1_page_fault(f->rip, f->cs, f->rsp, f->ss,
-                               (uint64_t)code, d2_cr2);
+        htmlk_m4_d1_user_fault(14U, f->rip, f->cs, f->rsp, f->ss,
+                                (uint64_t)code, d2_cr2);
     if (survivor)
         htmlk_m4_d1_switch_from_fault(survivor);
 #endif
