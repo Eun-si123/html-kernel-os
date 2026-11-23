@@ -29,4 +29,12 @@ struct htmlk_m5_bad_gp_owner {
     uint64_t error_word_address, error_code;
 };
 bool htmlk_m5_bad_gp_stack_owned(const struct htmlk_m5_bad_gp_owner *ctx);
+/* #PF is delivered to independently selected TSS.IST2, never RSP0.
+ * Error word is 8 bytes below the five-qword CPU frame. The policy
+ * proves IST2 ownership, active user CR3 and CR2 + CPU U/S fault bits. */
+struct htmlk_m5_bad_pf_owner {
+    struct htmlk_m5_bad_noerr_owner frame; /* tss_rsp0 field = trusted IST2 top */
+    uint64_t ist2_top, error_word_address, error_code, cr2;
+};
+bool htmlk_m5_bad_pf_stack_owned(const struct htmlk_m5_bad_pf_owner *ctx);
 #endif

@@ -153,5 +153,56 @@ int main(void) {
     gp.frame.saved_main_rsp=UINT64_C(0xffff800000300000);
     assert(!htmlk_m5_bad_gp_stack_owned(NULL));
 
+    /* M5-E3-H: #PF has an ERROR word and MUST use trusted IST2 (not RSP0).
+     * The shared owner gate alone never substitutes for exact IST2 frame. */
+    ud.already_terminated=false;
+    struct htmlk_m5_bad_pf_owner pf = {
+        .frame=ud,
+        .ist2_top=ud.tss_rsp0,
+        .error_word_address=ud.tss_rsp0-48U,
+        .error_code=5U,
+        .cr2=UINT64_C(0xffffffff80001000),
+    };
+    assert(htmlk_m5_bad_pf_stack_owned(&pf));
+    pf.error_code=7U;pf.cr2=user_base;
+    assert(htmlk_m5_bad_pf_stack_owned(&pf));
+    pf.cr2=user_base+4095U;assert(htmlk_m5_bad_pf_stack_owned(&pf));
+    pf.cr2=user_base+4096U;assert(!htmlk_m5_bad_pf_stack_owned(&pf));
+    pf.error_code=5U;pf.cr2=UINT64_C(0xffffffff80001000);
+    for (unsigned bad_error=0;bad_error<128U;++bad_error) {
+        if (bad_error==5U || bad_error==7U) continue;
+        pf.error_code=bad_error;
+        assert(!htmlk_m5_bad_pf_stack_owned(&pf));
+    }
+    pf.error_code=5U;pf.cr2=user_base;
+    assert(!htmlk_m5_bad_pf_stack_owned(&pf));
+    pf.cr2=UINT64_C(0xffffffff80001000);
+    pf.error_word_address-=8U;
+    assert(!htmlk_m5_bad_pf_stack_owned(&pf));pf.error_word_address+=8U;
+    pf.frame.frame_address-=8U;
+    assert(!htmlk_m5_bad_pf_stack_owned(&pf));pf.frame.frame_address+=8U;
+    pf.ist2_top+=16U;
+    assert(!htmlk_m5_bad_pf_stack_owned(&pf));pf.ist2_top-=16U;
+    pf.frame.tss_rsp0+=16U;
+    assert(!htmlk_m5_bad_pf_stack_owned(&pf));pf.frame.tss_rsp0-=16U;
+    pf.frame.cs=0x08U;
+    assert(!htmlk_m5_bad_pf_stack_owned(&pf));pf.frame.cs=0x2bU;
+    pf.frame.ss=0x10U;
+    assert(!htmlk_m5_bad_pf_stack_owned(&pf));pf.frame.ss=0x33U;
+    pf.frame.active_cr3=pf.frame.saved_cr3;
+    assert(!htmlk_m5_bad_pf_stack_owned(&pf));pf.frame.active_cr3=pf.frame.owned_cr3;
+    pf.frame.live_frames=5U;
+    assert(!htmlk_m5_bad_pf_stack_owned(&pf));pf.frame.live_frames=6U;
+    pf.frame.has_active_app=false;
+    assert(!htmlk_m5_bad_pf_stack_owned(&pf));pf.frame.has_active_app=true;
+    pf.frame.already_terminated=true;
+    assert(!htmlk_m5_bad_pf_stack_owned(&pf));pf.frame.already_terminated=false;
+    pf.frame.user_rsp=HTMLK_M4_USER_STACK-16U;
+    assert(!htmlk_m5_bad_pf_stack_owned(&pf));pf.frame.user_rsp=0U;
+    pf.frame.rflags|=UINT64_C(3)<<12;
+    assert(!htmlk_m5_bad_pf_stack_owned(&pf));pf.frame.rflags=0x202U;
+    pf.frame.rip=user_base+64U;
+    assert(!htmlk_m5_bad_pf_stack_owned(&pf));pf.frame.rip=user_base+3U;
+    assert(!htmlk_m5_bad_pf_stack_owned(NULL));
     puts("M5-E1 USER EXCEPTION FRAME/CR3/SEL/ERR GUARDS PASS");
 }

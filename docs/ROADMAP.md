@@ -121,6 +121,8 @@ The marker `— NEXT` is a **planning recommendation**, not an authoritative com
 
 **M5 Web-Live B HTML source inside ROMFS (branch):** embed byte-for-byte original user HTML as `/source.html` alongside its genuinely compiled HKEX; real QEMU and Chromium COM1 `cat` readback match raw SHA-256-verified source, then `run` executes real Ring3 user code. Public Pages deployment and exact PR-head CI remain PENDING. See [Web Live provenance](M5_WEB_LIVE.md).
 
+**M5-E3-H poisoned RSP true CPU page-fault IST2 (local feature branch):** independently reproduced fatal #PF5 error5/CR2 on real QEMU prior to patch. Now only trusted actual IST2 six-word CPU frame, active owner/private CR3 and properly scoped PF error5/7 can retire the current task; a real QEMU 3×(5 bad-user PF + 6 healthy HTML + genuine x2APIC timeout) positive suite, no-timer, legacy/error4 fail-stop, host UBSan negatives PASS. Full CI/merge pending. [Detailed proof](M5_USER_BAD_PF.md).
+
 - Prioritize an input/output terminal and deterministic RAM-backed or embedded filesystem before broad hardware drivers.
 - Add a simple user program loader, error reporting and minimal command interaction.
 - **Gate:** boot the image, enter a command, read an embedded file, execute a separate program, and report controlled invalid-input behavior.

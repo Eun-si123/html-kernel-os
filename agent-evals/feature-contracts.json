@@ -435,7 +435,9 @@
         "scripts/test_m5_user_bad_de_stack.py",
         "docs/M5_USER_BAD_DE.md",
         "scripts/test_m5_user_bad_gp_stack.py",
-        "docs/M5_USER_BAD_GP.md"
+        "docs/M5_USER_BAD_GP.md",
+        "scripts/test_m5_user_bad_pf_stack.py",
+        "docs/M5_USER_BAD_PF.md"
       ]
     },
     {

@@ -263,6 +263,15 @@ __attribute__((interrupt)) static void vector_14(struct interrupt_frame *f, unsi
         htmlk_m5_accept_user_fault(14U, f->rip, f->cs, f->rflags,
                                     f->rsp, f->ss, (uint64_t)code, m5_cr2))
         htmlk_m4_user_return();
+    /* A genuine CPL3 #PF with damaged user RSP is delivered to IST2,
+     * not RSP0. Verify exact IST2 error-code frame + CR2 provenance. */
+    if ((f->cs & 3U) == 3U &&
+        htmlk_tss_on_page_fault_stack(current_rsp) &&
+        htmlk_m5_accept_bad_user_rsp_pf((uintptr_t)f,
+                                        (uintptr_t)f - sizeof(uint64_t),
+                                        f->rip, f->cs, f->rflags,
+                                        f->rsp, f->ss, (uint64_t)code, m5_cr2))
+        htmlk_m4_user_return();
 #endif
 #ifdef HTMLK_M3_PAGING_RECOVER_TEST
     uint64_t fault_address;

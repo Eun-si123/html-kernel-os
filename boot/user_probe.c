@@ -604,6 +604,52 @@ bool htmlk_m5_accept_bad_user_rsp_gp(uintptr_t cpu_frame,
     return true;
 }
 
+/* M5-E3-H: unlike #GP at TSS.RSP0, #PF always changes to IST2.
+ * Prove exact CPU frame and error word relative to trusted TSS IST2 top;
+ * restore only the active owned CPL3 app after strict PF guard rejects
+ * its poisoned *user* RSP. Never dereference that RSP or CR2. */
+bool htmlk_m5_accept_bad_user_rsp_pf(uintptr_t cpu_frame,
+                                  uintptr_t cpu_error_word,
+                                  uint64_t rip, uint64_t cs, uint64_t flags,
+                                  uint64_t user_rsp, uint64_t ss,
+                                  uint64_t error, uint64_t cr2) {
+    uint64_t current_cr3;
+    __asm__ volatile("mov %%cr3,%0" : "=r"(current_cr3));
+    const uint64_t ist2_top = htmlk_tss_pf_ist2_top();
+    const struct htmlk_m5_bad_pf_owner proof = {
+        .frame = {
+            .frame_address=(uint64_t)cpu_frame,
+            .tss_rsp0=ist2_top,
+            .rip=rip,.cs=cs,.ss=ss,.rflags=flags,.user_rsp=user_rsp,
+            .active_cr3=current_cr3,.owned_cr3=frames[0],
+            .saved_cr3=htmlk_m4_saved_cr3,
+            .saved_main_rsp=(uint64_t)(uintptr_t)htmlk_m4_saved_main_rsp,
+            .code_bytes=user_code_length,
+            .live_frames=frames_registry.live,
+            .has_active_app=selected_app_path != 0,
+            .already_terminated=user_faulted || user_bad_syscall || user_exited
+#ifdef HTMLK_M5_USER_TIMEOUT
+                || user_timed_out
+#endif
+            ,
+#ifdef HTMLK_M5_USER_TIMEOUT
+            .expected_if=true,
+#else
+            .expected_if=false,
+#endif
+        },
+        .ist2_top=ist2_top,
+        .error_word_address=(uint64_t)cpu_error_word,
+        .error_code=error,
+        .cr2=cr2,
+    };
+    if (!htmlk_m5_bad_pf_stack_owned(&proof)) return false;
+    user_faulted=true;
+    log_text(error == 5U ? "M5_E3_USER_PF5_BAD_RSP_RETIRED\n" :
+                           "M5_E3_USER_PF7_BAD_RSP_RETIRED\n");
+    return true;
+}
+
 bool htmlk_m5_accept_user_fault(unsigned vector, uint64_t rip,
                                 uint64_t cs, uint64_t flags,
                                 uint64_t rsp, uint64_t ss,
