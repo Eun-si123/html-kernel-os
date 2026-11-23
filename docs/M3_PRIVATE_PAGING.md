@@ -1,6 +1,6 @@
 # M3 — Private CR3 virtual page mapping proof
 
-**Status:** experimental 4-level x86-64 page-table slice, not a general-purpose memory manager. The proof must pass the actual BIOS QEMU and native C checks in `scripts/test_paging_probe.py` before claims of native execution. No Pages, firmware, disk, UEFI or physical-hardware changes.
+**Status:** experimental 4-level x86-64 page-table slice, not a general-purpose memory manager. **Verified on the experimental branch:** native GCC UBSan -O0/-O3 layout checks, genuine BIOS QEMU CR3 map/unmap alias, source-derived execution, post-unmap #PF (CR2), and combined physical pool/IDT/video test all PASSED in Actions run `45097571139`. This is not browser/UEFI/physical hardware evidence. No Pages, firmware, disk, UEFI or physical-hardware changes.
 
 ## Implemented operation
 
