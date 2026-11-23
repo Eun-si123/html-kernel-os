@@ -56,7 +56,8 @@ def get_limine(cache: Path) -> tuple[Path, Path]:
 def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool,
           memory_probe: bool = False, memory_probe_badmap: bool = False,
           video_console: bool = False, video_test: bool = False,
-          exception_idt: bool = False, fault_test: str | None = None) -> None:
+          exception_idt: bool = False, fault_test: str | None = None,
+          paging_probe: bool = False, paging_fault_test: bool = False) -> None:
     dist, header = get_limine(cache)
     work_root.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="htmlk-boot-", dir=work_root) as temp:
@@ -77,6 +78,12 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
         define = ["-DHTMLK_QEMU_TEST_EXIT"] if test_exit else []
         if fault_test is not None and not exception_idt:
             raise ValueError("CPU fault injection requires the opt-in exception IDT")
+        if paging_fault_test and not (paging_probe and exception_idt):
+            raise ValueError("paging fault injection needs paging probe and exception IDT")
+        if paging_probe:
+            define.append("-DHTMLK_M3_PAGING_PROBE")
+        if paging_fault_test:
+            define.append("-DHTMLK_M3_PAGING_UNMAP_FAULT_TEST")
         if exception_idt:
             define.append("-DHTMLK_M3_EXCEPTION_IDT")
         faults = {"ud": "UD", "page": "PF", "divide": "DE", "general": "GP"}
@@ -100,8 +107,12 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
         run("gcc", *flags, *define, "-I", header.parent, "-c",
             ROOT / "boot/kernel_entry.c", "-o", entry_obj)
         extra_objects: list[Path] = []
-        if memory_probe or video_console or exception_idt:
-            sources = (["page_pool", "memory_probe"] if memory_probe else [])
+        if memory_probe or video_console or exception_idt or paging_probe:
+            sources = (["page_pool"] if (memory_probe or paging_probe) else [])
+            if memory_probe:
+                sources.append("memory_probe")
+            if paging_probe:
+                sources.append("paging_probe")
             if exception_idt:
                 sources.append("exception_idt")
             if video_console:
@@ -159,7 +170,13 @@ def main() -> None:
                         help="Opt-in M3 32-vector x86-64 fail-stop exception handling")
     parser.add_argument("--fault-test", choices=("ud", "page", "divide", "general"),
                         help="Test-only genuine CPU fault; requires --exception-idt")
+    parser.add_argument("--paging-probe", action="store_true",
+                        help="Opt-in M3 private 4KiB CR3 mapping, alias and unmap probe")
+    parser.add_argument("--paging-fault-test", action="store_true",
+                        help="Real post-unmap #PF; needs --paging-probe and --exception-idt")
     a = parser.parse_args()
+    if a.paging_fault_test and not (a.paging_probe and a.exception_idt):
+        parser.error("--paging-fault-test requires --paging-probe and --exception-idt")
     if a.fault_test is not None and not a.exception_idt:
         parser.error("--fault-test requires --exception-idt")
     if a.video_test and not a.video_console:
@@ -168,7 +185,8 @@ def main() -> None:
         parser.error("--memory-probe-badmap requires --memory-probe")
     build(a.source, a.out, a.cache_dir, a.work_dir, a.test_exit,
           a.memory_probe, a.memory_probe_badmap,
-          a.video_console, a.video_test, a.exception_idt, a.fault_test)
+          a.video_console, a.video_test, a.exception_idt, a.fault_test,
+          a.paging_probe, a.paging_fault_test)
 
 
 if __name__ == "__main__":
