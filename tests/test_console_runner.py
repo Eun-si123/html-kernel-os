@@ -67,6 +67,26 @@ class ConsoleRunnerTests(unittest.TestCase):
         for blocked in ("-hda","-drive","-usb","-netdev"):
             self.assertNotIn(blocked,qemu)
 
+    def test_html_user_mode_auto_selects_guarded_ring3_and_has_no_host_drive(self):
+        html = ROOT / "examples/user-programs/html-hello.html"
+        cmd = build_command(Path("html-user.iso"), ROOT / "examples/romfs",
+                            with_user_program=True, recover_user_faults=True,
+                            user_timeout=True, html_user_app=html)
+        assert cmd[cmd.index("--user-app-html") + 1] == str(html)
+        self.assertIn("--user-timeout", cmd)
+        self.assertIn("--romfs-run-console", cmd)
+        self.assertNotIn("--romfs-console", cmd)
+        with self.assertRaisesRegex(ValueError, "guarded Ring3"):
+            build_command(Path("bad.iso"), ROOT/"examples/romfs",html_user_app=html)
+        with patch("sys.stdin.isatty",return_value=False):
+            with contextlib.redirect_stderr(io.StringIO()):
+                with self.assertRaises(SystemExit) as raised:
+                    main(["--html-user-app",str(html)])
+                self.assertEqual(raised.exception.code,2)
+        qemu=qemu_command(Path("html-user.iso"),Path("debug.log"),user_timeout=True)
+        for blocked in ("-hda","-drive","-usb","-netdev"):
+            self.assertNotIn(blocked,qemu)
+
     def test_timeout_manual_cli_fails_closed_without_recovery(self):
         with patch("sys.stdin.isatty",return_value=True), \
              patch("sys.stdout.isatty",return_value=True):
