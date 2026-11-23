@@ -61,7 +61,8 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
           paging_recover_test: bool = False, owned_frame_test: bool = False,
           tss_ist: bool = False, double_fault_test: bool = False,
           multi_page_test: bool = False, multi_page_fault_test: bool = False,
-          task_probe: bool = False, task_negative_test: bool = False) -> None:
+          task_probe: bool = False, task_negative_test: bool = False,
+          timer_probe: bool = False, timer_mask_test: bool = False) -> None:
     dist, header = get_limine(cache)
     work_root.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="htmlk-boot-", dir=work_root) as temp:
@@ -80,6 +81,14 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
                  "-mno-red-zone", "-mcmodel=kernel", "-mgeneral-regs-only",
                  "-fcf-protection=none", "-Wall", "-Wextra", "-Werror"]
         define = ["-DHTMLK_QEMU_TEST_EXIT"] if test_exit else []
+        if timer_probe and not (exception_idt and task_probe):
+            raise ValueError("M4 PIT timer requires --exception-idt and --task-probe")
+        if timer_mask_test and not (timer_probe and test_exit):
+            raise ValueError("M4 timer mask negative requires --timer-probe --test-exit")
+        if timer_probe:
+            define.append("-DHTMLK_M4_TIMER_PROBE")
+        if timer_mask_test:
+            define.append("-DHTMLK_M4_TIMER_MASK_TEST")
         if task_negative_test and not task_probe:
             raise ValueError("M4 negative task oracle needs task probe")
         if task_probe:
@@ -153,6 +162,8 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
                 sources.append("memory_probe")
             if task_probe:
                 sources.extend(("task_model", "task_runtime"))
+            if timer_probe:
+                sources.append("timer_irq")
             if paging_probe:
                 sources.extend(("frame_owner", "paging_tables", "paging_probe"))
             if exception_idt:
@@ -239,7 +250,15 @@ def main() -> None:
                         help="Opt-in M4-A real ring-0 cooperative task contexts")
     parser.add_argument("--task-negative-test", action="store_true",
                         help="Reject unsafe task states in native QEMU; needs task probe")
+    parser.add_argument("--timer-probe", action="store_true",
+                        help="Opt-in real QEMU PIT/PIC IRQ0 task progress, needs IDT and tasks")
+    parser.add_argument("--timer-mask-test", action="store_true",
+                        help="Intentionally mask IRQ0 for bounded QEMU timeout negative oracle")
     a = parser.parse_args()
+    if a.timer_probe and not (a.exception_idt and a.task_probe):
+        parser.error("--timer-probe requires --exception-idt and --task-probe")
+    if a.timer_mask_test and not (a.timer_probe and a.test_exit):
+        parser.error("--timer-mask-test requires --timer-probe and --test-exit")
     if a.task_negative_test and not a.task_probe:
         parser.error("--task-negative-test requires --task-probe")
     if a.multi_page_test and not a.paging_probe:
@@ -275,7 +294,8 @@ def main() -> None:
           a.paging_recover_test, a.owned_frame_test,
           a.tss_ist, a.double_fault_test,
           a.multi_page_test, a.multi_page_fault_test,
-          a.task_probe, a.task_negative_test)
+          a.task_probe, a.task_negative_test,
+          a.timer_probe, a.timer_mask_test)
 
 
 if __name__ == "__main__":

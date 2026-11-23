@@ -1,4 +1,4 @@
-/* M3 x86-64 exception IDT: opt-in, ring-0 only, no scheduler/IRQ support. */
+/* Opt-in M3 exception IDT; M4-B1 optionally adds IRQ0 on vector 32. */
 #ifndef HTMLK_EXCEPTION_IDT_H
 #define HTMLK_EXCEPTION_IDT_H
 
@@ -23,7 +23,7 @@ bool htmlk_idt_gate_make(struct htmlk_idt_gate *gate,
 
 /* Install ring-0 trap handlers for architected exceptions 0..31.
  * This is fail-stop diagnostics, NOT recovery from CPU faults.
- * IRQs remain masked; no nested handlers, SMP, TSS/IST or page recovery. */
+ * IRQs stay masked by default. M4-B1 separately opts in IRQ0 only. */
 void htmlk_idt_install(void);
 
 /* Test-only deterministic exception injection; no public HTML language API. */

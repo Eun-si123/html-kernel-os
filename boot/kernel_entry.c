@@ -4,6 +4,9 @@
 #ifdef HTMLK_M4_TASK_PROBE
 #include "task_runtime.h"
 #endif
+#ifdef HTMLK_M4_TIMER_PROBE
+#include "timer_irq.h"
+#endif
 #ifdef HTMLK_M3_IST_STACK
 #include "tss_ist.h"
 #endif
@@ -107,8 +110,14 @@ void kmain(void) {
 #ifdef HTMLK_FB_CONSOLE
     configure_framebuffer();
 #endif
+#ifdef HTMLK_M4_TIMER_PROBE
+    htmlk_m4_timer_init(); /* Real PIT/PIC IRQ0, installed IDT vector 32. */
+#endif
 #ifdef HTMLK_M4_TASK_PROBE
     htmlk_m4_task_probe(); /* Opt-in, ring-0 only cooperative task proof. */
+#endif
+#ifdef HTMLK_M4_TIMER_PROBE
+    htmlk_m4_timer_finish(); /* Mask IRQ0 before entering source-derived HTML. */
 #endif
     kernel_main(); /* Generated from examples/kernel.html. */
     for (;;) __asm__ volatile ("cli; hlt");

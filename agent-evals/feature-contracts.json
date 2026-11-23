@@ -2,6 +2,12 @@
   "schemaVersion": 1,
   "features": [
     {
+      "id": "m4-pit-irq-pacing",
+      "source": ["boot/timer_irq.h", "boot/timer_irq.c", "boot/exception_idt.c", "boot/task_runtime.c", "boot/kernel_entry.c", "scripts/build_boot.py"],
+      "regressions": ["tests/test_m4_pit_divisor.py"],
+      "fieldEvidence": ["scripts/test_m4_timer.py", "tests/native/test_pit_divisor.c", "docs/M4_PIT_IRQ.md"]
+    },
+    {
       "id": "m4-cooperative-kernel-tasks",
       "source": ["boot/task_model.h", "boot/task_model.c", "boot/task_runtime.h", "boot/task_runtime.c", "boot/task_switch.S", "boot/kernel_entry.c", "scripts/build_boot.py"],
       "regressions": ["tests/test_m4_task_model.py"],

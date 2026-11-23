@@ -3,6 +3,9 @@
  * Does not support recovery, interrupts, SMP, TSS, IST or user mode.
  */
 #include "exception_idt.h"
+#ifdef HTMLK_M4_TIMER_PROBE
+#include "timer_irq.h"
+#endif
 #ifdef HTMLK_M3_IST_STACK
 #include "tss_ist.h"
 #endif
@@ -289,6 +292,12 @@ void htmlk_idt_install(void) {
 #ifdef HTMLK_M3_IST_STACK
     idt[8].ist = 1;  /* #DF uses its own dedicated stack even if RSP is broken */
     idt[14].ist = 2; /* #PF never shares the double-fault emergency stack */
+#endif
+#ifdef HTMLK_M4_TIMER_PROBE
+    if (!htmlk_idt_gate_make(&idt[32],
+            (uint64_t)(uintptr_t)&htmlk_m4_irq0_entry, cs)) {
+        panic(13, 0, 0);
+    }
 #endif
     const struct idtr pointer = { (uint16_t)(sizeof(idt) - 1), (uint64_t)(uintptr_t)idt };
     __asm__ volatile ("lidt %0" : : "m"(pointer) : "memory");

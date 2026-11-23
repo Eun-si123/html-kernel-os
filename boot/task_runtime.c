@@ -1,5 +1,8 @@
 #include "task_runtime.h"
 #include "task_model.h"
+#ifdef HTMLK_M4_TIMER_PROBE
+#include "timer_irq.h"
+#endif
 #include <stdint.h>
 /* Opt-in two independent ring-0 stacks. The C state model is host-testable. */
 #define STACK_WORDS 1024U
@@ -47,6 +50,9 @@ static void task_entry(void) {
         if (running != id ||
             token != (id == 0U ? 0xA11CE5A11CE5ULL : 0xB00B5B00B5ULL))
             fail("M4_CONTEXT_CORRUPTED\n");
+#ifdef HTMLK_M4_TIMER_PROBE
+        htmlk_m4_timer_wait(); /* Real CPU IRQ0 before each task progress point. */
+#endif
         log_text(id == 0U ? "M4_TASK_A_" : "M4_TASK_B_");
         log_char((uint8_t)('0' + n));
         log_char('\n');
