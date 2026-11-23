@@ -39,6 +39,10 @@ bool htmlk_tss_descriptor_make(struct htmlk_tss_descriptor *out,
 void htmlk_tss_ist_install(void);
 bool htmlk_tss_on_double_fault_stack(uint64_t current_rsp);
 bool htmlk_tss_on_page_fault_stack(uint64_t current_rsp);
+#ifdef HTMLK_M4_USER_PREEMPT
+/* Must be called with interrupts disabled before entering another CPL3 task. */
+bool htmlk_tss_set_rsp0(uint64_t kernel_stack_top);
+#endif
 
 /* Only for a specially built QEMU negative-control image. */
 #ifdef HTMLK_M3_DOUBLE_FAULT_TEST

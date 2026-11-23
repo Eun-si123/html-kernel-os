@@ -70,7 +70,15 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
           user_write_code: bool = False, isolation_probe: bool = False,
           isolation_gp: bool = False, isolation_ro: bool = False,
           isolation_forged: bool = False,
-          isolation_survivor_fault: bool = False) -> None:
+          isolation_survivor_fault: bool = False,
+          user_preempt_probe: bool = False,
+          user_preempt_mask: bool = False,
+          user_preempt_forged: bool = False,
+          user_preempt_bad_syscall: bool = False,
+          user_preempt_b_fault: bool = False,
+          user_preempt_corrupt_gpr: bool = False,
+          user_preempt_bad_cr3: bool = False,
+          user_preempt_revoke_b: bool = False) -> None:
     dist, header = get_limine(cache)
     work_root.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="htmlk-boot-", dir=work_root) as temp:
@@ -89,10 +97,40 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
                  "-mno-red-zone", "-mcmodel=kernel", "-mgeneral-regs-only",
                  "-fcf-protection=none", "-Wall", "-Wextra", "-Werror"]
         define = ["-DHTMLK_QEMU_TEST_EXIT"] if test_exit else []
+        if user_preempt_probe and (not exception_idt or not tss_ist or
+                any((isolation_probe, user_probe, preempt_probe, task_probe,
+                     timer_probe, memory_probe, paging_probe, video_console,
+                     fault_test is not None, double_fault_test))):
+            raise ValueError("M4-D user preemption requires only IDT+TSS")
+        d_negatives = (user_preempt_mask, user_preempt_forged,
+                       user_preempt_bad_syscall, user_preempt_b_fault,
+                       user_preempt_corrupt_gpr, user_preempt_bad_cr3,
+                       user_preempt_revoke_b)
+        if any(d_negatives) and not (user_preempt_probe and test_exit):
+            raise ValueError("M4-D negative mode requires probe and test exit")
+        if sum(bool(x) for x in d_negatives) > 1:
+            raise ValueError("M4-D negative modes must be exclusive")
+        if user_preempt_probe:
+            define.append("-DHTMLK_M4_USER_PREEMPT")
+        if user_preempt_mask:
+            define.append("-DHTMLK_M4_D_TIMER_MASK")
+        if user_preempt_forged:
+            define.append("-DHTMLK_M4_D_FORGED_FRAME")
+        if user_preempt_bad_syscall:
+            define.append("-DHTMLK_M4_D_BAD_SYSCALL")
+        if user_preempt_b_fault:
+            define.append("-DHTMLK_M4_D_B_FAULT")
+        if user_preempt_corrupt_gpr:
+            define.append("-DHTMLK_M4_D_CORRUPT_GPR")
+        if user_preempt_bad_cr3:
+            define.append("-DHTMLK_M4_D_BAD_CR3")
+        if user_preempt_revoke_b:
+            define.append("-DHTMLK_M4_D_REVOKE_B_CODE")
         if isolation_probe and (not exception_idt or not tss_ist or user_probe or
                                 memory_probe or paging_probe or video_console or
                                 task_probe or timer_probe or preempt_probe or
-                                fault_test is not None or double_fault_test):
+                                fault_test is not None or double_fault_test or
+                                user_preempt_probe):
             raise ValueError("M4 isolation requires only IDT+TSS/IST")
         iso_negatives = (isolation_gp, isolation_ro, isolation_forged,
                          isolation_survivor_fault)
@@ -113,7 +151,8 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
         if user_probe and (not exception_idt or not tss_ist or
                            memory_probe or paging_probe or video_console or
                            task_probe or timer_probe or preempt_probe or
-                           fault_test is not None or double_fault_test):
+                           fault_test is not None or double_fault_test or
+                           user_preempt_probe):
             raise ValueError("M4 user probe requires only IDT and TSS/IST")
         user_negatives = (user_bad_syscall, user_privileged_io,
                           user_read_kernel, user_write_code)
@@ -133,7 +172,8 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
             define.append("-DHTMLK_M4_USER_WRITE_CODE")
         if preempt_probe and (not exception_idt or task_probe or timer_probe or
                               paging_probe or memory_probe or video_console or
-                              tss_ist or fault_test is not None):
+                              tss_ist or fault_test is not None or
+                              user_preempt_probe):
             raise ValueError("M4 x2APIC preemption requires only the IDT (no other probes)")
         if preempt_bad_frame and not (preempt_probe and test_exit):
             raise ValueError("M4 bad-frame negative requires preempt-probe and test-exit")
@@ -220,8 +260,8 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
         run("gcc", *flags, *define, "-I", header.parent, "-c",
             ROOT / "boot/kernel_entry.c", "-o", entry_obj)
         extra_objects: list[Path] = []
-        if memory_probe or video_console or exception_idt or paging_probe or tss_ist or task_probe or preempt_probe or user_probe or isolation_probe:
-            sources = (["page_pool"] if (memory_probe or paging_probe or user_probe or isolation_probe) else [])
+        if memory_probe or video_console or exception_idt or paging_probe or tss_ist or task_probe or preempt_probe or user_probe or isolation_probe or user_preempt_probe:
+            sources = (["page_pool"] if (memory_probe or paging_probe or user_probe or isolation_probe or user_preempt_probe) else [])
             if memory_probe:
                 sources.append("memory_probe")
             if task_probe:
@@ -237,6 +277,9 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
             if isolation_probe:
                 sources.extend(("frame_owner", "user_pages",
                                 "isolation_policy", "user_isolation"))
+            if user_preempt_probe:
+                sources.extend(("frame_owner", "user_pages", "isolation_policy",
+                                "user_timer_policy", "user_preempt"))
             if exception_idt:
                 sources.append("exception_idt")
             if tss_ist:
@@ -258,11 +301,17 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
                 run("gcc", "-c", "-m64", "-fno-pie", "-fno-pic",
                     ROOT / "boot/preempt_switch.S", "-o", obj)
                 extra_objects.append(obj)
-            if user_probe or isolation_probe:
+            if user_probe or isolation_probe or user_preempt_probe:
                 obj = build_dir / "user_entry.o"
                 run("gcc", "-c", "-m64", "-fno-pie", "-fno-pic",
                     *define, ROOT / "boot/user_entry.S", "-o", obj)
                 extra_objects.append(obj)
+            if user_preempt_probe:
+                for filename in ("user_preempt_entry.S", "user_preempt_payload.S"):
+                    obj = build_dir / (Path(filename).stem + ".o")
+                    run("gcc", "-c", "-m64", "-fno-pie", "-fno-pic",
+                        *define, ROOT / "boot" / filename, "-o", obj)
+                    extra_objects.append(obj)
             if isolation_probe:
                 obj = build_dir / "user_isolation_payload.o"
                 run("gcc", "-c", "-m64", "-fno-pie", "-fno-pic",
@@ -366,12 +415,43 @@ def main() -> None:
                         help="M4-C2: reject forged CPL0 fault context before execution")
     parser.add_argument("--user-isolation-survivor-fault", action="store_true",
                         help="M4-C2: survivor faults must not be incorrectly recovered")
+    parser.add_argument("--user-preempt-probe", action="store_true",
+                        help="M4-D: actual x2APIC timer switching between two non-yielding CPL3 CR3 tasks")
+    parser.add_argument("--user-preempt-mask", action="store_true",
+                        help="M4-D negative: mask timer; CPL3 loop cannot yield")
+    parser.add_argument("--user-preempt-forged", action="store_true",
+                        help="M4-D negative: reject forged CPL0 selector")
+    parser.add_argument("--user-preempt-bad-syscall", action="store_true",
+                        help="M4-D negative: survivor calls unknown syscall")
+    parser.add_argument("--user-preempt-b-fault", action="store_true",
+                        help="M4-D negative: survivor #GP must panic, not use A recovery")
+    parser.add_argument("--user-preempt-corrupt-gpr", action="store_true",
+                        help="M4-D negative: corrupt first task GPR; real CPL3 #UD must fail")
+    parser.add_argument("--user-preempt-bad-cr3", action="store_true",
+                        help="M4-D negative: corrupt active CR3; fault on bad owner")
+    parser.add_argument("--user-preempt-revoke-b", action="store_true",
+                        help="M4-D negative: revoke B code after first run, verify TLB flush")
     a = parser.parse_args()
+    if a.user_preempt_probe and (
+        not a.exception_idt or not a.tss_ist or any((
+            a.user_isolation_probe, a.user_probe, a.preempt_probe,
+            a.task_probe, a.timer_probe, a.paging_probe, a.memory_probe,
+            a.video_console, a.fault_test is not None, a.double_fault_test))):
+        parser.error("--user-preempt-probe needs --exception-idt --tss-ist only")
+    d_negatives = (a.user_preempt_mask, a.user_preempt_forged,
+                   a.user_preempt_bad_syscall, a.user_preempt_b_fault,
+                   a.user_preempt_corrupt_gpr, a.user_preempt_bad_cr3,
+                   a.user_preempt_revoke_b)
+    if any(d_negatives) and not (a.user_preempt_probe and a.test_exit):
+        parser.error("M4-D negatives require --user-preempt-probe --test-exit")
+    if sum(bool(x) for x in d_negatives) > 1:
+        parser.error("M4-D negatives cannot be combined")
     if a.user_isolation_probe and (
         not a.exception_idt or not a.tss_ist or a.user_probe or
         a.memory_probe or a.paging_probe or a.video_console or
         a.task_probe or a.timer_probe or a.preempt_probe or
-        a.fault_test is not None or a.double_fault_test):
+        a.fault_test is not None or a.double_fault_test or
+        a.user_preempt_probe):
         parser.error("--user-isolation-probe needs only --exception-idt --tss-ist")
     iso_negatives = (a.user_isolation_gp, a.user_isolation_ro,
                      a.user_isolation_forged, a.user_isolation_survivor_fault)
@@ -382,7 +462,8 @@ def main() -> None:
     if a.user_probe and (not a.exception_idt or not a.tss_ist or
                          a.memory_probe or a.paging_probe or a.video_console or
                          a.task_probe or a.timer_probe or a.preempt_probe or
-                         a.fault_test is not None or a.double_fault_test):
+                         a.fault_test is not None or a.double_fault_test or
+        a.user_preempt_probe):
         parser.error("--user-probe needs --exception-idt --tss-ist only")
     user_negatives = (a.user_bad_syscall, a.user_privileged_io,
                       a.user_read_kernel, a.user_write_code)
@@ -392,7 +473,8 @@ def main() -> None:
         parser.error("M4 user negative probes cannot be combined")
     if a.preempt_probe and (not a.exception_idt or a.task_probe or a.timer_probe or
                             a.paging_probe or a.memory_probe or a.video_console or
-                            a.tss_ist or a.fault_test is not None):
+                            a.tss_ist or a.fault_test is not None or
+                            a.user_preempt_probe):
         parser.error("--preempt-probe needs --exception-idt alone (no other probes)")
     if a.preempt_bad_frame and not (a.preempt_probe and a.test_exit):
         parser.error("--preempt-bad-frame needs --preempt-probe --test-exit")
@@ -444,7 +526,11 @@ def main() -> None:
           a.user_read_kernel, a.user_write_code,
           a.user_isolation_probe, a.user_isolation_gp,
           a.user_isolation_ro, a.user_isolation_forged,
-          a.user_isolation_survivor_fault)
+          a.user_isolation_survivor_fault,
+          a.user_preempt_probe, a.user_preempt_mask, a.user_preempt_forged,
+          a.user_preempt_bad_syscall, a.user_preempt_b_fault,
+          a.user_preempt_corrupt_gpr, a.user_preempt_bad_cr3,
+          a.user_preempt_revoke_b)
 
 
 if __name__ == "__main__":

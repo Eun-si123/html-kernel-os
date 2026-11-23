@@ -3,11 +3,15 @@
  * Does not support recovery, interrupts, SMP, TSS, IST or user mode.
  */
 #include "exception_idt.h"
-#if defined(HTMLK_M4_USER_PROBE) || defined(HTMLK_M4_USER_ISOLATION)
+#if defined(HTMLK_M4_USER_PROBE) || defined(HTMLK_M4_USER_ISOLATION) || \
+    defined(HTMLK_M4_USER_PREEMPT)
 #include "user_probe.h"
 #endif
 #ifdef HTMLK_M4_USER_ISOLATION
 #include "user_isolation.h"
+#endif
+#ifdef HTMLK_M4_USER_PREEMPT
+#include "user_preempt.h"
 #endif
 #ifdef HTMLK_M4_X2APIC_PREEMPT
 #include "preempt_x2apic.h"
@@ -197,6 +201,13 @@ __attribute__((interrupt)) static void vector_14(struct interrupt_frame *f, unsi
                                   (uint64_t)code, fault_cr2))
         htmlk_m4_user_return(); /* abandon IST frame and private CR3 */
 #endif
+#ifdef HTMLK_M4_USER_PREEMPT
+    uint64_t d_cr2;
+    __asm__ volatile ("mov %%cr2,%0" : "=r"(d_cr2));
+    if (htmlk_m4_d_accept_fault(f->rip, f->cs, f->rsp, f->ss,
+                                 (uint64_t)code, d_cr2))
+        htmlk_m4_d_recover_fault();
+#endif
     panic(14, f->rip, (uint64_t)code);
 }
 
@@ -328,7 +339,15 @@ void htmlk_idt_install(void) {
         panic(13, 0, 0);
     }
 #endif
-#if defined(HTMLK_M4_USER_PROBE) || defined(HTMLK_M4_USER_ISOLATION)
+#ifdef HTMLK_M4_USER_PREEMPT
+    if (!htmlk_idt_gate_make(&idt[HTMLK_M4_PREEMPT_VECTOR],
+            (uint64_t)(uintptr_t)&htmlk_m4_d_timer_entry, cs) ||
+        !htmlk_idt_gate_make(&idt[0xffU],
+            (uint64_t)(uintptr_t)&htmlk_m4_d_spurious_entry, cs))
+        panic(13, 0, 0);
+#endif
+#if defined(HTMLK_M4_USER_PROBE) || defined(HTMLK_M4_USER_ISOLATION) || \
+    defined(HTMLK_M4_USER_PREEMPT)
     if (!htmlk_idt_gate_make(&idt[0x80U],
             (uint64_t)(uintptr_t)&htmlk_m4_syscall_entry, cs)) {
         panic(13, 0, 0);

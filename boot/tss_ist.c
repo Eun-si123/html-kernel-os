@@ -25,7 +25,8 @@ static uint64_t gdt[7] __attribute__((aligned(16))) = {
     UINT64_C(0x00af9a000000ffff),
     UINT64_C(0x00cf92000000ffff),
     0, 0,
-#if defined(HTMLK_M4_USER_PROBE) || defined(HTMLK_M4_USER_ISOLATION)
+#if defined(HTMLK_M4_USER_PROBE) || defined(HTMLK_M4_USER_ISOLATION) || \
+    defined(HTMLK_M4_USER_PREEMPT)
     UINT64_C(0x00affa000000ffff), /* selector 0x2b: ring 3 CS */
     UINT64_C(0x00cff2000000ffff)  /* selector 0x33: ring 3 SS */
 #else
@@ -125,6 +126,16 @@ void htmlk_tss_ist_install(void) {
     __asm__ volatile ("ltr %w0" : : "r"(tss_selector) : "memory");
     report("M3_TSS_IST_READY\n");
 }
+
+#ifdef HTMLK_M4_USER_PREEMPT
+bool htmlk_tss_set_rsp0(uint64_t top) {
+    if (!top || (top & 15U) != 0 ||
+        (top >> 48) != ((top & (UINT64_C(1) << 47)) ? 0xffffU : 0U))
+        return false;
+    tss.rsp[0] = top;
+    return tss.rsp[0] == top;
+}
+#endif
 
 #ifdef HTMLK_M3_DOUBLE_FAULT_TEST
 __attribute__((noreturn, noinline))

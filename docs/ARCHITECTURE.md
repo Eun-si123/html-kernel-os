@@ -33,6 +33,10 @@ The QEMU-only M4-C1 probe is deliberately **separate from M4-B2 timer preemption
 
 The kernel allocates two separate six-frame user images with independent PML4/PDPT/PD/PT roots and code/stack backing pages while preserving the original Limine CR3. Both Ring3 payloads use the same virtual entry and stack addresses but have different physical mappings; the survivor is checked to start with a zeroed stack independent of the offender. M3 #PF and #GP handlers use a strict pure predicate from boot/isolation_policy.c to accept only the single intended Ring3 fault with a matching selector, vector, error, RIP/RSP, CR2 and active CR3. The C1 assembly return restores the original supervisor CR3 and trusted main stack before releasing the faulty task frames. B then runs and exits via INT0x80; all frames are reclaimed before generated HTML executes. All other faults fail-stop. This is sequential task containment, not interrupt-driven user preemption or a general-purpose process loader. [M4-C2 proof](M4_FAULT_ISOLATION.md).
 
+## M4-D combined user CR3 and timer preemption (QEMU only)
+
+Opt-in M4-D uses the local x2APIC timer to force nonyielding CPL3 tasks on two different concurrently live user CR3 roots to alternate. An interrupt records 15 GPRs and the five CPU IRET words on each task-owned kernel RSP0 stack. Only selectors, frame bounds, user flags and RIP/RSP that satisfy a strict validator may switch. Before returning to the next CPL3 task, the kernel updates TSS.RSP0 and CR3. A real A user #PF is handled on IST2 with expected CR3/error/CR2 checks; only A frames are freed, while B resumes its saved IRQ state and completes INT 0x80 calls. See [M4-D proof](M4_USER_PREEMPT_D.md). This does not implement general user binaries or physical hardware support.
+
 ## Boundaries
 
 - HTML is being used as **syntax**, not as the web platform. The meaning of each tag is custom.

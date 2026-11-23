@@ -203,6 +203,12 @@
       "source": ["boot/user_isolation.c", "boot/user_isolation.h", "boot/user_isolation_payload.S", "boot/isolation_policy.c", "boot/isolation_policy.h", "boot/user_pages.c", "boot/user_entry.S", "boot/frame_owner.c", "boot/exception_idt.c", "boot/tss_ist.c", "boot/kernel_entry.c", "scripts/build_boot.py"],
       "regressions": ["tests/test_isolation_policy.py"],
       "fieldEvidence": ["scripts/test_m4_isolation.py", "tests/native/test_isolation_policy.c", "docs/M4_FAULT_ISOLATION.md"]
+    },
+    {
+      "id": "m4-user-cr3-apic-preemption",
+      "source": ["boot/user_preempt.c", "boot/user_preempt.h", "boot/user_preempt_entry.S", "boot/user_preempt_payload.S", "boot/user_timer_policy.c", "boot/user_timer_policy.h", "boot/tss_ist.c", "boot/exception_idt.c", "boot/kernel_entry.c", "scripts/build_boot.py"],
+      "regressions": ["tests/test_user_timer_policy.py"],
+      "fieldEvidence": ["scripts/test_m4_user_preempt.py", "tests/native/test_user_timer_policy.c", "docs/M4_USER_PREEMPT_D.md"]
     }
   ]
 }

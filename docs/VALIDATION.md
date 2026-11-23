@@ -33,6 +33,10 @@ Requires QEMU x86-64, GCC, make, xorriso, Python 3.12+; pinned Limine dependenci
 
 Run python3 scripts/test_m4_isolation.py. Real BIOS QEMU must show two private task CR3s and original CPU exception delivery: offender A user-to-kernel memory read causes #PF error 5 with IST2, but kernel restores trusted CR3, reclaims only A frames, executes B user syscall and exit and reclaims B frames without leak, followed by exact original/modified HTML output (QEMU success 33). Alternate genuine A exceptions #GP error 0 and RO-code #PF error 7 must also preserve B. Forged CPL0 context is rejected with non-success 55; B unexpected #GP must fail-stop with non-success 45 and no success HTML output; invalid builder flag combinations fail. Host-native tests/test_isolation_policy.py must pass GCC -O0/-O3 UBSan fault-validation boundaries. This does not validate concurrent CPL3 preemption, SMP, arbitrary user loader, UEFI or physical PC. [M4-C2 details](M4_FAULT_ISOLATION.md).
 
+## M4-D real CPU combined Ring3 timer preemption and fault survivor (2026-11-23 local)
+
+Run scripts/test_m4_user_preempt.py on QEMU q35, qemu64,+x2apic, one vCPU. Three exact repeated boot logs must show A0/B0/A1/B1/A2/B2 alternation from non-yielding CPL3 loops, an IST2 real CPU #PF error 5, A-only six-frame reclamation and B saved IRQ context recovery, syscall/exit, all twelve owned frames released and original HTML output. The source-mutation test builds a changed ISO and checks its changed native output. Unsupported CPU, masked timer hang, forged kernel selector, bad B syscall, unapproved B #GP, corrupted user GPR sentinel (#UD), wrong active CR3 owner, B-only revoked PTE followed by real #PF after CR3 switch and incompatible builder flags are separate negative controls. Host tests/test_user_timer_policy.py compiles the pure frame validator with GCC -O0/-O3 UBSan. See [M4-D protocol](M4_USER_PREEMPT_D.md). No SMP, dynamic loader, physical PC or UEFI testing is implied.
+
 ## Observed QEMU and browser boot results (2026-11-22)
 
 - Real x86-64 BIOS QEMU, source alteration and negative controls **PASS**, PR #13 CI run `45027891902`, main run `45029073618`.

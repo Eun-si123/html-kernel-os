@@ -2,6 +2,10 @@
 
 > 이 문서는 [창립자 인터뷰 1~20](INTERVIEW_DECISIONS.md)을 실행 가능한 검증 단계로 바꾸는 **계획**이다. 실제 구현 증거는 [STATUS](STATUS.md)에 기록한다. 기존 [M0–M6](ROADMAP.md) 마일스톤 ID와 부팅 완료 기준은 유지한다.
 
+## M4-D implementation checkpoint (2026-11-23)
+
+An opt-in x2APIC interrupt handler now preempts two live, non-yielding Ring3 tasks with independent page roots and per-task TSS.RSP0; it contains a real A user CPU page fault, retires A frames, restores the saved B context, completes B syscalls and returns to source-generated HTML code. See [M4-D bounded proof](M4_USER_PREEMPT_D.md). Local native QEMU positive/negative oracle passed; exact CI must pass before promoting the bounded M4 gate. M5 input/filesystem/program execution remains pending.
+
 ## 개발의 목적과 첫 성공
 
 - **첫 성공 S1:** HTML 스타일 소스의 내용을 바꾸어 컴파일했을 때, **실제로 QEMU에서 부팅한 커널의 출력도 바뀜**을 입증한다. 웹사이트에 부팅 화면을 흉내 내는 것으로 대신하지 않는다.
