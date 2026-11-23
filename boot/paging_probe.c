@@ -39,9 +39,12 @@ static void failed(const char *marker) {
 #ifdef HTMLK_M3_PAGING_RECOVER_TEST
 static struct htmlk_frame_registry *recovery_registry;
 static volatile uint64_t *recovery_table;
-static uint64_t recovery_cr3_phys, recovery_hhdm, recovery_frame;
-static bool recovery_armed;
-static unsigned recovery_count;
+static uint64_t recovery_cr3_phys, recovery_hhdm;
+static volatile uint64_t recovery_frame;
+/* The handler changes these asynchronously across a faulting volatile load.
+ * A compiler must re-read them after architectural iretq. */
+static volatile bool recovery_armed;
+static volatile unsigned recovery_count;
 
 /* Called only by the IDT #PF handler. Fail closed on any unsolicited fault,
  * wrong CR3, wrong address, protection violation or repeated invocation. */
