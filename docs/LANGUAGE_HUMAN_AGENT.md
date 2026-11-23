@@ -146,7 +146,10 @@ The `build --target linux|user` command emits a real executable ELF or a
 checked relocation-free HKEX binary, respectively. Existing destinations
 are refused by default; `--force` allows explicit replacement, but a
 symlink destination is never replaced. The output is committed only after
-full successful compilation via a temporary staging file. Invalid UTF-8,
+full successful compilation via a temporary staging file, using an atomic
+**no-clobber hard link** for default creation; a concurrent agent writing the
+same path gets a controlled error rather than losing its output. A real
+concurrent-process test checks that only one writer succeeds. Invalid UTF-8,
 large/symlink sources and invalid HTMLK syntax are rejected before output
 creation. `check` and `describe` delegate to the earlier checker rather than
 implementing a competing grammar. AI agents can use stable `--json` results.

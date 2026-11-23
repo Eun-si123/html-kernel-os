@@ -143,6 +143,20 @@ class HtmlkDeveloperCliTests(unittest.TestCase):
         self.assertEqual(schema["schema_version"], 1)
         self.assertIn("kernel", schema["tags"])
 
+    def test_concurrent_build_same_output_never_clobbers(self):
+        with tempfile.TemporaryDirectory() as temp:
+            destination = Path(temp) / "concurrent-app"
+            processes = [subprocess.Popen([
+                sys.executable, str(CMD), "build", str(EXAMPLE),
+                "--target", "linux", "--out", str(destination),
+            ], stdout=subprocess.PIPE, stderr=subprocess.PIPE) for _ in range(2)]
+            statuses = [proc.communicate(timeout=20) for proc in processes]
+            self.assertEqual(sorted(proc.returncode for proc in processes), [0, 1],
+                             statuses)
+            self.assertTrue(destination.read_bytes().startswith(b"\x7fELF"))
+            result = subprocess.run([str(destination)], capture_output=True, timeout=5)
+            self.assertEqual((result.returncode, result.stdout), (0, EXPECTED))
+
     def test_build_changed_html_changes_real_native_behavior(self):
         with tempfile.TemporaryDirectory() as temp:
             source = Path(temp)/"changed.html"

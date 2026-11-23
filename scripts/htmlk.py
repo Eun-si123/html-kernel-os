@@ -95,7 +95,12 @@ def atomic_copy(src: Path, dst: Path, *, overwrite: bool) -> None:
         os.chmod(stage_path, src.stat().st_mode & 0o777)
         if dst.is_symlink() or (dst.exists() and not overwrite):
             raise FileExistsError("destination changed during build: " + str(dst))
-        os.replace(stage_path, dst)
+        if overwrite:
+            os.replace(stage_path, dst)
+        else:
+            # Atomic no-clobber even if another agent creates the same path
+            # after the last existence check. Both files share this directory.
+            os.link(stage_path, dst)
     finally:
         stage_path.unlink(missing_ok=True)
 
