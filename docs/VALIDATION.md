@@ -103,3 +103,12 @@ Follow [PERFORMANCE.md](PERFORMANCE.md): compare equivalent checked-output nativ
 ## Agent/reporting checklist
 
 Report (a) changed files, (b) tests run with outputs, (c) exact commit/PR CI, (d) missing QEMU/physical test, (e) known regressions or safety risks. If a test is unavailable, write NOT RUN rather than PASS.
+
+## M3 native framebuffer verification (opt-in experiment)
+
+```sh
+python3 scripts/test_video_console.py # actual Limine RAM, original/mutated source and QEMU pixel readback
+python3 scripts/test_video_screen.py # independent QEMU monitor VGA screendump and PNG proof
+```
+
+A serial debugcon success is **not** a framebuffer success. `FB_PIXELS_OK` verifies a guest read of a pixel written through the Limine mapped framebuffer; a **separate** QEMU monitor screenshot test verifies actual VGA output RGB at the known header, background and source-generated glyph coordinates. They are distinct evidence classes. CI also runs GCC UBSan host rasterizer/mode/canary tests. Both QEMU checks passed in branch Actions `45095698115`; the public v86 site and physical PC are still NOT tested with the new ISO. The HTML compiler's hosted GCC flags must explicitly select x86-64 baseline ISA because a native BMI2 `SHLX` caused a real QEMU illegal-instruction exception before this was fixed. The PNG artifact is a verifiable visual reference, not an emulated browser screenshot.
