@@ -6,11 +6,11 @@ import argparse
 from pathlib import Path
 
 if __package__:
-    from .language import CompileError, MAX_RUNTIME_STEPS, Node, expression, fail, parse, validate_name
+    from .language import CompileError, MAX_RUNTIME_STEPS, Node, expression, fail, parse, validate_name, array_code, array_details
     from .function_codegen import compile_functions
     from .numeric_types import c_type, c_helpers
 else:
-    from language import CompileError, MAX_RUNTIME_STEPS, Node, expression, fail, parse, validate_name
+    from language import CompileError, MAX_RUNTIME_STEPS, Node, expression, fail, parse, validate_name, array_code, array_details
     from function_codegen import compile_functions
     from numeric_types import c_type, c_helpers
 
@@ -22,13 +22,17 @@ def compile_html(source: str, *, target: str = "kernel") -> str:
     program = parsed.statements
     functions = parsed.functions
     contains_numeric_print = False
+    contains_arrays = False
 
     def scan(nodes: list[Node]) -> None:
-        nonlocal contains_numeric_print
+        nonlocal contains_numeric_print, contains_arrays
         for node in nodes:
             contains_numeric_print |= node.tag == "print" and "value" in node.attrs
+            contains_arrays |= node.tag == "array"
             scan(node.children)
     scan(program)
+    for fn in functions.values():
+        scan(fn.body)
 
     lines = [
         "/* Generated from HTML Kernel language. x86-64 native C. */",
@@ -79,6 +83,32 @@ def compile_html(source: str, *, target: str = "kernel") -> str:
             "static inline __attribute__((noreturn)) void htmlk_divide_by_zero(void) {",
             '  (void)fputs("HTMLK_DIVIDE_BY_ZERO\\n", stderr);',
             "  exit(65);",
+            "}",
+        ]
+    if contains_arrays:
+        if target == "kernel":
+            lines += [
+                "static inline __attribute__((noreturn)) void htmlk_array_bounds_fault(void) {",
+                '  const unsigned char msg[] = "HTMLK_ARRAY_BOUNDS\\n";',
+                "  for (uint64_t i = 0; i < sizeof(msg) - 1; ++i) outb(msg[i]);",
+                "#ifdef HTMLK_QEMU_TEST_EXIT",
+                "  io_outb(0xf4, 0x12); /* non-success QEMU exit 37 */",
+                "#endif",
+                '  __asm__ volatile ("cli");',
+                '  for (;;) __asm__ volatile ("hlt");',
+                "}",
+            ]
+        else:
+            lines += [
+                "static inline __attribute__((noreturn)) void htmlk_array_bounds_fault(void) {",
+                '  (void)fputs("HTMLK_ARRAY_BOUNDS\\n", stderr);',
+                "  exit(66);",
+                "}",
+            ]
+        lines += [
+            "static inline uint64_t htmlk_checked_index(uint64_t index, uint64_t length) {",
+            "  if (index >= length) htmlk_array_bounds_fault();",
+            "  return index;",
             "}",
         ]
     lines.extend(c_helpers())
@@ -165,6 +195,27 @@ def compile_html(source: str, *, target: str = "kernel") -> str:
                 lines.append(f"{pad}{ctype} htmlk_{name} = {value};")
                 # An unused declaration is legal source, not a C -Werror failure.
                 lines.append(f"{pad}(void)htmlk_{name};")
+            elif tag == "array":
+                name = validate_name(node)
+                if name in variables:
+                    fail(node, f"variable {name!r} is already declared")
+                typ = node.attrs["type"]
+                size = int(node.attrs["length"])
+                variables.add(name)
+                variable_types[name] = array_code(typ, size)
+                lines.extend([
+                    f"{pad}{c_type(typ)} htmlk_{name}[{size}] = {{0}};",
+                    f"{pad}(void)htmlk_{name};",
+                ])
+            elif tag == "store":
+                name = validate_name(node)
+                detail = array_details(variable_types.get(name, ""))
+                if detail is None:
+                    fail(node, f"undefined array {name!r}; declare <array> first")
+                element, _ = detail
+                location = checked(f"{name}[{node.attrs['index']}]", expected_type=element)
+                value = checked(node.attrs["value"], expected_type=element)
+                lines.append(f"{pad}{location} = {value};")
             elif tag == "set":
                 name = validate_name(node)
                 if name not in variables:
