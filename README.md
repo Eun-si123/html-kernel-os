@@ -31,6 +31,10 @@ python3 scripts/htmlk.py build examples/human-agent-hello.html --target user --o
 
 `run` launches a generated **Linux userspace binary**, never a kernel or an imported executable; native QEMU boot requires the separate ISO builder. For full-u64 native Ring3 HKEX, ISO construction must use the **byte-exact checked source** `--user-app-image build/my-program.hke --user-app-html-proof examples/human-agent-hello.html`; otherwise the original legacy syscall ABI remains unchanged. See [commands, real QEMU proof, and security/overwrite boundaries](docs/LANGUAGE_HUMAN_AGENT.md). This slice is locally tested; PR-head CI/merge are pending.
 
+## Draft HTML code in the browser (M2-UX4 local feature branch)
+
+On the [Live Lab](https://eun-si123.github.io/html-kernel-os/live/) you can write HTML Kernel Language code in a simple source editor, see **UTF-8 byte limits**, download `htmlk-program.html`, and copy the genuine native ISO build command. GitHub Pages does **not** compile source by itself. Compile with the repository's local toolchain, choose the new ISO + exact HTML on Live Lab and boot **real native code** in the browser emulator. Local Chromium and independent QEMU proof demonstrate source edits changing actual guest CPU output. **This is locally verified but public deployment and exact-head CI are pending.** [Step-by-step guide](docs/M2_WEB_EDITOR.md).
+
 ## Agent and contributor entry points
 
 AI agents and external contributors: start at **[AGENTS.md](AGENTS.md)**, then follow **[CODEMAP.md](CODEMAP.md)** and the [documentation hub](docs/README.md). The repository uses TeamForge/BetterNet-style instructions for task ownership, public-safe commit attribution, current status, durable memory and advisory [feature-to-regression mapping](agent-evals/README.md). The instructions do not start a background agent or imply automatic deployment.
