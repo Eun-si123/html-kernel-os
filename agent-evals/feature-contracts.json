@@ -596,6 +596,23 @@
         "docs/M5_WEB_LIVE.md",
         "scripts/test_live_source_mutation.py"
       ]
+    },
+    {
+      "id": "m2-human-agent-diagnostics",
+      "source": [
+        "compiler/diagnostics.py",
+        "scripts/htmlk_check.py",
+        "examples/human-agent-hello.html"
+      ],
+      "regressions": [
+        "tests/test_htmlk_check_cli.py",
+        "tests/test_compiler.py",
+        "tests/test_targets.py"
+      ],
+      "fieldEvidence": [
+        "scripts/test_htmlk_human_agent_boot.py",
+        "docs/LANGUAGE_HUMAN_AGENT.md"
+      ]
     }
   ]
 }

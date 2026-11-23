@@ -28,6 +28,12 @@ jobs:
         run: |
           node --check site/app.js
           node --check site/play.js
+      - name: M2-UX human and agent language checker and grammar discovery
+        run: |
+          python scripts/htmlk_check.py --describe --json | python -m json.tool > /dev/null
+          python scripts/htmlk_check.py examples/human-agent-hello.html --target kernel
+          python scripts/htmlk_check.py examples/human-agent-hello.html --target linux
+          python scripts/htmlk_check.py examples/human-agent-hello.html --target user --json
       - name: Generate freestanding C
         run: python compiler/htmlk.py examples/kernel.html --out build/kernel.c
       - name: Compile x86-64 object (not a boot image)
@@ -140,6 +146,8 @@ jobs:
         run: python scripts/test_m5_process_lifecycle_stress.py
       - name: M5-E3-B actual CPL3 DIV0 DEBUG INT3 recovery, one-byte trap RIP and legacy fail-stop QEMU
         run: python scripts/test_m5_user_trap_containment.py
+      - name: M2-UX same beginner HTML source runs in actual native Ring3 QEMU and source mutation changes CPU output
+        run: python scripts/test_htmlk_human_agent_boot.py
       - name: M5-F1 native HTML-derived HKEX from shared compiler, real CPL3 UART run and source provenance
         run: python scripts/test_m5_html_user.py
       - name: M5-E3-C syscall origin/owner frame guard UBSan O0 O3

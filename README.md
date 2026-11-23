@@ -6,6 +6,18 @@ HTML is normally a document language. This repository explores a dedicated compi
 
 > **Current status: VERIFIED BOOTABLE DEMO KERNEL (QEMU BIOS + browser), NOT A USABLE OS.** A restricted HTML dialect compiles to freestanding x86-64 C; Limine starts the generated kernel. Real QEMU source-mutation/negative controls passed locally and on GitHub CI. The same boot ISO was independently booted in Chromium using the v64 WebAssembly x86-64 emulator: [try the browser demo](https://eun-si123.github.io/html-kernel-os/play.html). UEFI, mobile-browser compatibility and physical hardware remain unverified. No general-purpose memory manager, writable/disk filesystem, production task scheduler or general hardware drivers; bounded opt-in M3/M4 experiments and M5 immutable ROMFS + real QEMU UART terminal now exist. **M4-C1/C2** prove native CPL3 entry, syscalls and sequential fault isolation; the later bounded **M4-D** opt-in experiment also proves true x2APIC preemption and survivor fault cleanup in QEMU. **M5-A/B/C1/D1** provide an embedded read-only filesystem, real UART command input and a restricted, build-time embedded CPL3 user program launched with `run`; this does not constitute a production process manager or general-purpose filesystem.
 
+## Write one HTML-like program — for humans and agents (M2-UX1 development)
+
+HTML Kernel Language is a **typed native programming language using familiar HTML-style tags**, not standard browser HTML. Start from [this beginner example](examples/human-agent-hello.html) with `<let>`, `<repeat>`, `<print>` and `<halt/>`. Before building or booting, check a program with the **existing real compiler** (no generated artifacts):
+
+```sh
+python3 scripts/htmlk_check.py examples/human-agent-hello.html --target linux
+python3 scripts/htmlk_check.py examples/human-agent-hello.html --target user --json
+python3 scripts/htmlk_check.py --describe --json  # discover supported tags/attributes/limits
+```
+
+Humans get file/line/column/caret and useful typo suggestions; coding agents receive deterministic JSON diagnostics and grammar metadata assembled from the actual compiler tables. The **same** example runs as a real Linux program and a native Ring3 HKEX on QEMU; changed HTML source yields changed native CPU output. The new frontend has **local proof, but exact PR-head CI and merge are pending**. Source language grammar and current runtime safety rules remain unchanged. See [quickstart, agent API and limits](docs/LANGUAGE_HUMAN_AGENT.md).
+
 ## Agent and contributor entry points
 
 AI agents and external contributors: start at **[AGENTS.md](AGENTS.md)**, then follow **[CODEMAP.md](CODEMAP.md)** and the [documentation hub](docs/README.md). The repository uses TeamForge/BetterNet-style instructions for task ownership, public-safe commit attribution, current status, durable memory and advisory [feature-to-regression mapping](agent-evals/README.md). The instructions do not start a background agent or imply automatic deployment.
