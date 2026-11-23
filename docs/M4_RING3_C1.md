@@ -63,8 +63,10 @@ Real QEMU BIOS default q35 CPU profile, -m 256M. Normal test uses
 - Original/altered HTML source builds different ISO, changes kernel output,
   and rejects stale source output in QEMU.
 - Invalid/mixed builder options must fail before generating an image.
-- GCC UBSan -O0/-O3 host tests reject duplicate/unaligned/wrong-owner frame
-  inputs and prove user-path ancestor permissions, RO code and RW stack.
+- GCC UBSan -O0/-O3 host tests reject duplicate, zero, misaligned and
+  out-of-range physical-frame inputs and verify user-path ancestor flags,
+  read-only code and read/write stack. The *separate* native guest owner
+  registry rejects wrong-owner releases.
 
 ## Not yet implemented
 
