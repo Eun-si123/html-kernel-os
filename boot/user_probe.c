@@ -52,8 +52,10 @@ static volatile bool user_timed_out;
 #endif
 #endif
 #endif
-static void log_decimal(uint32_t number) {
-    char digits[5];
+/* Worst-case uint64_t decimal is 20 bytes. The syscall count remains
+ * independently capped at 8 for HTML-compiled user apps. */
+static void log_decimal(uint64_t number) {
+    char digits[20];
     unsigned count = 0;
     do { digits[count++] = (char)('0' + (number % 10U)); number /= 10U; }
     while (number != 0U);
@@ -213,7 +215,10 @@ void htmlk_m4_syscall_dispatch(void *raw_frame) {
         return; /* assembly iretq resumes same ring3 task */
     }
 #ifdef HTMLK_M5_USER_LOADER
-    if (id == 2U && syscall_seen && !user_exited && f->rdi <= 9999U &&
+    if (id == 2U && syscall_seen && !user_exited &&
+#ifndef HTMLK_M5_USER_U64_OUTPUT
+        f->rdi <= 9999U &&
+#endif
 #ifdef HTMLK_M5_USER_MULTI_REPORT
         user_report_count < HTMLK_M5_USER_REPORT_LIMIT
 #else
@@ -225,7 +230,7 @@ void htmlk_m4_syscall_dispatch(void *raw_frame) {
         ++user_report_count;
 #endif
         log_text("M5_C_USER_VALUE=");
-        log_decimal((uint32_t)f->rdi);
+        log_decimal(f->rdi);
         log_text("\n");
         return;
     }
