@@ -116,15 +116,18 @@ void htmlk_tss_ist_install(void) {
 #ifdef HTMLK_M3_DOUBLE_FAULT_TEST
 __attribute__((noreturn, noinline))
 void htmlk_tss_inject_double_fault(void) {
-    /* Force a real #DF: the invalid stack prevents the CPU from pushing
-     * the original #UD frame, so vector8 must switch to IST1.
-     * NEVER enable on a normal/physical machine image.
+    /* First raise an authentic #PF with a VALID kernel stack. The test-only
+     * #PF handler then deliberately raises a second #PF before returning;
+     * the CPU must enter #DF on the independent IST1 emergency stack.
      */
     __asm__ volatile (
-        "movabs $0x0000000040000000, %%rsp\n\t"
-        "ud2\n\t"
-        : : : "memory"
+        "movabs $0x0000000040000000, %%rax\n\t"
+        "mov (%%rax), %%rax\n\t"
+        : : : "rax", "memory"
     );
-    __builtin_unreachable();
+    report("M3_DOUBLE_FAULT_NOT_TRIGGERED\n");
+    __asm__ volatile ("outb %0, %1" : :
+                      "a"((uint8_t)0x17), "Nd"((unsigned short)0xf4));
+    for (;;) __asm__ volatile ("cli; hlt");
 }
 #endif
