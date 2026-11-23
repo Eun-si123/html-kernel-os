@@ -137,6 +137,24 @@
         "scripts/test_paging_recovery.py",
         "docs/M3_FAULT_RECOVERY.md"
       ]
+    },
+    {
+      "id": "m3-tss-ist",
+      "source": [
+        "boot/tss_ist.c",
+        "boot/tss_ist.h",
+        "boot/exception_idt.c",
+        "boot/kernel_entry.c",
+        "scripts/build_boot.py"
+      ],
+      "regressions": [
+        "tests/test_tss_ist.py"
+      ],
+      "fieldEvidence": [
+        "tests/native/test_tss_ist.c",
+        "scripts/test_tss_ist.py",
+        "docs/M3_TSS_IST.md"
+      ]
     }
   ]
 }
