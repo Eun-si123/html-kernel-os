@@ -33,11 +33,18 @@ bool htmlk_m5_user_fault_frame_valid(unsigned vector, uint64_t rip,
     return false;
 }
 
-/* Unlike INT80/x2APIC 160-byte frames, hardware #UD without an error code
+/* Unlike INT80/x2APIC 160-byte frames, CPU #DE/#UD without error codes
  * enters with exactly five 64-bit CPU words: RIP, CS, RFLAGS, RSP, SS.
  * TSS.RSP0 and the original private-user CR3 are supervisor-owned values.
  * This narrow fallback MUST NOT rescue a kernel-origin or unexpected fault. */
-bool htmlk_m5_bad_ud_stack_owned(const struct htmlk_m5_bad_ud_owner *c) {
+/* Strictly two fault-class no-error-code vectors. Other no-error-code
+ * exceptions (#DB/#BP) are traps with different saved RIP semantics;
+ * error-code exceptions (#GP/#PF) use a different CPU frame size. */
+bool htmlk_m5_bad_noerr_fault_vector(unsigned vector) {
+    return vector == 0U || vector == 6U;
+}
+
+bool htmlk_m5_bad_noerr_stack_owned(const struct htmlk_m5_bad_noerr_owner *c) {
     if (!c || !c->has_active_app || c->already_terminated ||
         c->live_frames != 6U ||
         c->tss_rsp0 < UINT64_C(40) ||

@@ -57,3 +57,5 @@ When a feature changes, update the **one authoritative** owner, then fix any con
 - [M5-F5 full unsigned u64 from HTML user code to native COM1](M5_HTML_U64_OUTPUT.md).
 
 - [M5-E3-E actual CPL3 UD2 after corrupted RSP and exact trusted CPU-frame recovery](M5_USER_BAD_UD.md).
+
+- [M5-E3-F actual CPL3 divide by zero with bad RSP, shared exact CPU ownership proof](M5_USER_BAD_DE.md).

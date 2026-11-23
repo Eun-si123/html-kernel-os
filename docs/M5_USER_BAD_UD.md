@@ -1,6 +1,6 @@
 # M5-E3-E — contain an owned Ring3 #UD after the user corrupts RSP
 
-**Status:** local real x86-64 BIOS QEMU proof PASS with and without a real x2APIC user timer; exact PR-head GitHub CI/Gitleaks and merge have to be verified independently. This is a **very narrow opt-in exception recovery gate**, not arbitrary-code security certification.
+**Status:** local genuine QEMU and UBSan proof PASS; **PR #94 exact-head GitHub QEMU Actions `45145677104`/`45145738649`, Gitleaks `45145738754` PASS and merged as `b4628d7`**. The separate E3-F #DE follow-on remains gated by its own PR-head verification. This is a **very narrow opt-in exception recovery gate**, not arbitrary-code security certification.
 
 ## Confirmed pre-fix kernel liveness defect
 
@@ -8,7 +8,7 @@ A separately assembled, valid bounded HKEX Ring3 executable can run `xorq %rsp,%
 
 ## Narrow CPU/task ownership proof before recovery
 
-The original **strict** M5-E1 ordinary user exception-frame guard remains unchanged. In `boot/exception_idt.c` vector 6 **only**, if the strict guard fails, the handler first checks the CPU's saved CS is CPL3 before reading any user-only RSP/SS field. The second-chance pure policy `htmlk_m5_bad_ud_stack_owned()` verifies:
+The original **strict** M5-E1 ordinary user exception-frame guard remains unchanged. In `boot/exception_idt.c` vector 6 **only**, if the strict guard fails, the handler first checks the CPU's saved CS is CPL3 before reading any user-only RSP/SS field. The second-chance pure policy `htmlk_m5_bad_noerr_stack_owned()` verifies (renamed by the subsequent E3-F shared no-error-code fault policy):
 
 - Actual CPU-provided five-qword exception frame pointer is **exactly** TSS.RSP0 − 40; TSS.RSP0 is a 16-byte-aligned high canonical supervisor pointer. The 160-byte syscall/x2APIC IRQ frame is explicitly not interchangeable with this #UD frame.
 - Saved exact CPL3 CS=0x2b, SS=0x33, valid reserved RFLAGS, the expected IF state of this opt-in mode, and no IOPL/NT/VM impersonation. The saved user RIP must still be **inside the validated loaded executable** (not past its code end), rather than freely trusting the user-code address.
@@ -31,3 +31,7 @@ python3 scripts/test_m5_user_bad_ud_stack.py
 ## Important limits and next gate
 
 Only known active opt-in Ring3 **#UD with poisoned user RSP** is newly recoverable. Corrupting RSP and then triggering **#GP, #PF, #DE, #DB, or #BP** remains a separate unverified case; especially page fault IST2 requires its own frame/stack provenance, so this policy cannot simply be copied onto other vectors. FPU/XSAVE, FS/GS, SMP, nested CPU faults, general ELF/untrusted image integrity, process groups, calibrated timing, UEFI and physical hardware are **NOT RUN/NOT SUPPORTED**. The user-program byte checksum is not a signature. The phase belongs to [M5-E tracking issue #75](https://github.com/Eun-si123/html-kernel-os/issues/75).
+
+## Follow-on (separate M5-E3-F phase)
+
+This initial E3-E contract covers #UD only. The subsequent opt-in E3-F patch generalizes the same five-qword frame/owner check to the only other supported *fault-class no-error-code* vector **#DE (0)**, while keeping #UD (6) acceptance unchanged and excluding all other vectors. See [M5-E3-F CPU divide error evidence](M5_USER_BAD_DE.md); its exact PR-head CI/merge is independently gated.

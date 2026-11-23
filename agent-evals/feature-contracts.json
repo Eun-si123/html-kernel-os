@@ -431,7 +431,9 @@
         "scripts/test_m5_user_syscall_eof.py",
         "docs/M5_USER_SYSCALL_EOF.md",
         "scripts/test_m5_user_bad_ud_stack.py",
-        "docs/M5_USER_BAD_UD.md"
+        "docs/M5_USER_BAD_UD.md",
+        "scripts/test_m5_user_bad_de_stack.py",
+        "docs/M5_USER_BAD_DE.md"
       ]
     },
     {

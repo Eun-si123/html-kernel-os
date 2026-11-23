@@ -124,6 +124,14 @@ __attribute__((interrupt)) static void vector_0(struct interrupt_frame *f) {
         htmlk_m5_accept_user_fault(0U, f->rip, f->cs, f->rflags,
                                     f->rsp, f->ss, 0U, 0U))
         htmlk_m4_user_return();
+    /* Like #UD, true CPL3 #DE has no error code: on a stack switch, its
+     * five-word CPU frame is at trusted TSS.RSP0 - 40. Ignore poisoned
+     * saved USER RSP only if an independently proven live owner exists. */
+    if ((f->cs & 3U) == 3U &&
+        htmlk_m5_accept_bad_user_rsp_noerr(0U, (uintptr_t)f,
+                                           f->rip, f->cs, f->rflags,
+                                           f->rsp, f->ss))
+        htmlk_m4_user_return();
 #endif
     panic(0, f->rip, 0);
 }
@@ -172,7 +180,7 @@ __attribute__((interrupt)) static void vector_6(struct interrupt_frame *f) {
      * the trusted TSS.RSP0 for this no-error-code #UD exception. The
      * independent, exact 40-byte frame/owner proof must pass first. */
     if ((f->cs & 3U) == 3U &&
-        htmlk_m5_accept_bad_user_rsp_ud((uintptr_t)f,
+        htmlk_m5_accept_bad_user_rsp_noerr(6U, (uintptr_t)f,
                                         f->rip, f->cs, f->rflags,
                                         f->rsp, f->ss))
         htmlk_m4_user_return();

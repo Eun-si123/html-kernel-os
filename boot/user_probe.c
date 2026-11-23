@@ -520,17 +520,22 @@ __attribute__((noreturn)) void htmlk_m5_timeout_expire(void) {
 }
 #endif
 
-/* M5-E3-E: single-vector second-chance ownership proof for a REAL CPL3
- * #UD with an invalid saved user RSP. The normal #UD policy remains strict.
+/* M5-E3-E/F: two fault-only, no-CPU-error-code second-chance proofs
+ * for REAL CPL3 #UD/#DE with invalid user RSP. The normal policy stays strict.
  * Do not access arbitrary user memory or recover an ownerless supervisor
  * fault. The caller has already examined CPL3 CS before reading RSP/SS. */
-bool htmlk_m5_accept_bad_user_rsp_ud(uintptr_t frame_address,
+bool htmlk_m5_accept_bad_user_rsp_noerr(unsigned vector,
+                                   uintptr_t frame_address,
                                    uint64_t rip, uint64_t cs,
                                    uint64_t flags, uint64_t user_rsp,
                                    uint64_t ss) {
+    /* Only the two no-error-code *faults* #DE/#UD use this tiny 40-byte
+     * CPU frame. #GP/#PF have error codes; #DB/#BP are traps with different
+     * RIP semantics, and must NOT accidentally share this recovery. */
+    if (!htmlk_m5_bad_noerr_fault_vector(vector)) return false;
     uint64_t active_cr3;
     __asm__ volatile("mov %%cr3,%0" : "=r"(active_cr3));
-    const struct htmlk_m5_bad_ud_owner ctx = {
+    const struct htmlk_m5_bad_noerr_owner ctx = {
         .frame_address=(uint64_t)frame_address,
         .tss_rsp0=htmlk_tss_rsp0(),
         .rip=rip, .cs=cs, .ss=ss, .rflags=flags, .user_rsp=user_rsp,
@@ -551,9 +556,10 @@ bool htmlk_m5_accept_bad_user_rsp_ud(uintptr_t frame_address,
         .expected_if=false,
 #endif
     };
-    if (!htmlk_m5_bad_ud_stack_owned(&ctx)) return false;
+    if (!htmlk_m5_bad_noerr_stack_owned(&ctx)) return false;
     user_faulted=true;
-    log_text("M5_E3_USER_UD_BAD_RSP_RETIRED\n");
+    log_text(vector == 0U ? "M5_E3_USER_DE_BAD_RSP_RETIRED\n" :
+                            "M5_E3_USER_UD_BAD_RSP_RETIRED\n");
     return true;
 }
 
