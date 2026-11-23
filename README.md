@@ -4,7 +4,7 @@
 
 HTML is normally a document language. This repository explores a dedicated compiler that interprets a restricted set of HTML-style elements as *systems-programming instructions*. The long-term goal is a self-booting OS whose kernel logic is written in that language.
 
-> **Current status: VERIFIED BOOTABLE DEMO KERNEL (QEMU BIOS + browser), NOT A USABLE OS.** A restricted HTML dialect compiles to freestanding x86-64 C; Limine starts the generated kernel. Real QEMU source-mutation/negative controls passed locally and on GitHub CI. The same boot ISO was independently booted in Chromium using the v64 WebAssembly x86-64 emulator: [try the browser demo](https://eun-si123.github.io/html-kernel-os/play.html). UEFI, mobile-browser compatibility and physical hardware remain unverified. No memory manager, filesystem, scheduler or general hardware drivers.
+> **Current status: VERIFIED BOOTABLE DEMO KERNEL (QEMU BIOS + browser), NOT A USABLE OS.** A restricted HTML dialect compiles to freestanding x86-64 C; Limine starts the generated kernel. Real QEMU source-mutation/negative controls passed locally and on GitHub CI. The same boot ISO was independently booted in Chromium using the v64 WebAssembly x86-64 emulator: [try the browser demo](https://eun-si123.github.io/html-kernel-os/play.html). UEFI, mobile-browser compatibility and physical hardware remain unverified. No general-purpose memory manager, filesystem, scheduler or general hardware drivers; M3 currently has a limited verified physical-page probe.
 
 ## Agent and contributor entry points
 
@@ -14,7 +14,7 @@ Read [actual implementation status](docs/STATUS.md) and [evidence criteria](docs
 
 ## Roadmap for people and agents / 개발 계획
 
-Start with the **[M0–M6 milestone roadmap](docs/ROADMAP.md)**: M1 actual QEMU BIOS boot is **verified by local tests and GitHub CI**; M2 core language programming features are NEXT. Read the [language design / Python ease comparison](docs/LANGUAGE_DESIGN.md), [C++/Rust-class performance goal and measurement contract](docs/PERFORMANCE.md), and [risk/assumption register](docs/PROJECT_RISKS.md) before proposing syntax or hardware changes. Milestones are *not* dates or release promises; [STATUS](docs/STATUS.md) owns observed progress. Agents can open milestone-scoped Issues with [this shared task template](.github/ISSUE_TEMPLATE/roadmap-task.md).
+Start with the **[M0–M6 milestone roadmap](docs/ROADMAP.md)**: M1 actual QEMU BIOS boot is **verified by local tests and GitHub CI**; M2 core language programming features have native QEMU/Linux evidence; M3 memory and fault handling are NEXT. Read the [language design / Python ease comparison](docs/LANGUAGE_DESIGN.md), [C++/Rust-class performance goal and measurement contract](docs/PERFORMANCE.md), and [risk/assumption register](docs/PROJECT_RISKS.md) before proposing syntax or hardware changes. Milestones are *not* dates or release promises; [STATUS](docs/STATUS.md) owns observed progress. Agents can open milestone-scoped Issues with [this shared task template](.github/ISSUE_TEMPLATE/roadmap-task.md).
 
 ## Try the working prototype
 
@@ -127,3 +127,15 @@ Then open http://127.0.0.1:8000 in your browser.
 ## M3 memory bootstrap experiment (separate from normal boot)
 
 An opt-in Limine memory-map/HHDM probe now selects exactly 16 usable, 4KiB-aligned physical pages, performs actual RAM readback through HHDM, and checks exhaustion. The ordinary HTML-derived kernel image is unchanged. Run `python3 scripts/test_m3_memory.py` to check the freestanding C page-pool logic with GCC UBSan and run positive/negative real BIOS QEMU boots, or build a manually bootable test ISO with `python3 scripts/build_boot.py --memory-probe --out build/html-kernel-m3-memory.iso`. This is **only the initial M3 physical memory slice**: no virtual page mapping, interrupt/fault handler, real PC verification or user-program isolation. Full design and limitations: [M3 memory bootstrap](docs/M3_MEMORY_BOOTSTRAP.md).
+
+## Native screen output experiment (M3, not a graphical desktop)
+
+A new opt-in **real RGB framebuffer console** makes the actual booted x86-64 kernel write text pixels into its Limine framebuffer. Existing `<print>` source writes to the QEMU debugcon and COM1 **and** to the real monitor when enabled. Build a standalone ISO with:
+
+```sh
+python3 scripts/build_boot.py --source examples/framebuffer-kernel.html --video-console --out build/html-kernel-video.iso
+python3 scripts/test_video_console.py
+python3 scripts/test_video_screen.py
+```
+
+The original five-by-seven bitmap renderer is implemented in `boot/console_fb.c`, with safe mode validation, bounded dimensions, line wrapping and a dark display palette. GCC/QEMU's x86-64 ISA is pinned explicitly; previously an unsupported BMI2 `SHLX` instruction caused a real QEMU #UD/triple fault before screen output, now fixed with `-march=x86-64 -mno-bmi2`. Tests distinguish actual Limine pixel readback from serial text, and a separate QEMU VGA screenshot oracle checks visible pixels. This is an **opt-in native ISO and GitHub Actions artifact**, not yet wired to the public browser Boot Lab. There is no keyboard interaction, Unicode font, window manager, general graphics driver or verified physical PC display. See [M3 framebuffer contract](docs/M3_FRAMEBUFFER_CONSOLE.md).
