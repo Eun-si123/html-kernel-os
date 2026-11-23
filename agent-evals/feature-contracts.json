@@ -67,15 +67,22 @@
         "boot/page_pool.c",
         "boot/memory_probe.h",
         "boot/memory_probe.c",
-        "scripts/build_boot.py"
+        "scripts/build_boot.py",
+        "boot/console_fb.c",
+        "boot/console_fb.h"
       ],
       "regressions": [
-        "tests/test_m3_memory.py"
+        "tests/test_m3_memory.py",
+        "tests/test_video_console.py"
       ],
       "fieldEvidence": [
         "scripts/test_m3_memory.py",
         "docs/M3_MEMORY_BOOTSTRAP.md",
-        "tests/native/test_page_pool.c"
+        "tests/native/test_page_pool.c",
+        "tests/native/test_console_fb.c",
+        "scripts/test_video_console.py",
+        "scripts/test_video_screen.py",
+        "docs/M3_FRAMEBUFFER_CONSOLE.md"
       ]
     }
   ]

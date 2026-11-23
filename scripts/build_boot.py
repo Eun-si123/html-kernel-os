@@ -54,7 +54,8 @@ def get_limine(cache: Path) -> tuple[Path, Path]:
         run("make", "-C", dist / "limine-binary")
     return dist / "limine-binary", header
 def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool,
-          memory_probe: bool = False, memory_probe_badmap: bool = False) -> None:
+          memory_probe: bool = False, memory_probe_badmap: bool = False,
+          video_console: bool = False, video_test: bool = False) -> None:
     dist, header = get_limine(cache)
     work_root.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="htmlk-boot-", dir=work_root) as temp:
@@ -65,13 +66,22 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
         kernel = build_dir / "kernel.elf"
         iso_root = build_dir / "iso_root"
         run(sys.executable, ROOT / "compiler/htmlk.py", source.resolve(), "--out", generated)
-        flags = ["-std=c11", "-O2", "-ffreestanding", "-fno-builtin",
+        # Deterministic guest ISA: hosted GCC may target BMI2 (SHLX),
+        # but baseline QEMU qemu64 deliberately lacks that extension.
+        flags = ["-std=c11", "-O2", "-march=x86-64", "-mtune=generic",
+                 "-mno-bmi2", "-ffreestanding", "-fno-builtin",
                  "-fno-stack-protector", "-fno-pie", "-fno-pic", "-fno-common",
                  "-mno-red-zone", "-mcmodel=kernel", "-mgeneral-regs-only",
                  "-fcf-protection=none", "-Wall", "-Wextra", "-Werror"]
         define = ["-DHTMLK_QEMU_TEST_EXIT"] if test_exit else []
         if memory_probe_badmap and not memory_probe:
             raise ValueError("bad-map injection requires an explicit M3 memory probe")
+        if video_test and not video_console:
+            raise ValueError("framebuffer pixel oracle requires --video-console")
+        if video_console:
+            define.append("-DHTMLK_FB_CONSOLE")
+        if video_test:
+            define.append("-DHTMLK_FB_TEST")
         if memory_probe:
             define.append("-DHTMLK_M3_MEMORY_PROBE")
         if memory_probe_badmap:
@@ -80,8 +90,11 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
         run("gcc", *flags, *define, "-I", header.parent, "-c",
             ROOT / "boot/kernel_entry.c", "-o", entry_obj)
         extra_objects: list[Path] = []
-        if memory_probe:
-            for source_name in ("page_pool", "memory_probe"):
+        if memory_probe or video_console:
+            sources = (["page_pool", "memory_probe"] if memory_probe else [])
+            if video_console:
+                sources.append("console_fb")
+            for source_name in sources:
                 obj = build_dir / (source_name + ".o")
                 run("gcc", *flags, *define, "-I", header.parent, "-I", ROOT / "boot",
                     "-c", ROOT / "boot" / (source_name + ".c"), "-o", obj)
@@ -126,11 +139,18 @@ def main() -> None:
                         help="Opt-in M3 Limine map + 16-page HHDM allocator test")
     parser.add_argument("--memory-probe-badmap", action="store_true",
                         help="M3 negative test only; corrupt a local map copy")
+    parser.add_argument("--video-console", action="store_true",
+                        help="Opt-in M3 native Limine RGB framebuffer text output")
+    parser.add_argument("--video-test", action="store_true",
+                        help="QEMU-only framebuffer on-device pixel verification")
     a = parser.parse_args()
+    if a.video_test and not a.video_console:
+        parser.error("--video-test requires --video-console")
     if a.memory_probe_badmap and not a.memory_probe:
         parser.error("--memory-probe-badmap requires --memory-probe")
     build(a.source, a.out, a.cache_dir, a.work_dir, a.test_exit,
-          a.memory_probe, a.memory_probe_badmap)
+          a.memory_probe, a.memory_probe_badmap,
+          a.video_console, a.video_test)
 
 
 if __name__ == "__main__":

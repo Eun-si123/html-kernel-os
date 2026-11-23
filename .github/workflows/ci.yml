@@ -40,6 +40,10 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends qemu-system-x86 xorriso
+      - name: Verify actual Limine RGB framebuffer writes and source-derived pixels in QEMU
+        run: python scripts/test_video_console.py
+      - name: Verify actual QEMU VGA screenshot shows kernel glyph pixels
+        run: python scripts/test_video_screen.py
       - name: Boot and verify HTML-derived kernel in QEMU
         run: python scripts/test_boot.py
       - name: Verify M2 variables and control flow boot
@@ -78,6 +82,7 @@ jobs:
           python scripts/build_boot.py --source examples/array-kernel.html --out build/html-kernel-array.iso
           python scripts/build_boot.py --source examples/m2-exercises-kernel.html --out build/html-kernel-m2-exercises.iso
           python scripts/build_boot.py --memory-probe --out build/html-kernel-m3-memory.iso
+          python scripts/build_boot.py --source examples/framebuffer-kernel.html --video-console --out build/html-kernel-video.iso
       - uses: actions/upload-artifact@v4
         with:
           name: html-kernel-os-native-iso
@@ -106,3 +111,6 @@ jobs:
             build/html-kernel-m2-exercises.elf
             build/html-kernel-m3-memory.iso
             build/html-kernel-m3-memory.elf
+            build/html-kernel-video.iso
+            build/html-kernel-video.elf
+            build/html-kernel-video-visible-screen.png

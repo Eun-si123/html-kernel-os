@@ -1,6 +1,9 @@
 /* Minimal Limine base-revision-6 handoff into code generated from HTML. */
 #include <stdint.h>
 #include "limine.h"
+#ifdef HTMLK_FB_CONSOLE
+#include "console_fb.h"
+#endif
 #ifdef HTMLK_M3_MEMORY_PROBE
 #include "memory_probe.h"
 #endif
@@ -28,6 +31,37 @@ static volatile struct limine_hhdm_request m3_hhdm_request = {
 };
 #endif
 
+#ifdef HTMLK_FB_CONSOLE
+__attribute__((used, section(".limine_requests")))
+static volatile struct limine_framebuffer_request fb_request = {
+    .id = LIMINE_FRAMEBUFFER_REQUEST_ID, .revision = 0, .response = 0
+};
+
+static void configure_framebuffer(void) {
+    const struct limine_framebuffer_response *response = fb_request.response;
+    if (response == 0 || response->framebuffer_count == 0 ||
+        response->framebuffers == 0 || response->framebuffers[0] == 0) {
+        return; /* Serial/debugcon remains the fallback. */
+    }
+    const struct limine_framebuffer *frame = response->framebuffers[0];
+    const struct htmlk_fb_mode mode = {
+        .address = (volatile uint8_t *)frame->address,
+        .width = frame->width,
+        .height = frame->height,
+        .pitch = frame->pitch,
+        .bpp = frame->bpp,
+        .memory_model = frame->memory_model,
+        .red_size = frame->red_mask_size,
+        .red_shift = frame->red_mask_shift,
+        .green_size = frame->green_mask_size,
+        .green_shift = frame->green_mask_shift,
+        .blue_size = frame->blue_mask_size,
+        .blue_shift = frame->blue_mask_shift
+    };
+    (void)htmlk_fb_init(&mode);
+}
+#endif
+
 extern void kernel_main(void);
 __attribute__((noreturn))
 void kmain(void) {
@@ -41,6 +75,9 @@ void kmain(void) {
     }
 #ifdef HTMLK_M3_MEMORY_PROBE
     htmlk_memory_probe(m3_memmap_request.response, m3_hhdm_request.response);
+#endif
+#ifdef HTMLK_FB_CONSOLE
+    configure_framebuffer();
 #endif
     kernel_main(); /* Generated from examples/kernel.html. */
     for (;;) __asm__ volatile ("cli; hlt");

@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SUCCESS_EXIT = 33  # isa-debug-exit device: (0x10 << 1) | 1
 
 
-def boot(iso: Path, *, timeout: int = 12) -> tuple[int, str]:
+def boot(iso: Path, *, timeout: int = 12, trace_file: Path | None = None) -> tuple[int, str]:
     args = [
         "qemu-system-x86_64", "-M", "q35", "-m", "256M",
         "-cdrom", str(iso), "-boot", "d",
@@ -23,6 +23,8 @@ def boot(iso: Path, *, timeout: int = 12) -> tuple[int, str]:
         "-device", "isa-debug-exit,iobase=0xf4,iosize=0x04",
         "-no-reboot",
     ]
+    if trace_file is not None:
+        args += ["-d", "int,guest_errors", "-D", str(trace_file)]
     try:
         result = subprocess.run(args, capture_output=True, timeout=timeout, check=False)
     except subprocess.TimeoutExpired as exc:
