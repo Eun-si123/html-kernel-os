@@ -5,6 +5,12 @@
 
 void htmlk_m4_user_probe(const struct limine_memmap_response *map,
                          const struct limine_hhdm_response *hhdm);
+#ifdef HTMLK_M5_INTERACTIVE_RUN
+void htmlk_m5_user_run(const char *path,
+                       const struct limine_memmap_response *map,
+                       const struct limine_hhdm_response *hhdm);
+void htmlk_m5_console_byte(uint8_t byte);
+#endif
 void htmlk_m4_syscall_entry(void);
 void htmlk_m4_syscall_dispatch(void *frame);
 void htmlk_m4_user_enter(uint64_t rip, uint64_t rsp, uint64_t cs, uint64_t ss);

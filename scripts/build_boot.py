@@ -84,7 +84,21 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
           romfs_root: Path | None = None,
           romfs_console: bool = False,
           user_loader: bool = False, user_app_source: Path | None = None,
-          user_app_image: Path | None = None) -> None:
+          user_app_image: Path | None = None,
+          interactive_run: bool = False) -> None:
+    if interactive_run:
+        if not (exception_idt and tss_ist) or any((
+            memory_probe, video_console, paging_probe, task_probe,
+            timer_probe, preempt_probe, user_probe, isolation_probe,
+            user_preempt, romfs_probe, romfs_console, user_loader,
+            fault_test is not None, double_fault_test,
+            paging_fault_test, paging_recover_test, romfs_negative,
+            user_bad_syscall, user_privileged_io, user_read_kernel,
+            user_write_code, isolation_gp, isolation_ro, isolation_forged,
+            isolation_survivor_fault, user_preempt_mask, user_preempt_bad_frame,
+            user_preempt_fault, user_preempt_survivor_fault,
+            user_preempt_fault_gp, user_preempt_fault_ro)):
+            raise ValueError("M5-D1 needs IDT/TSS and no other probes")
     if user_loader:
         if not (exception_idt and tss_ist) or any((
             memory_probe, video_console, paging_probe, task_probe,
@@ -101,7 +115,7 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
             raise ValueError("M5-C1 requires IDT+TSS only, no other probes")
         if user_app_source is not None and user_app_image is not None:
             raise ValueError("M5-C1 source and prebuilt image are exclusive")
-    elif user_app_source is not None or user_app_image is not None:
+    elif not interactive_run and (user_app_source is not None or user_app_image is not None):
         raise ValueError("M5-C1 app parameters require --user-loader-probe")
     if romfs_console and romfs_probe:
         raise ValueError("M5-A probe and M5-B console are exclusive")
@@ -130,8 +144,10 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
                  "-mno-red-zone", "-mcmodel=kernel", "-mgeneral-regs-only",
                  "-fcf-protection=none", "-Wall", "-Wextra", "-Werror"]
         define = ["-DHTMLK_QEMU_TEST_EXIT"] if test_exit else []
-        if user_loader:
+        if user_loader or interactive_run:
             define.append("-DHTMLK_M5_USER_LOADER")
+        if interactive_run:
+            define.extend(("-DHTMLK_M5_INTERACTIVE_RUN", "-DHTMLK_M5_SERIAL_CONSOLE"))
         if romfs_probe:
             define.append("-DHTMLK_M5_ROMFS_PROBE")
         if romfs_console:
@@ -314,16 +330,18 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
         run("gcc", *flags, *define, "-I", header.parent, "-c",
             ROOT / "boot/kernel_entry.c", "-o", entry_obj)
         extra_objects: list[Path] = []
-        if memory_probe or video_console or exception_idt or paging_probe or tss_ist or task_probe or preempt_probe or user_probe or isolation_probe or user_preempt or romfs_probe or romfs_console or user_loader:
-            sources = (["page_pool"] if (memory_probe or paging_probe or user_probe or isolation_probe or user_preempt or user_loader) else [])
+        if memory_probe or video_console or exception_idt or paging_probe or tss_ist or task_probe or preempt_probe or user_probe or isolation_probe or user_preempt or romfs_probe or romfs_console or user_loader or interactive_run:
+            sources = (["page_pool"] if (memory_probe or paging_probe or user_probe or isolation_probe or user_preempt or user_loader or interactive_run) else [])
             if memory_probe:
                 sources.append("memory_probe")
             if romfs_probe:
                 sources.extend(("romfs", "romfs_probe"))
-            if romfs_console:
+            if romfs_console or interactive_run:
                 sources.extend(("romfs", "serial_command", "serial_console"))
-            if user_loader:
-                sources.extend(("romfs", "user_image", "frame_owner", "user_pages", "user_probe"))
+            if user_loader or interactive_run:
+                sources.extend(("user_image", "frame_owner", "user_pages", "user_probe"))
+                if user_loader:
+                    sources.append("romfs")
             if task_probe:
                 sources.extend(("task_model", "task_runtime"))
             if timer_probe:
@@ -350,10 +368,10 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
                 run("gcc", *flags, *define, "-I", header.parent, "-I", ROOT / "boot",
                     "-c", ROOT / "boot" / (source_name + ".c"), "-o", obj)
                 extra_objects.append(obj)
-            if romfs_probe or romfs_console or user_loader:
+            if romfs_probe or romfs_console or user_loader or interactive_run:
                 generated_romfs = build_dir / "romfs_generated.c"
                 selected_root = (romfs_root or ROOT / "examples/romfs").resolve()
-                if user_loader:
+                if user_loader or interactive_run:
                     # Preserve the existing ROMFS source directory unchanged.
                     # Keep symlinks as symlinks so gen_romfs rejects them.
                     selected_root = build_dir / "romfs_with_app"
@@ -393,7 +411,7 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
                 run("gcc", "-c", "-m64", "-fno-pie", "-fno-pic",
                     ROOT / "boot/preempt_switch.S", "-o", obj)
                 extra_objects.append(obj)
-            if user_probe or isolation_probe or user_loader:
+            if user_probe or isolation_probe or user_loader or interactive_run:
                 obj = build_dir / "user_entry.o"
                 run("gcc", "-c", "-m64", "-fno-pie", "-fno-pic",
                     *define, ROOT / "boot/user_entry.S", "-o", obj)
@@ -533,6 +551,8 @@ def main() -> None:
                         help="M5-C1 relocation-free x86-64 assembly for external Ring3 program")
     parser.add_argument("--user-app-image", type=Path,
                         help="M5-C1 prebuilt HKEX file (guest validates integrity/format)")
+    parser.add_argument("--romfs-run-console", action="store_true",
+                        help="M5-D1 interactive COM1 run /apps/hello.hke in actual CPL3")
     parser.add_argument("--romfs-probe", action="store_true",
                         help="M5-A opt-in bounded read-only files in native ELF")
     parser.add_argument("--romfs-console", action="store_true",
@@ -542,6 +562,16 @@ def main() -> None:
     parser.add_argument("--romfs-root", type=Path, default=ROOT / "examples/romfs",
                         help="Trusted ROMFS input (16 files, up to 4KiB each)")
     a = parser.parse_args()
+    if a.romfs_run_console:
+        if not (a.exception_idt and a.tss_ist) or any((
+            a.user_loader_probe, a.user_probe, a.user_isolation_probe,
+            a.user_preempt_probe, a.romfs_console, a.romfs_probe,
+            a.memory_probe, a.video_console, a.paging_probe,
+            a.task_probe, a.timer_probe, a.preempt_probe,
+            a.fault_test is not None, a.double_fault_test,
+            a.romfs_negative, a.user_preempt_fault_gp,
+            a.user_preempt_fault_ro)):
+            parser.error("--romfs-run-console requires IDT+TSS alone")
     if a.user_loader_probe:
         if not (a.exception_idt and a.tss_ist) or any((
             a.memory_probe, a.video_console, a.paging_probe,
@@ -553,8 +583,8 @@ def main() -> None:
             parser.error("M5-C1 loader requires IDT+TSS only, no other probes")
         if a.user_app_source and a.user_app_image:
             parser.error("M5-C1 source and image options are exclusive")
-    elif a.user_app_source or a.user_app_image:
-        parser.error("M5-C1 app options require --user-loader-probe")
+    elif (a.user_app_source or a.user_app_image) and not a.romfs_run_console:
+        parser.error("M5-C1 app options require --user-loader-probe or --romfs-run-console")
     if a.romfs_console and a.romfs_probe:
         parser.error("--romfs-console and --romfs-probe are exclusive")
     if a.romfs_negative and not (a.romfs_probe and a.test_exit):
@@ -679,7 +709,8 @@ def main() -> None:
           a.user_preempt_revoke_b,
           a.romfs_probe, a.romfs_negative, a.romfs_root,
           a.romfs_console, a.user_loader_probe,
-          a.user_app_source, a.user_app_image)
+          a.user_app_source, a.user_app_image,
+          a.romfs_run_console)
 
 
 if __name__ == "__main__":

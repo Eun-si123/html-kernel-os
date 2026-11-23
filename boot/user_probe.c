@@ -20,6 +20,9 @@ static volatile bool syscall_seen;
 static volatile bool user_exited;
 #ifdef HTMLK_M5_USER_LOADER
 static volatile bool user_reported;
+#ifdef HTMLK_M5_INTERACTIVE_RUN
+static const char *selected_app_path;
+#endif
 static void log_decimal(uint32_t number) {
     char digits[5];
     unsigned count = 0;
@@ -27,7 +30,11 @@ static void log_decimal(uint32_t number) {
     while (number != 0U);
     while (count != 0U) {
         const uint8_t byte = (uint8_t)digits[--count];
+#ifdef HTMLK_M5_INTERACTIVE_RUN
+        htmlk_m5_console_byte(byte);
+#else
         __asm__ volatile ("outb %0,%1" :: "a"(byte), "Nd"((uint16_t)0xe9));
+#endif
     }
 }
 #endif
@@ -42,8 +49,12 @@ _Static_assert(sizeof(struct user_irq_frame)==160,"ring3 syscall IRQ frame misma
 
 static void log_text(const char *s) {
     while (*s) {
+#ifdef HTMLK_M5_INTERACTIVE_RUN
+        htmlk_m5_console_byte((uint8_t)*s++);
+#else
         __asm__ volatile ("outb %0, %1" : :
             "a"((uint8_t)*s++), "Nd"((uint16_t)0xe9));
+#endif
     }
 }
 __attribute__((noreturn)) static void reject(const char *s) {
@@ -173,7 +184,13 @@ void htmlk_m4_user_probe(const struct limine_memmap_response *map,
     }
 #ifdef HTMLK_M5_USER_LOADER
     size_t loaded = 0;
-    if (!htmlk_romfs_read(&htmlk_romfs_image, "/apps/hello.hke", 0,
+    if (!htmlk_romfs_read(&htmlk_romfs_image,
+#ifdef HTMLK_M5_INTERACTIVE_RUN
+                          selected_app_path,
+#else
+                          "/apps/hello.hke",
+#endif
+                          0,
                           (uint8_t *)(uintptr_t)code, HTMLK_PAGE_SIZE,
                           &loaded))
         reject("M5_C_PROGRAM_NOT_FOUND\n");
@@ -240,3 +257,13 @@ void htmlk_m4_user_probe(const struct limine_memmap_response *map,
     log_text("M4_RING3_MAIN_RESTORED\n");
 #endif
 }
+
+#ifdef HTMLK_M5_INTERACTIVE_RUN
+void htmlk_m5_user_run(const char *path,
+                       const struct limine_memmap_response *map,
+                       const struct limine_hhdm_response *hhdm) {
+    selected_app_path = path;
+    htmlk_m4_user_probe(map, hhdm);
+    selected_app_path = 0;
+}
+#endif
