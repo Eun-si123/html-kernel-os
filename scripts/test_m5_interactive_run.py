@@ -98,6 +98,8 @@ def main() -> None:
             (b"run /missing.hke\r", b"M5_ERR_NOT_FOUND"),
             (b"run /welcome.txt\r", b"M5_ERR_BAD_EXEC"),
             (b"run /../welcome.txt\r", b"M5_ERR_INVALID_PATH"),
+            (b"run /\r", b"M5_ERR_INVALID_PATH"),
+            (b"x"*96+b"\r", b"M5_ERR_INVALID_LINE"),
             (b"run /apps/hello.hke\r", APP_TRACE),
             (b"run /apps/hello.hke\r", APP_TRACE),
             (b"unknown\r", b"M5_ERR_UNKNOWN_COMMAND"),

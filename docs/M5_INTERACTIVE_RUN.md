@@ -18,7 +18,7 @@ python3 scripts/test_m5_interactive_run.py
 python3 scripts/run_m5_console.py --with-user-program
 ```
 
-`tests/test_m5_run_command.py` uses native GCC UBSan -O0/-O3 to reject noncanonical paths, malformed command spelling and traversal while retaining the older parser behavior. `scripts/test_m5_interactive_run.py` builds and actually boots x86-64 BIOS QEMU, sending live UART bytes into COM1: `help -> ls -> cat -> run missing -> run invalid text -> run traversal -> run valid twice -> unknown -> exit`. The test separately checks COM1 UART TX user-program data, the independent byte-level source mutations (`2026 -> 2027` user assembly and edited HTML), idle/no-input guard, malformed `HKEX` integrity rejection with **continued shell operation**, and dangerous command-line combination rejection.
+`tests/test_m5_run_command.py` uses native GCC UBSan -O0/-O3 to reject noncanonical paths, malformed command spelling and traversal while retaining the older parser behavior. `scripts/test_m5_interactive_run.py` builds and actually boots x86-64 BIOS QEMU, sending live UART bytes into COM1: `help -> ls -> cat -> run missing -> run invalid text -> run traversal -> run invalid root -> overlong input -> run valid twice -> unknown -> exit`. The test separately checks COM1 UART TX user-program data, the independent byte-level source mutations (`2026 -> 2027` user assembly and edited HTML), idle/no-input guard, malformed `HKEX` integrity rejection with **continued shell operation**, and dangerous command-line combination rejection.
 
 ## Security and scope boundaries
 
