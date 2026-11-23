@@ -44,6 +44,9 @@ def main() -> None:
             (b'run /apps/spin.hke\r',SPIN_TRACE),
             (b'run /apps/hello.hke\r',GOOD_TRACE),
             (b'run /apps/fault-ud.hke\r',b'M5_ERR_USER_FAULT'),
+            (b'run /apps/fault-de.hke\r',b'M5_ERR_USER_FAULT'),
+            (b'run /apps/fault-db.hke\r',b'M5_ERR_USER_FAULT'),
+            (b'run /apps/fault-bp.hke\r',b'M5_ERR_USER_FAULT'),
             (b'run /apps/hello.hke\r',GOOD_TRACE),
             (b'cat /welcome.txt\r',b'M5_CAT_END'),
             (b'run /wrong.hke\r',b'M5_ERR_NOT_FOUND'),
@@ -57,20 +60,22 @@ def main() -> None:
             assert transcript.count(b'M5_E2_REAL_USER_IRQ_LIMIT')==2,(boot,transcript)
             assert transcript.count(b'M5_E2_TIMEOUT_FRAMES_RECLAIMED')==2,(boot,transcript)
             assert transcript.count(b'M5_E_BAD_SYSCALL_FRAMES_RECLAIMED')==2,(boot,transcript)
-            assert transcript.count(b'M5_E_FAULT_FRAMES_RECLAIMED')==4,(boot,transcript)
+            assert transcript.count(b'M5_E_FAULT_FRAMES_RECLAIMED')==7,(boot,transcript)
             assert transcript.count(b'M5_C_USER_FRAMES_RECLAIMED')==7,(boot,transcript)
             assert transcript.count(b'M5_ERR_USER_SYSCALL')==2,(boot,transcript)
             assert transcript.count(b'M5_ERR_USER_TIMEOUT')==2,(boot,transcript)
-            assert transcript.count(b'M5_ERR_USER_FAULT')==4,(boot,transcript)
+            assert transcript.count(b'M5_ERR_USER_FAULT')==7,(boot,transcript)
             assert transcript.count(b'M5_RUN_DONE')==7,(boot,transcript)
+            for marker in (b'M5_E_USER_DE\n',b'M5_E_USER_DB\n',b'M5_E_USER_BP\n'):
+                assert transcript.count(marker)==1,(boot,marker,transcript)
             assert b'M4_UNKNOWN_SYSCALL_REJECTED' not in transcript
             assert b'M5_CONSOLE_FATAL' not in transcript
             assert b'M5_E2_UNTRUSTED_RING3_IRQ_CONTEXT' not in transcript
             assert uart.count(b'M5_ERR_USER_SYSCALL')==2,(boot,uart)
             assert uart.count(b'M5_ERR_USER_TIMEOUT')==2,(boot,uart)
             assert uart.count(b'M5_C_USER_VALUE=2026')==7,(boot,uart)
-            assert uart.count(b'M5_ERR_USER_FAULT')==4,(boot,uart)
-            print(f'M5-E3 INTERLEAVED QEMU BOOT {boot+1}/3: 7 OK + 2 TIMEOUT + 4 CPU FAULT + 2 SYSCALL ERR + 1 MISSING + EXIT PASS',flush=True)
+            assert uart.count(b'M5_ERR_USER_FAULT')==7,(boot,uart)
+            print(f'M5-E3 INTERLEAVED QEMU BOOT {boot+1}/3: 7 OK + 2 TIMEOUT + 7 CPU FAULT + 2 SYSCALL ERR + 1 MISSING + EXIT PASS',flush=True)
     print('M5-E3 ACTUAL CPU MIXED RING3 LIFECYCLE/OWNER REUSE 3x ACCEPTANCE PASS')
 
 if __name__=='__main__': main()

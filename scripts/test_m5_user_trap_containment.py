@@ -33,7 +33,8 @@ def prove_full_guest(iso:Path,*,timer:bool)->None:
                            b'M5_C_USER_PAGES_READY\n'+TIMER) if timer else APP_TRACE
     commands=[(b'help\r',b'M5_HELP help ls cat /path run /path exit')]
     for path in ('/apps/fault-de.hke','/apps/fault-db.hke','/apps/fault-bp.hke',
-                 '/end-bp.hke','/end-db.hke','/apps/fault-ud.hke'):
+                 '/end-bp.hke','/end-bp-int.hke','/end-db.hke',
+                 '/apps/fault-ud.hke'):
         commands.append((f'run {path}\r'.encode(),b'M5_ERR_USER_FAULT'))
         commands.append((b'run /apps/hello.hke\r',good))
     if timer:
@@ -45,24 +46,24 @@ def prove_full_guest(iso:Path,*,timer:bool)->None:
         assert trace.startswith(BASE) and trace.endswith(b'M5_CONSOLE_EXIT\n'+HTML)
         assert trace.count(b'M5_E_USER_DE\n')==1,(boot,trace)
         assert trace.count(b'M5_E_USER_DB\n')==2,(boot,trace)
-        assert trace.count(b'M5_E_USER_BP\n')==2,(boot,trace)
+        assert trace.count(b'M5_E_USER_BP\n')==3,(boot,trace)
         assert trace.count(b'M5_E_USER_UD\n')==1,(boot,trace)
-        assert trace.count(b'M5_ERR_USER_FAULT\n')==6,(boot,trace)
-        assert trace.count(b'M5_E_FAULT_FRAMES_RECLAIMED\n')==6,(boot,trace)
-        assert trace.count(b'M5_C_USER_FRAMES_RECLAIMED\n')==(7 if timer else 6),(boot,trace)
-        assert trace.count(b'M5_RUN_DONE\n')==(7 if timer else 6),(boot,trace)
-        assert trace.count(good)==(7 if timer else 6),(boot,trace)
-        assert uart.count(b'M5_ERR_USER_FAULT')==6,(boot,uart)
-        assert uart.count(b'M5_C_USER_VALUE=2026')==(7 if timer else 6),(boot,uart)
+        assert trace.count(b'M5_ERR_USER_FAULT\n')==7,(boot,trace)
+        assert trace.count(b'M5_E_FAULT_FRAMES_RECLAIMED\n')==7,(boot,trace)
+        assert trace.count(b'M5_C_USER_FRAMES_RECLAIMED\n')==(8 if timer else 7),(boot,trace)
+        assert trace.count(b'M5_RUN_DONE\n')==(8 if timer else 7),(boot,trace)
+        assert trace.count(good)==(8 if timer else 7),(boot,trace)
+        assert uart.count(b'M5_ERR_USER_FAULT')==7,(boot,uart)
+        assert uart.count(b'M5_C_USER_VALUE=2026')==(8 if timer else 7),(boot,uart)
         assert b'M3_EXCEPTION V=00' not in trace and b'M3_EXCEPTION V=01' not in trace
         assert b'M3_EXCEPTION V=0D' not in trace
         if timer:
-            assert trace.count(TIMER)==14,(boot,trace)
+            assert trace.count(TIMER)==16,(boot,trace)
             assert trace.count(b'M5_E2_REAL_USER_IRQ_LIMIT\n')==1,(boot,trace)
             assert trace.count(b'M5_E2_TIMEOUT_FRAMES_RECLAIMED\n')==1,(boot,trace)
             assert trace.count(b'M5_ERR_USER_TIMEOUT\n')==1,(boot,trace)
         print(f'M5-E3-B REAL QEMU {"x2APIC" if timer else "NO-TIMER"} BOOT {boot+1}/2: '
-              '6 user CPU traps + 6 healthy reruns + clean exit PASS',flush=True)
+              '7 user CPU traps + 7 healthy reruns + clean exit PASS',flush=True)
 
 
 def prove_html_user_cross_target(work:Path,cache:Path,romfs:Path)->None:
@@ -146,6 +147,13 @@ def main()->None:
                            f'    .byte 0x{opcode:02x}\n'
                            '.section .note.GNU-stack,"",@progbits\n')
             build_user_image(asm,romfs/(f'end-{mnemonic}.hke'))
+        # INT $3 is a *two-byte* software interrupt, not the one-byte INT3.
+        # Its DPL3-gated #BP trap also saves RIP exactly at code-end.
+        two_byte=work/'bp-two-byte-end.S'
+        two_byte.write_text('.section .text\n.global htmlk_user_program_start\n'
+                            'htmlk_user_program_start:\n    int $3\n'
+                            '.section .note.GNU-stack,"",@progbits\n')
+        build_user_image(two_byte,romfs/'end-bp-int.hke')
         prove_full_guest(build_guest(work,cache,romfs,timer=False),timer=False)
         prove_full_guest(build_guest(work,cache,romfs,timer=True),timer=True)
         prove_html_user_cross_target(work,cache,romfs)

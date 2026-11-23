@@ -101,6 +101,8 @@ The marker `— NEXT` is a **planning recommendation**, not an authoritative com
 
 **M5-F1 new build-time language target (QEMU-only):** the same checked M2 HTML-shaped grammar now compiles one numeric-report program into a separate relocation-free HKEX native Ring3 image in ROMFS and executes through the existing COM1 `run` command (rather than requiring users to write x86 assembly). Local 3x actual QEMU boot, rerun/reclaim, x2APIC timeout of independent app and changed-source provenance PASS; exact new PR-head CI and merge pending. This is **not** a general HTML user runtime or a browser app; see [M5-F1 HTML→user HKEX evidence](M5_HTML_USER_PROGRAM.md).
 
+**M5-E3-C complementary QEMU test expansion (local branch):** after the reviewed E3-B user fault recovery, exercise a two-byte `INT $3` at code end and 7 fault classes mixed with successful user programs, actual x2APIC timeouts and bad syscalls in the existing native CI tests. This is a test-only, local PASS addition; exact new PR-head CI/merge remains pending and broader M5 process hardening is still OPEN. See [lifecycle evidence](M5_PROCESS_LIFECYCLE_STRESS.md).
+
 - Prioritize an input/output terminal and deterministic RAM-backed or embedded filesystem before broad hardware drivers.
 - Add a simple user program loader, error reporting and minimal command interaction.
 - **Gate:** boot the image, enter a command, read an embedded file, execute a separate program, and report controlled invalid-input behavior.
