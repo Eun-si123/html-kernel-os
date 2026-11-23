@@ -20,7 +20,17 @@ class FeatureContractTests(unittest.TestCase):
                          {"html-grammar-codegen", "static-site", "m3-memory-bootstrap",
                           "m3-exception-idt", "m3-private-paging",
                           "m3-owned-fault-recovery", "m3-tss-ist",
-                          "m3-bounded-multipage"})
+                          "m3-bounded-multipage", "m4-cooperative-kernel-tasks"})
+
+    def test_changed_m4_scheduler_maps_native_qemu_and_state_oracles(self):
+        report = summarize(validate(self.real), ["boot/task_switch.S"])
+        self.assertEqual([item["feature"] for item in report["affectedFeatures"]],
+                         ["m4-cooperative-kernel-tasks"])
+        self.assertIn("tests/test_m4_task_model.py",
+                      report["affectedFeatures"][0]["existingRegressionTests"])
+        self.assertIn("scripts/test_m4_tasks.py",
+                      report["affectedFeatures"][0]["fieldEvidence"])
+        self.assertEqual(report["affectedFeatures"][0]["automatedEvidence"], "not-run")
 
     def test_changed_m3_c_source_maps_native_regressions(self):
         report = summarize(validate(self.real), ["boot/page_pool.c"])

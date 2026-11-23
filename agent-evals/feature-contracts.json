@@ -2,6 +2,12 @@
   "schemaVersion": 1,
   "features": [
     {
+      "id": "m4-cooperative-kernel-tasks",
+      "source": ["boot/task_model.h", "boot/task_model.c", "boot/task_runtime.h", "boot/task_runtime.c", "boot/task_switch.S", "boot/kernel_entry.c", "scripts/build_boot.py"],
+      "regressions": ["tests/test_m4_task_model.py"],
+      "fieldEvidence": ["scripts/test_m4_tasks.py", "tests/native/test_task_model.c", "docs/M4_TASKS.md"]
+    },
+    {
       "id": "html-grammar-codegen",
       "source": [
         "compiler/htmlk.py",

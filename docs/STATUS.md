@@ -50,6 +50,10 @@ These are not interchangeable. CI can verify code generation without proving a k
 
 This gate does not imply that a general-purpose memory manager, a scheduler, applications, or a full OS already exist. The confirmed interview Q1–Q20 goals and independently testable Linux/browser paths are in [INTERVIEW_DECISIONS.md](INTERVIEW_DECISIONS.md) and [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md).
 
+## M4 cooperative kernel tasks — Phase A (local native evidence)
+
+A separate opt-in M4 experiment adds two 8KiB ring-0 task stacks, real SysV x86-64 callee-saved CPU context switch assembly, a bounded round-robin dispatcher and a checked four-state task lifecycle. Local mini-PC `scripts/test_m4_tasks.py`: GCC -O0/-O3 UBSan state/invalid-transition probes PASS; real BIOS QEMU original-source and changed-source ISO boots PASS with strict A0/B0/A1/B1/A2/B2 output and subsequent HTML-derived kernel output; duplicate/out-of-range/terminated task QEMU negative-control PASS; unsafe CLI combination rejection PASS. The normal default kernel is unchanged. See [M4_TASKS.md](M4_TASKS.md) for exact acceptance limits. **PR/main CI pending**; M4 milestone **OPEN** until ring-3 isolation and forbidden-access rejection work.
+
 ## Site and licensing
 
 The `site/` directory contains source code for a separate project website. Avoid changing another `github.io` repository or enabling Pages without explicit authorization. No repository license has yet been selected, so public visibility alone does not grant open-source reuse rights.

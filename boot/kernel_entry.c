@@ -1,6 +1,9 @@
 /* Minimal Limine base-revision-6 handoff into code generated from HTML. */
 #include <stdint.h>
 #include "limine.h"
+#ifdef HTMLK_M4_TASK_PROBE
+#include "task_runtime.h"
+#endif
 #ifdef HTMLK_M3_IST_STACK
 #include "tss_ist.h"
 #endif
@@ -103,6 +106,9 @@ void kmain(void) {
 #endif
 #ifdef HTMLK_FB_CONSOLE
     configure_framebuffer();
+#endif
+#ifdef HTMLK_M4_TASK_PROBE
+    htmlk_m4_task_probe(); /* Opt-in, ring-0 only cooperative task proof. */
 #endif
     kernel_main(); /* Generated from examples/kernel.html. */
     for (;;) __asm__ volatile ("cli; hlt");
