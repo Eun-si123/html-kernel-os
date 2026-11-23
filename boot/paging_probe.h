@@ -27,6 +27,12 @@ struct limine_hhdm_response;
  * one supervisor-only test page, check HHDM alias, unmap, restore CR3.
  * A separate fault-injection build reads the unmapped virtual alias with
  * the already verified M3 IDT installed. No IRQ/SMP/user-mode support. */
+#ifdef HTMLK_M3_PAGING_RECOVER_TEST
+/* Invoked by x86-64 #PF ISR only; returns true exclusively for one approved
+ * non-present supervisor load while the private CR3 is active. */
+bool htmlk_paging_recover_page_fault(uint64_t fault_address, uint64_t error_code);
+#endif
+
 void htmlk_paging_probe(const struct limine_memmap_response *map,
                         const struct limine_hhdm_response *hhdm);
 
