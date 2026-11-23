@@ -1,6 +1,6 @@
 # M5-E2 — real CPU x2APIC timeout of nonyielding user program
 
-**Status:** opt-in, QEMU BIOS single-vCPU native proof; local acceptance PASS. New exact-head PR CI and merge status must be verified independently. **Not a production process security boundary.**
+**Status:** opt-in x86-64 BIOS QEMU single-vCPU proof merged in [PR #79](https://github.com/Eun-si123/html-kernel-os/pull/79), main commit `220e657` after exact-head GitHub Actions `45131358377`, `45131375290` and Gitleaks `45131365429` SUCCESS. This is **not a production process security boundary**. The cross-feature integration extension below is locally verified on its own branch, but its exact-head CI/merge must be checked separately.
 
 ## Build and manually run
 
@@ -25,6 +25,12 @@ In the interactive Linux terminal, run `run /apps/spin.hke`, then `run /apps/hel
 `scripts/test_m5_user_timeout.py` executes **three entire QEMU BIOS boots**, and in each sends `run spin → timeout → run valid → run CPU fault → run valid → run spin → timeout → run valid → exit`, asserting real debugcon and UART output order, three successful valid app executions, two timeout frame reclaims and one CPU-fault reclaim, then exact HTML-generated native kernel output. The same test proves a no-input shell remains idle, a modified HTML source yields a distinct native ISO and output, and a separately modified user assembly yields a distinct ISO and real CPL3 `INT 0x80` result.
 
 Crucial negative controls: on `-cpu qemu64,-x2apic` the guest **rejects** this mode with failure exit 57; with the **real APIC timer intentionally masked** through `--user-timeout-mask`, the nonyielding Ring3 app makes no IRQ progress and never returns to a prompt (host-enforced finite timeout). Other unsafe builder flag combinations fail without creating an ISO. `tests/test_user_timeout_frame.py` runs the standalone frame policy under GCC UBSan at `-O0` and `-O3`, rejecting forged CPL0/SS, wrong CR3, disabled IF, IOPL, NT, VM, bad RIP/RSP, bogus stack location, and excess code size.
+
+## M5-E3-A cross-feature recovery regression (additional acceptance layer)
+
+The enhanced `scripts/test_m5_user_timeout.py` builds two **additional actual BIOS-QEMU ISOs**, each combining the original genuine `spin.hke` x2APIC timeout with **all four** real user CPU faults (#GP, #PF error 5, #PF error 7, #UD), an invalid `int 0x80` syscall **ID** or **argument** (from merged E1 PR #78), and two subsequent healthy standalone HKEX executions from a distinct ROMFS path. It also embeds a checksum-corrupted HKEX file and asserts corrupt, missing and noncanonical program paths are rejected **before the APIC timer or user execution starts**. Every full sequence must end by running independently HTML-generated native code on the same guest after a real COM1 `exit`.
+
+This extension catches errors missed by merely running E1 and E2 in separate QEMU processes: stale task state, accidental timeout after rejected image preflight, cross-error frame reclamation, broken CR3/main-stack restoration and shell corruption. It asserts **exactly eight actual user launches** in each test (spin 1 + CPU faults 4 + bad syscall 1 + healthy 2), no ninth launch or timer activation for the three invalid ROMFS requests, exactly one timeout reclamation, four fault reclamations, one syscall reclamation, two healthy reclaim cycles and accurate UART-visible response counts. The E3-A extension is a **test/validation hardening slice only**, not new process capability or completion of full M5-E3. All inputs are trusted compile-time test fixtures.
 
 ## Deliberate limits / next gate
 

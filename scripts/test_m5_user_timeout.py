@@ -2,6 +2,7 @@
 """M5-E2 true x2APIC CPL3 non-yielding app timeout -> live COM1 shell."""
 from __future__ import annotations
 import os
+import shutil
 from pathlib import Path
 import subprocess
 import sys
@@ -9,6 +10,7 @@ import tempfile
 import time
 from test_boot import ROOT
 from test_m5_interactive_run import exercise, HTML, BASE, APP_TRACE
+from build_user_image import build as build_user_image
 
 CPU='qemu64,+x2apic'
 TIMER=b'M5_E2_X2APIC_TIMER_READY\n'
@@ -151,6 +153,67 @@ def main()->None:
         build(source,masked_iso,work,cache,'--user-timeout-mask')
         negative_cpu(masked_iso,TIMER,cpu=CPU,masked=True)
         print('M5-E2 MASKED REAL TIMER -> INFINITE CPL3 APP CANNOT RETURN; HOST TIMEOUT NEGATIVE PASS')
+        # Integration gap: merged M5-E1 #77/#78 and M5-E2 #79 passed in
+        # isolation. Prove one REAL guest can handle x2APIC timeout,
+        # CPU faults and illegal syscall *while the timer is configured*,
+        # then still run an independent valid HKEX app in the same shell.
+        extra_root=work/'romfs-with-safe-app'
+        shutil.copytree(ROOT/'examples/romfs',extra_root)
+        valid_hkex=build_user_image(ROOT/'examples/user-programs/hello.S',
+                                    extra_root/'safe.hke')
+        assert len(valid_hkex)>40
+        (extra_root/'corrupt.hke').write_bytes(
+            valid_hkex[:40]+bytes((valid_hkex[40]^1,))+valid_hkex[41:])
+        safe_trace=GOOD_TRACE.replace(b'/apps/hello.hke',b'/safe.hke')
+        cpu_faults=(
+            (b'run /apps/fault-io.hke\r',b'M5_E_USER_GP_0'),
+            (b'run /apps/fault-pf.hke\r',b'M5_E_USER_PF_5'),
+            (b'run /apps/fault-ro.hke\r',b'M5_E_USER_PF_7'),
+            (b'run /apps/fault-ud.hke\r',b'M5_E_USER_UD'),
+        )
+        for invalid_program in ('bad-syscall.S','bad-argument.S'):
+            iso=work/('integrated-'+invalid_program+'.iso')
+            build(source,iso,work,cache,
+                  '--romfs-root',str(extra_root),
+                  '--user-app-source',str(ROOT/'examples/user-programs'/invalid_program))
+            commands=[(b'run /apps/spin.hke\r',SPIN_TRACE),
+                      (b'run /corrupt.hke\r',b'M5_ERR_BAD_EXEC'),
+                      (b'run /missing.hke\r',b'M5_ERR_NOT_FOUND'),
+                      (b'run /../escape.hke\r',b'M5_ERR_INVALID_PATH')]
+            for command,marker in cpu_faults:
+                commands.append((command,b'M5_ERR_USER_FAULT'))
+            commands.extend([
+                (b'run /safe.hke\r',safe_trace),
+                (b'run /apps/hello.hke\r',b'M5_ERR_USER_SYSCALL'),
+                (b'run /safe.hke\r',safe_trace),
+                (b'exit\r',b'M5_CONSOLE_EXIT\n'+HTML),
+            ])
+            log,uart=exercise(iso,commands,HTML,cpu=CPU)
+            assert log.startswith(BASE) and log.endswith(b'M5_CONSOLE_EXIT\n'+HTML)
+            assert log.count(SPIN_TRACE)==1
+            assert log.count(b'M5_E2_TIMEOUT_FRAMES_RECLAIMED')==1
+            assert log.count(b'M5_E_FAULT_FRAMES_RECLAIMED')==4
+            assert log.count(b'M5_ERR_USER_FAULT')==4
+            for _,marker in cpu_faults:
+                assert log.count(marker)==1,(marker,log)
+            assert log.count(b'M5_E_BAD_SYSCALL_FRAMES_RECLAIMED')==1
+            assert log.count(b'M5_ERR_USER_SYSCALL')==1
+            assert log.count(b'M5_ERR_BAD_EXEC')==1
+            assert log.count(b'M5_ERR_NOT_FOUND')==1
+            assert log.count(b'M5_ERR_INVALID_PATH')==1
+            # Eight genuine user launches (1 spin, 4 CPU faults,
+            # 1 invalid syscall, 2 healthy HKEX); invalid files/paths
+            # must never enable x2APIC or install a new task image.
+            assert log.count(TIMER)==8,(log.count(TIMER),log)
+            assert log.count(b'M5_RUN_START ') == 8
+            assert log.count(safe_trace)==2
+            assert log.count(b'M5_C_USER_FRAMES_RECLAIMED')==2
+            assert uart.count(b'M5_ERR_USER_TIMEOUT')==1
+            assert uart.count(b'M5_ERR_USER_FAULT')==4
+            assert uart.count(b'M5_ERR_USER_SYSCALL')==1
+            assert uart.count(b'M5_C_USER_VALUE=2026')==2
+        print('M5-E3-A REAL QEMU: TIMER + FOUR CPU FAULTS + TWO SYSCALL REJECTIONS + CORRUPT HKEX/PATH DENIAL + RE-RUN PASS')
+
         for opts in (
             ('--user-timeout',),
             ('--user-timeout','--exception-idt','--tss-ist','--romfs-run-console'),
