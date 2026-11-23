@@ -1,0 +1,10 @@
+<kernel arch="x86_64">
+  <onboot>
+    <print>HTML KERNEL ON-SCREEN</print>
+    <print>THE DISPLAY IS DRAWN BY THE BOOTED CPU</print>
+    <let name="answer" type="u64" value="6 * 7"/>
+    <print value="answer"/>
+    <print>VIDEO PASS</print>
+    <halt/>
+  </onboot>
+</kernel>
