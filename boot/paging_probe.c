@@ -182,9 +182,9 @@ void htmlk_paging_probe(const struct limine_memmap_response *map,
                 failed("M3_MULTI_ALIAS_READ_FAILED\n");
             *mapped ^= UINT64_C(0x5A5A5A5A5A5A5A5A);
             if (*physical !=
-                (UINT64_C(0x4D334D554C544900) +
-                 (uint64_t)round * 16U + (uint64_t)i) ^
-                    UINT64_C(0x5A5A5A5A5A5A5A5A))
+                ((UINT64_C(0x4D334D554C544900) +
+                  (uint64_t)round * 16U + (uint64_t)i) ^
+                 UINT64_C(0x5A5A5A5A5A5A5A5A)))
                 failed("M3_MULTI_ALIAS_WRITE_FAILED\n");
         }
         if (htmlk_paging_leaf_map(pt, 1, added_frames[0]) ||
