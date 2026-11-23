@@ -152,6 +152,75 @@ void htmlk_paging_probe(const struct limine_memmap_response *map,
     }
     report("M3_PAGING_ALIAS_OK\n");
 
+#ifdef HTMLK_M3_MULTI_PAGE_TEST
+    /* Three DATA pages, three independent virtual offsets, three cycles.
+     * Prove real CPU/HHDM aliasing, owner reuse and that unmapping one leaf
+     * never clobbers the existing first-page mapping.
+     */
+    uint64_t first_round_frames[3] = {0};
+    for (unsigned round = 0; round < 3; ++round) {
+        uint64_t added_frames[3];
+        for (unsigned i = 0; i < 3; ++i) {
+            if (!htmlk_frame_claim(&registry, HTMLK_FRAME_DATA,
+                                   &added_frames[i]) ||
+                added_frames[i] > HTMLK_PAGING_PHYS_MASK ||
+                offset > UINT64_MAX - added_frames[i] - HTMLK_PAGE_SIZE)
+                failed("M3_MULTI_FRAME_EXHAUSTED\n");
+            if (round == 0) first_round_frames[i] = added_frames[i];
+            if (first_round_frames[i] != added_frames[i])
+                failed("M3_MULTI_FRAME_REUSE_MISMATCH\n");
+            volatile uint64_t *physical =
+                (volatile uint64_t *)(uintptr_t)(offset + added_frames[i]);
+            *physical = UINT64_C(0x4D334D554C544900) +
+                        (uint64_t)round * 16U + (uint64_t)i;
+            if (!htmlk_paging_leaf_map(pt, i + 1, added_frames[i]))
+                failed("M3_MULTI_MAP_REJECTED\n");
+            volatile uint64_t *mapped = (volatile uint64_t *)(uintptr_t)(
+                HTMLK_PAGING_VADDR + ((uint64_t)i + 1U) * HTMLK_PAGE_SIZE);
+            __asm__ volatile ("invlpg (%0)" : : "r"(mapped) : "memory");
+            if (*mapped != *physical)
+                failed("M3_MULTI_ALIAS_READ_FAILED\n");
+            *mapped ^= UINT64_C(0x5A5A5A5A5A5A5A5A);
+            if (*physical !=
+                (UINT64_C(0x4D334D554C544900) +
+                 (uint64_t)round * 16U + (uint64_t)i) ^
+                    UINT64_C(0x5A5A5A5A5A5A5A5A))
+                failed("M3_MULTI_ALIAS_WRITE_FAILED\n");
+        }
+        if (htmlk_paging_leaf_map(pt, 1, added_frames[0]) ||
+            htmlk_paging_leaf_map(pt, 4, added_frames[0]) ||
+            htmlk_paging_leaf_unmap(pt, 1, added_frames[1]))
+            failed("M3_MULTI_UNSAFE_MAP_ACCEPTED\n");
+        for (unsigned i = 0; i < 3; ++i) {
+            volatile uint64_t *mapped = (volatile uint64_t *)(uintptr_t)(
+                HTMLK_PAGING_VADDR + ((uint64_t)i + 1U) * HTMLK_PAGE_SIZE);
+            if (!htmlk_paging_leaf_unmap(pt, i + 1, added_frames[i]))
+                failed("M3_MULTI_UNMAP_REJECTED\n");
+            __asm__ volatile ("invlpg (%0)" : : "r"(mapped) : "memory");
+            if (htmlk_paging_leaf_unmap(pt, i + 1, added_frames[i]) ||
+                !htmlk_frame_release(&registry, HTMLK_FRAME_DATA,
+                                     added_frames[i]))
+                failed("M3_MULTI_DOUBLE_RELEASE_ACCEPTED\n");
+        }
+        if (registry.live != 5 ||
+            *virtual_alias != UINT64_C(0x4d33504147454d41) ||
+            *physical_alias != UINT64_C(0x4d33504147454d41))
+            failed("M3_MULTI_PARENT_ALIAS_DAMAGED\n");
+    }
+    report("M3_MULTI_PAGE_RECLAIM_OK\n");
+#ifdef HTMLK_M3_MULTI_PAGE_FAULT_TEST
+    /* An already revoked *second* page must raise a genuine CPU #PF.
+     * This address is NOT the approved one-shot recovery address.
+     */
+    volatile uint64_t *revoked = (volatile uint64_t *)(uintptr_t)(
+        HTMLK_PAGING_VADDR + 2U * HTMLK_PAGE_SIZE);
+    volatile uint64_t should_fault = *revoked;
+    (void)should_fault;
+    failed("M3_MULTI_REVOKED_PAGE_STILL_ACCESSIBLE\n");
+#endif
+#endif
+
+
     /* Revoke the private 4KiB virtual alias and invalidate its TLB entry. */
     pt[0] = 0;
     __asm__ volatile ("invlpg (%0)" : : "r"(virtual_alias) : "memory");
