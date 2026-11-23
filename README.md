@@ -18,6 +18,19 @@ python3 scripts/htmlk_check.py --describe --json  # discover supported tags/attr
 
 Humans get file/line/column/caret and useful typo suggestions; coding agents receive deterministic JSON diagnostics and grammar metadata assembled from the actual compiler tables. The **same** example runs as a real Linux program and a native Ring3 HKEX on QEMU; changed HTML source yields changed native CPU output. The new frontend has **local proof, but exact PR-head CI and merge are pending**. Source language grammar and current runtime safety rules remain unchanged. See [quickstart, agent API and limits](docs/LANGUAGE_HUMAN_AGENT.md).
 
+## One-command HTMLK programs (M2-UX2 development, local verification)
+
+The new CLI reuses the **same native typed compiler** for humans and agents. No interpreter or JavaScript fake CPU output:
+
+```sh
+python3 scripts/htmlk.py check examples/human-agent-hello.html --target user --json
+python3 scripts/htmlk.py run examples/human-agent-hello.html
+python3 scripts/htmlk.py build examples/human-agent-hello.html --target linux --out build/my-program
+python3 scripts/htmlk.py build examples/human-agent-hello.html --target user --out build/my-program.hke
+```
+
+`run` launches a generated **Linux userspace binary**, never a kernel or an imported executable; native QEMU boot requires the separate ISO builder. For full-u64 native Ring3 HKEX, ISO construction must use the **byte-exact checked source** `--user-app-image build/my-program.hke --user-app-html-proof examples/human-agent-hello.html`; otherwise the original legacy syscall ABI remains unchanged. See [commands, real QEMU proof, and security/overwrite boundaries](docs/LANGUAGE_HUMAN_AGENT.md). This slice is locally tested; PR-head CI/merge are pending.
+
 ## Agent and contributor entry points
 
 AI agents and external contributors: start at **[AGENTS.md](AGENTS.md)**, then follow **[CODEMAP.md](CODEMAP.md)** and the [documentation hub](docs/README.md). The repository uses TeamForge/BetterNet-style instructions for task ownership, public-safe commit attribution, current status, durable memory and advisory [feature-to-regression mapping](agent-evals/README.md). The instructions do not start a background agent or imply automatic deployment.

@@ -1,6 +1,6 @@
 # HTML Kernel Language — one syntax for humans and AI agents
 
-**Implementation phase: M2-UX1 / local feature branch.**
+**M2-UX1 merged in PR #103. M2-UX2 native one-command CLI is a separate local feature branch, CI/merge pending.**
 A useful programming language should be understandable from its source,
 provide actionable feedback to a beginner, and give an agent a **stable
 machine-readable contract**. A browser-looking demo or a larger list of tags
@@ -115,6 +115,72 @@ OK check as proof the guest booted or that arbitrary code is safe.
 - The schema is stable **v1** for this CLI, but the project has not
   published cross-version language compatibility or external beginner
   usability results. Existing M2 grammar and native ABI remain unchanged.
+
+## M2-UX2: one command for real native programs (local, not yet merged)
+
+The compiler can now be used from a single, explicit developer entrypoint.
+This is **not** a second parser or an interpreter; all program semantics and
+native output come from the existing typed language compiler.
+
+```sh
+python3 scripts/htmlk.py describe --json
+python3 scripts/htmlk.py check examples/human-agent-hello.html --target user --json
+python3 scripts/htmlk.py run examples/human-agent-hello.html
+python3 scripts/htmlk.py run examples/human-agent-hello.html --json
+python3 scripts/htmlk.py build examples/human-agent-hello.html --target linux --out build/first
+python3 scripts/htmlk.py build examples/human-agent-hello.html --target user --out build/first.hke
+```
+
+The `run` command compiles the real source to native C → ELF via GCC in a
+private temporary directory, runs that generated **Linux process** with
+closed stdin, a bounded 10-second timeout and maximum 16-KiB captured output;
+then removes the generated temporary files. Standard output is native CPU
+output. `--json` reports code-generated SHA-256, actual stdout/stderr and
+exit code. This is **not an operating-system sandbox**; do not use as an
+untrusted-code execution service. `run` does not boot QEMU or execute
+privileged kernel code. The kernel target remains handled separately by the
+real ISO builder. No root permission, host system disk configuration or
+external network access is required for the CLI itself.
+
+The `build --target linux|user` command emits a real executable ELF or a
+checked relocation-free HKEX binary, respectively. Existing destinations
+are refused by default; `--force` allows explicit replacement, but a
+symlink destination is never replaced. The output is committed only after
+full successful compilation via a temporary staging file. Invalid UTF-8,
+large/symlink sources and invalid HTMLK syntax are rejected before output
+creation. `check` and `describe` delegate to the earlier checker rather than
+implementing a competing grammar. AI agents can use stable `--json` results.
+
+**Important Ring3 ABI distinction:** the prior ROMFS `--user-app-image` path
+retains the **legacy** numeric output limit and one-report contract. A new
+opt-in ISO build argument `--user-app-html-proof SOURCE.html` works alongside
+`--user-app-image image.hke` only: the builder **recompiles a stable snapshot
+of SOURCE.html** via the original compiler and requires byte-for-byte
+identity with the supplied HKEX before enabling the HTML-only bounded
+u64/text/multi-report/exit-status ABI. A missing proof is NEVER interpreted
+as permission; mismatched, tampered, symlink, oversized or unsupported proof
+inputs fail before an ISO is published. This is a local reproducibility
+assertion, **not cryptographic authentication** of third-party binaries or a
+security boundary for untrusted programs.
+
+```sh
+python3 scripts/build_boot.py --exception-idt --tss-ist \
+  --romfs-run-console --user-fault-recover \
+  --user-app-image build/first.hke \
+  --user-app-html-proof examples/human-agent-hello.html \
+  --out build/first.iso
+# Boot the ISO via QEMU or the existing browser emulator (not the Linux run command)
+python3 scripts/test_htmlk_cli_qemu.py
+```
+
+The real QEMU regression boots the exact CLI-built HKEX twice, reclaims
+six user frames after each independent run, mutates the HTML from `3` to
+`5` and verifies a different HKEX/ISO and changed CPU UART output. A
+**negative native boot** proves a prebuilt image WITHOUT proof still fails
+under the old syscall limit with a recoverable task error. Additional
+fail-closed tests reject wrong source, corrupt image, symlink proof and
+mutually incompatible build options. Existing M2/M5 native regressions
+remain mandatory; a successful Linux run is not a QEMU boot.
 
 ## Next M2 language usability phases — proposed, NOT shipped
 
