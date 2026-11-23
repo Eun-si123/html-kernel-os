@@ -185,7 +185,13 @@ void htmlk_paging_probe(const struct limine_memmap_response *map,
         failed("M3_PAGING_RECOVERY_COUNT_WRONG\n");
     if (recovery_frame == 0)
         failed("M3_PAGING_RECOVERY_FRAME_MISSING\n");
-    if (pt[0] != (recovery_frame | HTMLK_PAGING_ENTRY_RW))
+    /* CPU may set Accessed (bit 5) and Dirty (bit 6) on a valid
+     * leaf PTE after it retries the fault. Validate physical address
+     * and required permissions, not exact raw PTE equality. */
+    const uint64_t post_retry_pte = pt[0];
+    if ((post_retry_pte & HTMLK_PAGING_PHYS_MASK) != recovery_frame ||
+        (post_retry_pte & HTMLK_PAGING_ENTRY_RW) != HTMLK_PAGING_ENTRY_RW ||
+        (post_retry_pte & UINT64_C(4)) != 0)
         failed("M3_PAGING_RECOVERY_PTE_MISMATCH\n");
     *virtual_alias = UINT64_C(0x123456789ABCDEF0);
     volatile uint64_t *recovered_phys =
