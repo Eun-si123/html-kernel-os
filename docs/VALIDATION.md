@@ -112,3 +112,12 @@ python3 scripts/test_video_screen.py # independent QEMU monitor VGA screendump a
 ```
 
 A serial debugcon success is **not** a framebuffer success. `FB_PIXELS_OK` verifies a guest read of a pixel written through the Limine mapped framebuffer; a **separate** QEMU monitor screenshot test verifies actual VGA output RGB at the known header, background and source-generated glyph coordinates. They are distinct evidence classes. CI also runs GCC UBSan host rasterizer/mode/canary tests. Both QEMU checks passed in PR Actions `45096047162` at `9df6e93` (actual PNG packaged in artifacts); the public v86 site and physical PC are still NOT tested with the new ISO. The HTML compiler's hosted GCC flags must explicitly select x86-64 baseline ISA because a native BMI2 `SHLX` caused a real QEMU illegal-instruction exception before this was fixed. The PNG artifact is a verifiable visual reference, not an emulated browser screenshot.
+
+## M3 authentic CPU faults under BIOS QEMU
+
+```sh
+python3 -m unittest tests.test_exception_idt -v # host C 16-byte IDT layout and rejects, GCC UBSan -O0/-O3
+python3 scripts/test_exception_idt.py       # genuine #DE/#UD/#GP/#PF and normal HTML, map+video composition
+```
+
+CI actually boots six source-generated ISOs or more (normal, changed HTML, four distinct CPU fault images, and a combined IDT+memory+framebuffer image). Each intentional fault must emit a deterministic `M3_EXCEPTION V=..` vector, 16-digit saved RIP and error-code field (plus CR2 for #PF), then exit QEMU with **non-success code 45** rather than silently resetting or reaching `kernel_main`. A simulated call to the output function would not meet this evidence gate. The IDT can only **detect and halt**, not recover or resume. No real UEFI/physical machine or v86 browser execution was checked for this opt-in image. The specific evidence baseline is branch GitHub Actions `45096792405` (SUCCESS, before final documentation changes).
