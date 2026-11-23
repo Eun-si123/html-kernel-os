@@ -17,6 +17,9 @@ FAULTS=(
  (b"run /apps/fault-pf.hke\r", b"M5_E_USER_PF_5\n"),
  (b"run /apps/fault-ro.hke\r", b"M5_E_USER_PF_7\n"),
  (b"run /apps/fault-ud.hke\r", b"M5_E_USER_UD\n"),
+ (b"run /apps/fault-de.hke\r", b"M5_E_USER_DE\n"),
+ (b"run /apps/fault-db.hke\r", b"M5_E_USER_DB\n"),
+ (b"run /apps/fault-bp.hke\r", b"M5_E_USER_BP\n"),
 )
 
 def build(source:Path,iso:Path,work:Path,cache:Path,*extra:str)->None:
@@ -77,19 +80,19 @@ def main():
             commands.append((b'exit\r',b'M5_CONSOLE_EXIT\n'+HTML))
             transcript,uart=exercise(original,commands,HTML)
             assert transcript.startswith(BASE)
-            assert transcript.count(b'M5_ERR_USER_FAULT')==4
-            assert transcript.count(b'M5_E_FAULT_FRAMES_RECLAIMED')==4
-            assert transcript.count(b'M5_C_USER_FRAMES_RECLAIMED')==4
-            assert transcript.count(APP_TRACE)==4
-            assert transcript.count(b'M5_RUN_DONE')==4
+            assert transcript.count(b'M5_ERR_USER_FAULT')==len(FAULTS)
+            assert transcript.count(b'M5_E_FAULT_FRAMES_RECLAIMED')==len(FAULTS)
+            assert transcript.count(b'M5_C_USER_FRAMES_RECLAIMED')==len(FAULTS)
+            assert transcript.count(APP_TRACE)==len(FAULTS)
+            assert transcript.count(b'M5_RUN_DONE')==len(FAULTS)
             assert transcript.endswith(b'M5_CONSOLE_EXIT\n'+HTML)
             for _,expected in FAULTS:
                 assert transcript.count(expected)==1,(expected,transcript)
             assert b'M3_IST_PF_STACK_BAD' not in transcript
             assert transcript.count(b'M3_IST_PF_STACK_OK')==2
-            assert uart.count(b'M5_ERR_USER_FAULT')==4
-            assert uart.count(b'M5_C_USER_VALUE=2026')==4
-        print('M5-E1 REAL QEMU 3x: #GP/#PF5/#PF7/#UD -> CLEANUP -> RE-RUN CPL3 PASS')
+            assert uart.count(b'M5_ERR_USER_FAULT')==len(FAULTS)
+            assert uart.count(b'M5_C_USER_VALUE=2026')==len(FAULTS)
+        print('M5-E3 REAL QEMU 3x: #GP/#PF5/#PF7/#UD/#DE/#DB/#BP -> CLEANUP -> RE-RUN CPL3 PASS')
         trace,_=exercise(original,[],HTML,idle=True)
         assert trace==BASE
         print('M5-E1 IDLE: NO UART INPUT -> NO USER EXECUTION')
