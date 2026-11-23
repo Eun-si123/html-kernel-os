@@ -57,9 +57,18 @@ def main() -> None:
             code, output = boot(iso, timeout=20, trace_file=trace)
             if code != SUCCESS_EXIT or output != expected:
                 debug = trace.read_text(errors="replace")[-7000:] if trace.exists() else ""
+                address = "0xffffffff8000185d"
+                objdump = subprocess.run(
+                    ["objdump", "-d", "-M", "intel",
+                     "--start-address=0xffffffff80001800",
+                     "--stop-address=0xffffffff80001920",
+                     str(iso.with_suffix(".elf"))],
+                    capture_output=True, text=True, timeout=10,
+                )
                 raise AssertionError(
                     f"real QEMU framebuffer {label} failed: exit={code}, output={output!r}; "
-                    f"expected {expected!r}; CPU trace tail={debug!r}")
+                    f"expected {expected!r}; CPU trace tail={debug!r}; "
+                    f"disassembly={objdump.stdout!r}")
             if baseline_bytes is None:
                 baseline_bytes = iso.read_bytes()
             elif baseline_bytes == iso.read_bytes():
