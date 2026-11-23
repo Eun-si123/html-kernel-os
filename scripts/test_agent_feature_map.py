@@ -31,7 +31,7 @@ class FeatureContractTests(unittest.TestCase):
         report = summarize(validate(self.real), ["boot/exception_idt.c"])
         self.assertEqual(
             [item["feature"] for item in report["affectedFeatures"]],
-            ["m3-exception-idt"])
+            ["m3-exception-idt", "m3-owned-fault-recovery"])
         self.assertIn("tests/test_exception_idt.py",
                       report["affectedFeatures"][0]["existingRegressionTests"])
         self.assertIn("scripts/test_exception_idt.py",
@@ -42,7 +42,7 @@ class FeatureContractTests(unittest.TestCase):
         report = summarize(validate(self.real), ["boot/paging_probe.c"])
         self.assertEqual(
             [item["feature"] for item in report["affectedFeatures"]],
-            ["m3-private-paging"])
+            ["m3-private-paging", "m3-owned-fault-recovery"])
         self.assertIn("tests/test_paging_tables.py",
                       report["affectedFeatures"][0]["existingRegressionTests"])
         self.assertIn("scripts/test_paging_probe.py",
