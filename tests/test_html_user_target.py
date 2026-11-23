@@ -30,7 +30,7 @@ class HtmlUserTargetTests(unittest.TestCase):
 
     def test_reject_user_only_unsupported_io_shapes(self):
         samples=[
-          EXAMPLE.replace('<print value="triple(score) - 1046"/>', '<print>hello</print>'),
+          EXAMPLE.replace('<print value="triple(score) - 1046"/>', '<print>한글</print>'),
           EXAMPLE.replace('<print value="triple(score) - 1046"/>',
                           '<print value="1"/><print value="2"/>'),
           EXAMPLE.replace('<print value="triple(score) - 1046"/>',
@@ -74,11 +74,11 @@ class HtmlUserTargetTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix='htmlk-user-invalid-') as tmp:
             testpath=Path(tmp)/'invalid.html'; outfile=Path(tmp)/'invalid.hke'
             testpath.write_text(EXAMPLE.replace('<print value="triple(score) - 1046"/>',
-                                             '<print>forbidden</print>'))
+                                             '<print>한글</print>'))
             result=subprocess.run([sys.executable,str(script),'--source',str(testpath),
                                    '--out',str(outfile)],capture_output=True,text=True,timeout=30)
             self.assertNotEqual(result.returncode,0)
-            self.assertIn('user target requires',result.stderr)
+            self.assertIn('user text output allows only printable ASCII',result.stderr)
             self.assertFalse(outfile.exists())
             testpath.write_text(EXAMPLE)
             oversize=Path(tmp)/'oversize.html'

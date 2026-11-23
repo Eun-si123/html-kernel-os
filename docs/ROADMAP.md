@@ -103,6 +103,8 @@ The marker `— NEXT` is a **planning recommendation**, not an authoritative com
 
 **M5-E3-C complementary QEMU test expansion (local branch):** after the reviewed E3-B user fault recovery, exercise a two-byte `INT $3` at code end and 7 fault classes mixed with successful user programs, actual x2APIC timeouts and bad syscalls in the existing native CI tests. This is a test-only, local PASS addition; exact new PR-head CI/merge remains pending and broader M5 process hardening is still OPEN. See [lifecycle evidence](M5_PROCESS_LIFECYCLE_STRESS.md).
 
+**M5-F2 opt-in verified locally:** extend shared HTML-to-native Ring3 user target with a single printable-ASCII text result. New `INT 0x80` ID 3 checks actual user RO code-page pointer/length/content before COM1 output; 3× real QEMU `run good → bad pointer/length/control → good → x2APIC timeout` and independent source mutations pass. Unsafe absolute user string relocation was identified by a real rejected syscall and corrected using position-independent C and prelink relocation checks. Exact PR-head CI/merge pending; see [M5-F2 checked text syscall](M5_HTML_USER_TEXT.md). This is not general user pointer access, arbitrary/untrusted app execution or Unicode text support.
+
 - Prioritize an input/output terminal and deterministic RAM-backed or embedded filesystem before broad hardware drivers.
 - Add a simple user program loader, error reporting and minimal command interaction.
 - **Gate:** boot the image, enter a command, read an embedded file, execute a separate program, and report controlled invalid-input behavior.
