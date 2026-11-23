@@ -64,6 +64,8 @@ jobs:
         run: python scripts/test_m2_gate.py
       - name: Verify M3 Limine memory-map, 16 physical page readbacks and malformed map in real QEMU
         run: python scripts/test_m3_memory.py
+      - name: Verify actual Limine RGB framebuffer writes and source-derived pixels in QEMU
+        run: python scripts/test_video_console.py
       - name: Assemble standalone, non-test boot images
         run: |
           python scripts/build_boot.py --out build/html-kernel.iso
@@ -78,6 +80,7 @@ jobs:
           python scripts/build_boot.py --source examples/array-kernel.html --out build/html-kernel-array.iso
           python scripts/build_boot.py --source examples/m2-exercises-kernel.html --out build/html-kernel-m2-exercises.iso
           python scripts/build_boot.py --memory-probe --out build/html-kernel-m3-memory.iso
+          python scripts/build_boot.py --source examples/framebuffer-kernel.html --video-console --out build/html-kernel-video.iso
       - uses: actions/upload-artifact@v4
         with:
           name: html-kernel-os-native-iso
@@ -106,3 +109,5 @@ jobs:
             build/html-kernel-m2-exercises.elf
             build/html-kernel-m3-memory.iso
             build/html-kernel-m3-memory.elf
+            build/html-kernel-video.iso
+            build/html-kernel-video.elf
