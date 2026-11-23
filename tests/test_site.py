@@ -97,12 +97,13 @@ class SiteTests(unittest.TestCase):
             self.assertIn(f"examples/{filename} public/examples/{filename}", pages)
             self.assertIn(f"source: '{filename}'", script)
             self.assertTrue((ROOT / "examples" / filename).is_file())
-        for control in ("vm-pace", "vm-pause", "boot-events",
+        for control in ("vm-pace", "vm-pause", "boot-latest", "boot-events",
                         "boot-source", "boot-source-note", "boot-source-path",
                         "live-tag"):
             self.assertIn(f'id="{control}"', html)
         self.assertIn("screen-put-char", script)
         self.assertIn("recordVgaCell", script)
+        self.assertIn("latestEvent.textContent = kind", script)
         self.assertIn("sourceLineForLiteral", script)
         self.assertIn("output.textContent = serial", script)
         self.assertIn("machine.run()", script)
@@ -148,7 +149,7 @@ class SiteTests(unittest.TestCase):
             self.assertIn(text, css)
         self.assertIn('href="./styles.css?v=20261123-auto-theme2"', home)
         self.assertIn('href="./styles.css?v=20261123-auto-theme2"', lab)
-        self.assertIn('href="./play.css?v=20261123-live-source5"', lab)
+        self.assertIn('href="./play.css?v=20261123-live-source6"', lab)
         self.assertIn("@media(max-width:480px)", lab_css)
         self.assertIn("aspect-ratio: 4/3", lab_css)
         self.assertIn("object-fit: contain", lab_css)
@@ -175,7 +176,7 @@ class SiteTests(unittest.TestCase):
         boot_css = (SITE / "play.css").read_text(encoding="utf-8")
         self.assertIn('@media (prefers-color-scheme: dark)', boot_css)
         self.assertIn('.lab-status-bar { background:#222b25;', boot_css)
-        self.assertIn('play.css?v=20261123-live-source5', lab)
+        self.assertIn('play.css?v=20261123-live-source6', lab)
 
     def test_copy_button_and_tabs_have_handlers(self):
         js = (SITE / "app.js").read_text(encoding="utf-8")
