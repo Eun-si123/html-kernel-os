@@ -51,3 +51,5 @@ When a feature changes, update the **one authoritative** owner, then fix any con
 
 - [M5-E3 guarded last-instruction Ring3 INT80 EOF and safe terminal exit](M5_USER_SYSCALL_EOF.md).
 - [M5-E3-D independently owned Ring3 x2APIC malformed user stack IRQ recovery](M5_USER_BAD_IRQ.md).
+
+- [M5-F4 HTML Ring3 user program exit status and live UART result](M5_HTML_EXIT_STATUS.md).

@@ -1,6 +1,6 @@
 # M5-E3-D — contain an owned Ring3 timer IRQ with poisoned user stack
 
-**Status:** actual QEMU BIOS, host UBSan proof PASS on a feature branch stacked on E3-C. New PR-head Actions/Gitleaks/merge **NOT YET VERIFIED**. Single CPU and only known compile-time HKEX images; not a complete secure arbitrary-code sandbox.
+**Status:** actual QEMU BIOS, host UBSan proof PASS on a feature branch stacked on E3-C. PR #90 exact-head GitHub native QEMU CI `45142172936` and `45142187895`, Gitleaks `45142187960` PASS, merged as `16d4291`. Single CPU and only known compile-time HKEX images; not a complete secure arbitrary-code sandbox.
 
 ## Prior confirmed failure
 

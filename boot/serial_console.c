@@ -47,6 +47,20 @@ void htmlk_m5_console_byte(uint8_t byte) { send(byte); }
 static void send_text(const char *text) {
     while (*text) send((uint8_t)*text++);
 }
+#if defined(HTMLK_M5_INTERACTIVE_RUN) && defined(HTMLK_M5_USER_EXIT_STATUS)
+static void send_exit_status(uint8_t status) {
+    if (status == 0U) { send_text("M5_RUN_DONE\n"); return; }
+    send_text("M5_RUN_EXIT_CODE=");
+    uint8_t digits[3];
+    unsigned length=0U;
+    do {
+        digits[length++] = (uint8_t)('0'+status%10U);
+        status = (uint8_t)(status/10U);
+    } while (status != 0U);
+    while (length != 0U) send(digits[--length]);
+    send((uint8_t)10U);
+}
+#endif
 static void send_uart_echo(uint8_t byte) {
     for (unsigned int attempts = 0; attempts < 1000000U; ++attempts) {
         if ((in_byte(UART_LSR) & UART_TX_READY) != 0U) {
@@ -123,7 +137,11 @@ static void run_program(const char *path) {
         send_text("M5_ERR_USER_SYSCALL\n");
     else
 #endif
+#ifdef HTMLK_M5_USER_EXIT_STATUS
+        send_exit_status(htmlk_m5_user_last_exit_status());
+#else
         send_text("M5_RUN_DONE\n");
+#endif
 }
 void htmlk_m5_serial_console_run(const struct limine_memmap_response *map,
                                   const struct limine_hhdm_response *hhdm) {

@@ -14,6 +14,9 @@ void htmlk_m5_console_byte(uint8_t byte);
 #ifdef HTMLK_M5_USER_FAULT_RECOVER
 bool htmlk_m5_user_last_faulted(void);
 bool htmlk_m5_user_last_bad_syscall(void);
+#ifdef HTMLK_M5_USER_EXIT_STATUS
+uint8_t htmlk_m5_user_last_exit_status(void);
+#endif
 #ifdef HTMLK_M5_USER_TIMEOUT
 struct htmlk_m4_d1_irq_frame;
 bool htmlk_m5_user_last_timed_out(void);
