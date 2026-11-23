@@ -42,6 +42,8 @@ jobs:
           sudo apt-get install -y --no-install-recommends qemu-system-x86 xorriso
       - name: Verify actual Limine RGB framebuffer writes and source-derived pixels in QEMU
         run: python scripts/test_video_console.py
+      - name: Verify actual QEMU VGA screenshot shows kernel glyph pixels
+        run: python scripts/test_video_screen.py
       - name: Boot and verify HTML-derived kernel in QEMU
         run: python scripts/test_boot.py
       - name: Verify M2 variables and control flow boot
