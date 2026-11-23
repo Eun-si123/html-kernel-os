@@ -50,3 +50,7 @@ The same strict language parser and validated statement tree can generate either
 - Build a bootable image and run QEMU using explicit machine type and debugcon redirection.
 - Assert the exact debug output and a deterministic halt/exit condition in CI.
 - Label success only as "bootable demo kernel", not "operating system complete".
+
+## M3 — first opt-in Limine memory map handoff (partial)
+
+The pinned Limine protocol's memory-map and HHDM requests are issued **only** when `--memory-probe` explicitly enables `HTMLK_M3_MEMORY_PROBE`. The pure freestanding C11 `boot/page_pool.c` rejects malformed, overlapping or oversized boot maps and selects 16 x 4KiB pages exclusively from USABLE ranges, never page zero. `boot/memory_probe.c` reads the actual Limine memory-map response, uses HHDM to write/read sentinels into those pages under BIOS QEMU, verifies exhaustion without reuse, and halts with a distinct error on malformed input or RAM mismatch. The ordinary boot path has no new memory access. This is not virtual mapping, general heap allocation, fault handling or a proof of memory isolation. See [M3_MEMORY_BOOTSTRAP.md](M3_MEMORY_BOOTSTRAP.md).
