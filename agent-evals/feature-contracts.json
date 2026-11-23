@@ -333,12 +333,14 @@
         "boot/serial_command.c",
         "boot/serial_command.h",
         "boot/serial_console.c",
+        "scripts/run_m5_console.py",
         "boot/romfs.c",
         "boot/kernel_entry.c",
         "scripts/build_boot.py"
       ],
       "regressions": [
-        "tests/test_serial_command.py"
+        "tests/test_serial_command.py",
+        "tests/test_console_runner.py"
       ],
       "fieldEvidence": [
         "tests/native/test_serial_command.c",
