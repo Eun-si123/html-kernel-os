@@ -373,7 +373,7 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
             if user_app_html is not None:
                 sources.append("user_text_policy")
             if user_fault_recover:
-                sources.append("user_fault_policy")
+                sources.extend(("user_fault_policy", "user_syscall_policy"))
             if user_timeout:
                 sources.extend(("user_timeout_frame", "user_timeout"))
             if task_probe:

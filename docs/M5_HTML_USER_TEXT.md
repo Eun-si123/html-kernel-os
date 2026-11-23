@@ -1,6 +1,6 @@
 # M5-F2 — checked read-only user text (real Ring 3, ROMFS, COM1)
 
-**Status:** native QEMU BIOS and GCC UBSan O0/O3 locally verified on an opt-in development branch. Exact PR-head CI and merge separately pending. The system is not an untrusted-executable sandbox or broadly compatible OS.
+**Status:** M5-F2 PR #85 merged as `92d1132` after exact-head QEMU Actions `45137570954`/`45137579777` plus Gitleaks `45137575662` PASS, with independent native QEMU and GCC UBSan O0/O3 verification. The system is not an untrusted-executable sandbox or broadly compatible OS.
 
 ## One-command live console
 
