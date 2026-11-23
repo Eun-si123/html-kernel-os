@@ -20,10 +20,21 @@ htmlk_m4_d1_a_loop:
 #ifdef HTMLK_M4_D2_FAULT
     cmpq $0, -40(%rsp) /* armed by kernel only after both users progress */
     je .Ld1_a_continue
+#if defined(HTMLK_M4_D2_A_GP)
+.global htmlk_m4_d1_a_fault
+htmlk_m4_d1_a_fault:
+    outb %al, $0xe9 /* actual ring3 privileged port IO -> #GP(0) */
+#elif defined(HTMLK_M4_D2_A_RO)
+    movabsq $0x0000400000000000, %rax
+.global htmlk_m4_d1_a_fault
+htmlk_m4_d1_a_fault:
+    movq $0x55, (%rax) /* actual ring3 RO-code write -> #PF(7) */
+#else
     movabsq $0xffffffff80001000, %rax
 .global htmlk_m4_d1_a_fault
 htmlk_m4_d1_a_fault:
     movq (%rax), %rax /* real ring3 supervisor read -> #PF(5) */
+#endif
 .Ld1_a_continue:
 #endif
     pause

@@ -80,6 +80,10 @@ The new `--romfs-probe` build embeds a trusted, sorted, bounded file manifest in
 
 Opt-in `--romfs-console` initializes **real QEMU emulated x86-64 COM1** and receives actual host-injected UART bytes after guest boot readiness. Freestanding input parser enforces bounded ASCII, backspace, overflow and unknown-command rejection; trusted kernel command handlers `help`, `ls`, `cat /path`, `exit` use the actual M5-A immutable ROMFS. `scripts/test_m5_console.py` passes **native BIOS QEMU input, file reads, invalid and overlong commands, recovery, idle/no-input denial, changed ROMFS bytes, changed HTML source and unsafe builder mode rejection**. Host GCC UBSan `-O0/-O3` parser state tests pass via `tests/test_serial_command.py` and `tests/native/test_serial_command.c`. **PR #66 CI `45122358516`, merged-main CI `45122622108` and Gitleaks `45122622015` SUCCESS.** This is not user-mode executable loading, M4-D concurrent CPL3 isolation, a keyboard/display driver, or a completed M5 gate. [Exact M5-B contract](M5_SERIAL_CONSOLE.md).
 
+## M4-D2 additional real CPU #GP/#PF offender variants (local proof)
+
+The existing merged PR #65 implementation is extended in a distinct opt-in test variant: after x2APIC preemption has made A and B progress, A may cause a genuine CPL3 port-IO #GP(error0) or write to RO user code #PF(error7, IST2). In each case the fault handler checks the exact privilege context, retires A, reclaims only A's six pages, and resumes B's saved ring3 IRQ frame; B completes and original HTML kernel code executes (QEMU exit33). Default D2 #PF(error5) and unexpected-B fail-stop behavior are retained. [D2 fault validation](M4_RING3_PREEMPT.md). These are **local** positive/negative CPU results; CI and merge are separately required and full M4 production maturity remains OPEN.
+
 ## Site and licensing
 
 The `site/` directory contains source code for a separate project website. Avoid changing another `github.io` repository or enabling Pages without explicit authorization. No repository license has yet been selected, so public visibility alone does not grant open-source reuse rights.

@@ -12,8 +12,8 @@ struct htmlk_m4_d1_irq_frame *htmlk_m4_d1_on_irq(
     struct htmlk_m4_d1_irq_frame *f);
 void htmlk_m4_d1_irq_entry(void);
 void htmlk_m4_d1_spurious(void);
-struct htmlk_m4_d1_irq_frame *htmlk_m4_d1_page_fault(
-    uint64_t rip, uint64_t cs, uint64_t rsp, uint64_t ss,
+struct htmlk_m4_d1_irq_frame *htmlk_m4_d1_user_fault(
+    unsigned vector, uint64_t rip, uint64_t cs, uint64_t rsp, uint64_t ss,
     uint64_t error, uint64_t cr2);
 __attribute__((noreturn))
 void htmlk_m4_d1_switch_from_fault(struct htmlk_m4_d1_irq_frame *next);

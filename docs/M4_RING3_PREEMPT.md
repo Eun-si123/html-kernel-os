@@ -72,6 +72,18 @@ Native QEMU log excerpt:
 Success is native QEMU debug-exit 33, followed by exact output
 from the compiler-generated HTML kernel body.
 
+## Additional D2 offender CPU fault variants
+
+The default D2 mode tests A's real supervisor-page read #PF(error 0x5).
+Optional flags --user-preempt-fault-gp and --user-preempt-fault-ro
+select a genuine CPL3 OUTB #GP(error 0) on the trusted TSS.RSP0 stack
+or a genuine write to the user RO code page #PF(error 0x7, IST2).
+Each guard checks exact fault vector, error, RIP, CPL, CR3 and CR2;
+A's six frames are reclaimed, while saved Ring 3 task B resumes
+and completes. The test performs two real QEMU boots per variant.
+Alternate offender faults are mutually exclusive with each other and
+with the unexpected-survivor-B injection. No arbitrary fault is approved.
+
 ## Independent controls
 
 - Three real QEMU boots each for D1 and D2, exact trace assertions.

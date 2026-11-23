@@ -58,6 +58,16 @@ def main():
         assert HTML not in txt(boot(changed_iso))
         print("M4-D2 CHANGED HTML -> DIFFERENT ISO -> REAL SURVIVOR OUTPUT PASS")
 
+        for mode, marker in (("--user-preempt-fault-gp",
+                              "M4_D2_A_GP_ERROR_0\n"),
+                             ("--user-preempt-fault-ro",
+                              "M3_IST_PF_STACK_OK\nM4_D2_A_PF_ERROR_7\n")):
+            variant = work / (mode[2:] + ".iso")
+            build(source, variant, work, (mode,))
+            exact(variant, START + HEAD + marker +
+                  "M4_D2_A_RECLAIMED\n" + SURVIVE + HTML, times=2)
+            print("M4-D2 REAL CPL3 FAULT VARIANT B SURVIVES:", mode)
+
         bad = work / "unexpected-b-fault.iso"
         build(source, bad, work, ("--user-preempt-survivor-fault",))
         r = boot(bad)
@@ -71,6 +81,14 @@ def main():
         for extra in (
             ("--user-preempt-fault",),
             ("--user-preempt-survivor-fault",),
+            ("--user-preempt-fault-gp",),
+            ("--user-preempt-fault-ro",),
+            ("--user-preempt-probe", "--user-preempt-fault",
+             "--user-preempt-fault-gp", "--user-preempt-fault-ro",
+             "--exception-idt", "--tss-ist", "--test-exit"),
+            ("--user-preempt-probe", "--user-preempt-fault",
+             "--user-preempt-fault-ro", "--user-preempt-survivor-fault",
+             "--exception-idt", "--tss-ist", "--test-exit"),
             ("--user-preempt-probe", "--user-preempt-fault"),
             ("--user-preempt-probe", "--user-preempt-survivor-fault",
              "--exception-idt", "--tss-ist", "--test-exit"),

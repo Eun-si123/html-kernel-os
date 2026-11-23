@@ -287,11 +287,11 @@ void htmlk_m4_user_preempt_probe(const struct limine_memmap_response *map,
 }
 
 #ifdef HTMLK_M4_D2_FAULT
-/* Reached from a real #PF on IST2. Never return to A's poisoned ring3
- * context; switch to B's distinct CR3/RSP0 and return its saved IRET frame.
- * Unexpected faults have no privileged recovery capability. */
-struct htmlk_m4_d1_irq_frame *htmlk_m4_d1_page_fault(
-    uint64_t rip,uint64_t cs,uint64_t rsp,uint64_t ss,
+/* Reached from real CPL3 #PF on IST2 or CPL3 #GP on trusted TSS.RSP0.
+ * Never return to A's poisoned user context; B's private CR3 and saved
+ * interrupt frame are activated. Unexpected faults are fail-stop. */
+struct htmlk_m4_d1_irq_frame *htmlk_m4_d1_user_fault(
+    unsigned vector,uint64_t rip,uint64_t cs,uint64_t rsp,uint64_t ss,
     uint64_t error,uint64_t cr2) {
     if (active!=0U || retired_a ||
         progress[0]<2 || progress[1]<2 ||
@@ -300,16 +300,26 @@ struct htmlk_m4_d1_irq_frame *htmlk_m4_d1_page_fault(
         rsp!=HTMLK_M4_USER_STACK-16U ||
         rip!=HTMLK_M4_USER_BASE+
              (uint64_t)(htmlk_m4_d1_a_fault-htmlk_m4_d1_a_begin) ||
-        error!=5U || cr2!=UINT64_C(0xffffffff80001000) ||
         !valid(1U,saved[1]))
         return NULL;
-    retired_a=true;
+#if defined(HTMLK_M4_D2_A_GP)
+    if (vector!=13U || error!=0U || cr2!=0U) return NULL;
+    log_text("M4_D2_A_GP_ERROR_0\n");
+#elif defined(HTMLK_M4_D2_A_RO)
+    if (vector!=14U || error!=7U || cr2!=HTMLK_M4_USER_BASE) return NULL;
+    log_text("M4_D2_A_PF_ERROR_7\n");
+#else
+    if (vector!=14U || error!=5U ||
+        cr2!=UINT64_C(0xffffffff80001000)) return NULL;
     log_text("M4_D2_A_PF_ERROR_5\n");
+#endif
+    retired_a=true;
     active=1U;
     htmlk_tss_set_rsp0(top(1U));
     __asm__ volatile("mov %0,%%cr3"::"r"(phys[1][0]):"memory");
-    /* No CPU is referencing A's page tables after the full CR3 reload.
-     * Still executing on the dedicated IST2 stack, never A's kstack. */
+    /* No CPU references A's page tables after the CR3 reload.
+     * Fault delivery uses trusted IST2 (#PF) or TSS.RSP0 (#GP), never
+     * A's user stack; kernel stacks are static and are not reclaimed. */
     for (unsigned j=0;j<6;j++) {
         const enum htmlk_frame_owner kind=j<4?HTMLK_FRAME_TABLE:HTMLK_FRAME_DATA;
         if (!htmlk_frame_release(&owners,kind,phys[0][j]))
@@ -318,6 +328,6 @@ struct htmlk_m4_d1_irq_frame *htmlk_m4_d1_page_fault(
     if (owners.live!=6 || !valid(1U,saved[1]))
         fail("M4_D2_B_CORRUPTED_AFTER_A_RECLAIM\n");
     log_text("M4_D2_A_RECLAIMED\n");
-    return saved[1]; /* caller jumps to assembly IRET; no APIC EOI on #PF */
+    return saved[1]; /* assembly IRET resumes B; CPU faults require no APIC EOI */
 }
 #endif
