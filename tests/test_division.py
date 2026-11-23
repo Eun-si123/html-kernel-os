@@ -49,6 +49,9 @@ class DivisionTests(unittest.TestCase):
     def test_reject_literal_zero_and_unsupported_floor_division(self):
         self.reject('<print value="5 / 0"/>', "zero literal")
         self.reject('<print value="5 % 0"/>', "zero literal")
+        self.reject('<print value="i32(5) / i32(0)"/>', "zero literal")
+        self.reject('<print value="u64(5) / (+0)"/>', "zero literal")
+        self.reject('<print value="i64(-5) % -0"/>', "zero literal")
         self.reject('<print value="5 // 2"/>', "unsupported binary operator")
         self.reject('<print value="i32(-1) / u32(2)"/>', "cannot mix")
         self.reject('<print value="i64(-1) % u64(2)"/>', "cannot mix")
