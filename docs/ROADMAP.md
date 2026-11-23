@@ -3,7 +3,7 @@
 **Audience:** human contributors, beginner programmers, coding agents, reviewers.
 **Project goal:** express increasingly capable **native OS/kernel logic** in an HTML-like systems language, while retaining a reproducible boot chain and honest execution evidence.
 
-> **한국어 요약:** `kernel.html → C → x86-64 커널 이미지 → 실제 QEMU BIOS 부팅`이 로컬 및 GitHub CI에서 검증됐어(M1). 이제 M2의 핵심 변수·타입·제어 흐름·함수·배열이 QEMU에서 검증됐고, **M3의 제한된 QEMU 메모리·예외 처리 완료 기준**을 통과했고, **M4 작업·보호**를 다음 목표로 진행해. 그 이후 최소 사용자 환경(M5), 최소 사용자 환경(M5), 실기기 검증(M6) 순으로 진행해. 실제 커널 부팅은 첫 성취로 검증됐고, **브라우저 체험도 한 Chromium 환경에서 동작을 확인**했어. Linux 사용자 프로그램의 최초 실행 경로는 구현·CI 검증됐고, 실제 PC 부팅은 추후 목표야. 브라우저 UI 시뮬레이션은 커널 부팅 증거가 아니야. 구체적인 병행 계획은 [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)를 참고해.
+> **한국어 요약:** `kernel.html → C → x86-64 커널 이미지 → 실제 QEMU BIOS 부팅`이 로컬 및 GitHub CI에서 검증됐어(M1). M2의 핵심 변수·타입·제어 흐름·함수·배열을 QEMU에서 검증했고, **M3의 제한된 메모리·예외 처리 QEMU 완료 기준도 통과했어.** 다음 목표는 **M4 작업·보호**이고, 이후 M5 최소 사용자 환경과 M6 실기기 검증으로 이어져. 실제 커널 부팅은 첫 성취로 검증됐고, **브라우저 체험도 한 Chromium 환경에서 동작을 확인**했어. Linux 사용자 프로그램의 최초 실행 경로는 구현·CI 검증됐고, 실제 PC 부팅은 추후 목표야. 브라우저 UI 시뮬레이션은 커널 부팅 증거가 아니야. 구체적인 병행 계획은 [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)를 참고해.
 
 ## How to read this / 읽는 방법
 
