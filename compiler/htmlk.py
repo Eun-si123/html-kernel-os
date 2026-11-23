@@ -19,6 +19,9 @@ def compile_html(source: str, *, target: str = "kernel") -> str:
     if target not in ("kernel", "linux", "user"):
         raise CompileError(f"unknown compiler target {target!r}")
     parsed = parse(source)
+    if target == "kernel" and parsed.root_form == "program":
+        raise CompileError("<program><main> is for Linux or Ring3 user apps; "
+                           "use <kernel><onboot> for native kernel code")
     program = parsed.statements
     functions = parsed.functions
     contains_numeric_print = False
