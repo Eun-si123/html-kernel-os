@@ -35,7 +35,8 @@
         "scripts/test_signed_bits.py",
         "scripts/test_integer_oracle.py",
         "scripts/test_while.py",
-        "scripts/test_division.py"
+        "scripts/test_division.py",
+        "scripts/test_division_oracle.py"
       ]
     },
     {
