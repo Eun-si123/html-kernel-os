@@ -1,6 +1,9 @@
 /* Minimal Limine base-revision-6 handoff into code generated from HTML. */
 #include <stdint.h>
 #include "limine.h"
+#ifdef HTMLK_M3_IST_STACK
+#include "tss_ist.h"
+#endif
 #ifdef HTMLK_M3_EXCEPTION_IDT
 #include "exception_idt.h"
 #endif
@@ -79,11 +82,17 @@ void kmain(void) {
 #endif
         for (;;) __asm__ volatile ("cli; hlt");
     }
+#ifdef HTMLK_M3_IST_STACK
+    htmlk_tss_ist_install(); /* load our own valid code/data GDT + 64-bit TSS */
+#endif
 #ifdef HTMLK_M3_EXCEPTION_IDT
     htmlk_idt_install(); /* install fail-stop CPU exceptions before probes */
 #if defined(HTMLK_M3_FAULT_UD) || defined(HTMLK_M3_FAULT_PF) || \
     defined(HTMLK_M3_FAULT_DE) || defined(HTMLK_M3_FAULT_GP)
     htmlk_idt_inject_test_fault(); /* real CPU exception, no return */
+#endif
+#ifdef HTMLK_M3_DOUBLE_FAULT_TEST
+    htmlk_tss_inject_double_fault(); /* corrupted RSP forces true #DF on IST1 */
 #endif
 #endif
 #ifdef HTMLK_M3_MEMORY_PROBE
