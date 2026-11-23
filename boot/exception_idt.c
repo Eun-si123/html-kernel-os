@@ -166,6 +166,16 @@ __attribute__((interrupt)) static void vector_14(struct interrupt_frame *f, unsi
     io_string(htmlk_tss_on_page_fault_stack(current_rsp)
               ? "M3_IST_PF_STACK_OK\n" : "M3_IST_PF_STACK_BAD\n");
 #endif
+#ifdef HTMLK_M3_DOUBLE_FAULT_TEST
+    /* The first genuine CPU #PF is already being handled on IST2. A
+     * second #PF during exception delivery escalates to CPU vector #DF,
+     * which must enter its separate IST1 stack. Test images only. */
+    __asm__ volatile (
+        "movabs $0x0000000050000000, %%rax\n\t"
+        "mov (%%rax), %%rax\n\t"
+        : : : "rax", "memory"
+    );
+#endif
 #ifdef HTMLK_M3_PAGING_RECOVER_TEST
     uint64_t fault_address;
     __asm__ volatile ("mov %%cr2, %0" : "=r"(fault_address));
