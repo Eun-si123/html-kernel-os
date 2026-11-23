@@ -4,7 +4,7 @@
 
 The old Boot Lab showed serial text beside a black virtual PC monitor. A real OS kernel should also be able to draw pixels in its own bootloader-supplied display. This feature adds a **native x86-64 Limine framebuffer text path**, not a JavaScript overlay or an HTML/CSS screen simulation.
 
-It remains deliberately opt-in even though **real QEMU BIOS framebuffer-pixel readback and the independently captured QEMU VGA monitor screenshot both passed** (branch CI `45095698115`, source `1a82b79`). The actual v86 browser monitor is not verified yet. The ordinary ISO, COM1 output, existing site/Pages workflow, and Linux target are not changed.
+It remains deliberately opt-in even though **real QEMU BIOS framebuffer-pixel readback and the independently captured QEMU VGA monitor screenshot both passed** (final PR CI `45096047162`, source `9df6e93`; an actual QEMU screenshot PNG is in the CI ISO artifact). The actual v86 browser monitor is not verified yet. The ordinary ISO, COM1 output, existing site/Pages workflow, and Linux target are not changed.
 
 ## Runtime path
 
