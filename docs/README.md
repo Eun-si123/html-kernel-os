@@ -48,3 +48,5 @@ When a feature changes, update the **one authoritative** owner, then fix any con
 - [M5-E3 mixed real QEMU user-process lifecycle and reclamation stress test](M5_PROCESS_LIFECYCLE_STRESS.md).
 
 - [M5-E3-C guarded malformed Ring3 syscall frame process-only abort](M5_USER_SYSCALL_FRAME.md).
+
+- [M5-E3 guarded last-instruction Ring3 INT80 EOF and safe terminal exit](M5_USER_SYSCALL_EOF.md).

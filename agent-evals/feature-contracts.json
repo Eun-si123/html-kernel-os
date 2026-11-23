@@ -427,7 +427,9 @@
         "scripts/test_m5_user_trap_containment.py",
         "tests/native/test_user_syscall_policy.c",
         "scripts/test_m5_user_syscall_frame.py",
-        "docs/M5_USER_SYSCALL_FRAME.md"
+        "docs/M5_USER_SYSCALL_FRAME.md",
+        "scripts/test_m5_user_syscall_eof.py",
+        "docs/M5_USER_SYSCALL_EOF.md"
       ]
     },
     {

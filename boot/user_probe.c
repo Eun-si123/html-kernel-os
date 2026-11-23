@@ -145,9 +145,20 @@ static void invalid_syscall_frame(struct user_irq_frame *f,const char *message) 
 
 void htmlk_m4_syscall_dispatch(void *raw_frame) {
     struct user_irq_frame *f = raw_frame;
+    /* INT 0x80 saves the *next* user RIP, exactly like a trap. A syscall
+     * placed at the final instruction therefore saves RIP == code end.
+     * Only the guarded M5 shell may handle that boundary; legacy modes
+     * still fail-stop on RIP outside the executable's strict interval. */
+#ifdef HTMLK_M5_USER_FAULT_RECOVER
+    const bool at_user_code_end = f &&
+        f->rip == HTMLK_M4_USER_BASE + user_code_length;
+#else
+    const bool at_user_code_end = false;
+#endif
     if (f == 0 || f->cs != user_cs || f->ss != user_ss ||
         (f->rip < HTMLK_M4_USER_BASE) ||
-        f->rip >= HTMLK_M4_USER_BASE + user_code_length ||
+        (f->rip >= HTMLK_M4_USER_BASE + user_code_length &&
+         !at_user_code_end) ||
         f->rsp <= HTMLK_M4_USER_BASE + HTMLK_PAGE_SIZE ||
         f->rsp > HTMLK_M4_USER_STACK ||
         !canonical(f->rip) || !canonical(f->rsp))
@@ -159,6 +170,27 @@ void htmlk_m4_syscall_dispatch(void *raw_frame) {
         invalid_syscall_frame(f,"M5_C_INVALID_SYSCALL_ADDRESS_SPACE\n");
 #endif
     const uint64_t id = f->rax;
+#ifdef HTMLK_M5_USER_FAULT_RECOVER
+    /* Resuming an ordinary (non-exit) syscall at RIP == code end would
+     * execute bytes outside the verified HKEX image and could turn a
+     * legitimate CPL3 protocol error into a fatal kernel exception.
+     * A valid terminating syscall may end at code end: it never IRETs. */
+    if (at_user_code_end &&
+        !(id == 1U && f->rdi == 0U && syscall_seen && user_reported &&
+          !user_exited)) {
+        if (selected_app_path && frames_registry.live == 6U &&
+            !user_faulted && !user_bad_syscall && !user_exited &&
+#ifdef HTMLK_M5_USER_TIMEOUT
+            !user_timed_out &&
+#endif
+            htmlk_m4_saved_main_rsp && htmlk_m4_saved_cr3 != frames[0]) {
+            user_bad_syscall = true;
+            log_text("M5_E_USER_EOF_SYSCALL_REJECTED\n");
+            htmlk_m4_user_return();
+        }
+        reject("M4_BAD_RING3_SYSCALL_FRAME\n");
+    }
+#endif
     if (id == 0U && f->rdi == UINT64_C(0x1234) && !syscall_seen) {
         syscall_seen = true;
 #ifdef HTMLK_M5_USER_LOADER

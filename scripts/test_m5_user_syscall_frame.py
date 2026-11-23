@@ -58,7 +58,10 @@ def exercise_guest(work:Path,cache:Path,romfs:Path,*,timer:bool)->None:
     for boot in range(2):
         trace,uart=exercise(iso,cmds,HTML,cpu=CPU if timer else None)
         assert trace.startswith(BASE) and trace.endswith(b'M5_CONSOLE_EXIT\n'+HTML)
-        assert trace.count(b'M5_E_USER_BAD_SYSCALL_FRAME\n')==5,(boot,trace)
+        # The dedicated EOF repair classifies last-byte INT80 separately
+        # from a poisoned saved stack; BOTH retire the same verified app.
+        assert trace.count(b'M5_E_USER_BAD_SYSCALL_FRAME\n')==4,(boot,trace)
+        assert trace.count(b'M5_E_USER_EOF_SYSCALL_REJECTED\n')==1,(boot,trace)
         assert trace.count(b'M5_E_BAD_SYSCALL_FRAMES_RECLAIMED\n')==5,(boot,trace)
         assert trace.count(b'M5_ERR_USER_SYSCALL\n')==5,(boot,trace)
         assert trace.count(b'M5_C_USER_FRAMES_RECLAIMED\n')==5,(boot,trace)
