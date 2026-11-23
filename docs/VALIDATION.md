@@ -139,3 +139,12 @@ python3 scripts/test_paging_recovery.py        # actual CPU #PF, one-shot mappin
 ```
 
 The positive gate is an **actual page fault followed by reexecution of the original memory load**, verified as zero-fill, then cross-checked through the HHDM physical alias. QEMU must also show deterministic owner reclaim/exhaustion, 16-pages limit and valid source-derived HTML after original CR3 restoration. Negative gate: unarmed wrong-address #PF still prints vector/RIP/CR2 and exits **non-success 45**; wrong CLI flag combos must fail before building. The CPU may set Accessed/Dirty PTE bits after replay: compare address/required flags, not exact raw 64-bit PTE value. The mini-PC Linux/QEMU test passed against branch code at `1b790d2` (before docs). UEFI, browser and real PC NOT RUN for M3 recovery.
+
+## M3 genuine double fault and emergency IST stack gate
+
+```sh
+python3 -m unittest tests.test_tss_ist -v  # TSS size and descriptor, GCC UBSan -O0/-O3
+python3 scripts/test_tss_ist.py         # genuine #PF on IST2, #DF on IST1, combined boot
+```
+
+QEMU builds must actually execute `lgdt`, `lretq`, and `ltr`, confirm original/changed-source HTML, and trigger a **real #DF** by poisoning test-only IST2 and causing a CPU #PF that cannot be delivered. It must observe `M3_IST_DF_STACK_OK`, vector8, and QEMU non-success status 45. A normal page fault independently checks IST2, while a positive integration boot performs one-shot CPU #PF repair on IST2 and finishes real framebuffer rendering. Unrecognized flag combinations are compile-time rejections; no synthetic direct handler invocation qualifies. BIOS QEMU only; **UEFI, browser for this ISO, IRQ hardware, and physical PC NOT RUN**.
