@@ -24,7 +24,7 @@ class FeatureContractTests(unittest.TestCase):
                           "m4-pit-irq-pacing", "m4-x2apic-preemption",
                           "m4-ring3-user-syscall",
                           "m4-ring3-fault-containment",
-                          "m4-ring3-preempt-isolation"})
+                          "m4-ring3-preempt-isolation", "m5-romfs-readonly"})
 
     def test_changed_m4_scheduler_maps_native_qemu_and_state_oracles(self):
         report = summarize(validate(self.real), ["boot/task_switch.S"])

@@ -73,7 +73,16 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
           isolation_survivor_fault: bool = False,
           user_preempt: bool = False, d_timer_mask: bool = False,
           d_bad_frame: bool = False, d_wrong_cr3: bool = False,
-          d_wrong_fault: bool = False, d_bad_survivor: bool = False) -> None:
+          d_wrong_fault: bool = False, d_bad_survivor: bool = False,
+          romfs_probe: bool = False, romfs_negative: bool = False,
+          romfs_root: Path | None = None) -> None:
+    if romfs_negative and not (romfs_probe and test_exit):
+        raise ValueError("M5-A denial oracle requires ROMFS probe and test-exit")
+    if romfs_probe and any((memory_probe, video_console, exception_idt,
+                            paging_probe, tss_ist, task_probe, timer_probe,
+                            preempt_probe, user_probe, isolation_probe,
+                            user_preempt)):
+        raise ValueError("M5-A ROMFS probe is an independent opt-in boot mode")
     dist, header = get_limine(cache)
     work_root.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="htmlk-boot-", dir=work_root) as temp:
@@ -116,6 +125,10 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
             define.append("-DHTMLK_M4_D_WRONG_FAULT")
         if d_bad_survivor:
             define.append("-DHTMLK_M4_D_BAD_SURVIVOR")
+        if romfs_probe:
+            define.append("-DHTMLK_M5_ROMFS_PROBE")
+        if romfs_negative:
+            define.append("-DHTMLK_M5_ROMFS_NEGATIVE")
         if isolation_probe and (not exception_idt or not tss_ist or user_probe or
                                 memory_probe or paging_probe or video_console or
                                 task_probe or timer_probe or preempt_probe or
@@ -247,10 +260,12 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
         run("gcc", *flags, *define, "-I", header.parent, "-c",
             ROOT / "boot/kernel_entry.c", "-o", entry_obj)
         extra_objects: list[Path] = []
-        if memory_probe or video_console or exception_idt or paging_probe or tss_ist or task_probe or preempt_probe or user_probe or isolation_probe or user_preempt:
+        if memory_probe or video_console or exception_idt or paging_probe or tss_ist or task_probe or preempt_probe or user_probe or isolation_probe or user_preempt or romfs_probe:
             sources = (["page_pool"] if (memory_probe or paging_probe or user_probe or isolation_probe or user_preempt) else [])
             if memory_probe:
                 sources.append("memory_probe")
+            if romfs_probe:
+                sources.extend(("romfs", "romfs_probe"))
             if task_probe:
                 sources.extend(("task_model", "task_runtime"))
             if timer_probe:
@@ -278,6 +293,15 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
                 run("gcc", *flags, *define, "-I", header.parent, "-I", ROOT / "boot",
                     "-c", ROOT / "boot" / (source_name + ".c"), "-o", obj)
                 extra_objects.append(obj)
+            if romfs_probe:
+                generated_romfs = build_dir / "romfs_generated.c"
+                run(sys.executable, ROOT / "scripts/gen_romfs.py",
+                    "--root", (romfs_root or ROOT / "examples/romfs").resolve(),
+                    "--out", generated_romfs)
+                generated_romfs_obj = build_dir / "romfs_generated.o"
+                run("gcc", *flags, *define, "-I", ROOT / "boot", "-c",
+                    generated_romfs, "-o", generated_romfs_obj)
+                extra_objects.append(generated_romfs_obj)
             if task_probe:
                 obj = build_dir / "task_switch.o"
                 run("gcc", "-c", "-m64", "-fno-pie", "-fno-pic",
@@ -414,6 +438,12 @@ def main() -> None:
         help="M4-D negative: reject incorrect A fault address")
     parser.add_argument("--user-preempt-bad-survivor",action="store_true",
         help="M4-D negative: reject independent B task unexpected CPU fault")
+    parser.add_argument("--romfs-probe", action="store_true",
+                        help="M5-A opt-in bounded read-only files baked into native kernel")
+    parser.add_argument("--romfs-negative", action="store_true",
+                        help="M5-A QEMU rejection oracle, requires ROMFS probe and test exit")
+    parser.add_argument("--romfs-root", type=Path, default=ROOT / "examples/romfs",
+                        help="Trusted ROMFS input directory (16 files, max 4KiB each)")
     a = parser.parse_args()
     if a.user_preempt_probe and (not a.exception_idt or not a.tss_ist or
         a.user_probe or a.user_isolation_probe or a.memory_probe or
@@ -427,6 +457,14 @@ def main() -> None:
         parser.error("M4-D negatives need --user-preempt-probe --test-exit")
     if sum(bool(x) for x in d_negatives)>1:
         parser.error("M4-D negative controls cannot be combined")
+
+    if a.romfs_negative and not (a.romfs_probe and a.test_exit):
+        parser.error("--romfs-negative requires --romfs-probe --test-exit")
+    if a.romfs_probe and any((a.memory_probe, a.video_console, a.exception_idt,
+                              a.paging_probe, a.tss_ist, a.task_probe,
+                              a.timer_probe, a.preempt_probe, a.user_probe,
+                              a.user_isolation_probe, a.user_preempt_probe)):
+        parser.error("M5-A ROMFS probe must run alone (separate M4 proof)")
     if a.user_isolation_probe and (
         not a.exception_idt or not a.tss_ist or a.user_probe or
         a.memory_probe or a.paging_probe or a.video_console or
@@ -507,7 +545,8 @@ def main() -> None:
           a.user_isolation_survivor_fault,
           a.user_preempt_probe,a.user_preempt_timer_mask,
           a.user_preempt_bad_frame,a.user_preempt_wrong_cr3,
-          a.user_preempt_wrong_fault,a.user_preempt_bad_survivor)
+          a.user_preempt_wrong_fault,a.user_preempt_bad_survivor,
+          a.romfs_probe, a.romfs_negative, a.romfs_root)
 
 
 if __name__ == "__main__":

@@ -209,6 +209,27 @@
       "source": ["boot/user_preempt.c", "boot/user_preempt.h", "boot/user_preempt_policy.c", "boot/user_preempt_policy.h", "boot/user_preempt_entry.S", "boot/user_preempt_payload.S", "boot/tss_ist.c", "boot/exception_idt.c", "boot/kernel_entry.c", "scripts/build_boot.py"],
       "regressions": ["tests/test_user_preempt_policy.py"],
       "fieldEvidence": ["scripts/test_m4_user_preempt.py", "tests/native/test_user_preempt_policy.c", "docs/M4_USER_PREEMPT.md"]
+    },
+    {
+      "id": "m5-romfs-readonly",
+      "source": [
+        "boot/romfs.h",
+        "boot/romfs.c",
+        "boot/romfs_probe.c",
+        "scripts/gen_romfs.py",
+        "examples/romfs/welcome.txt",
+        "examples/romfs/config/build.txt",
+        "boot/kernel_entry.c",
+        "scripts/build_boot.py"
+      ],
+      "regressions": [
+        "tests/test_romfs_generator.py"
+      ],
+      "fieldEvidence": [
+        "tests/native/test_romfs.c",
+        "scripts/test_m5_romfs.py",
+        "docs/M5_ROMFS.md"
+      ]
     }
   ]
 }
