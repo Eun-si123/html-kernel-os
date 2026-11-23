@@ -19,7 +19,8 @@
         "tests/test_u32.py",
         "tests/test_signed.py",
         "tests/test_bitwise.py",
-        "tests/test_loop_control.py"
+        "tests/test_loop_control.py",
+        "tests/test_while.py"
       ],
       "fieldEvidence": [
         "docs/VALIDATION.md",
@@ -31,7 +32,8 @@
         "scripts/test_else.py",
         "scripts/test_u32.py",
         "scripts/test_signed_bits.py",
-        "scripts/test_integer_oracle.py"
+        "scripts/test_integer_oracle.py",
+        "scripts/test_while.py"
       ]
     },
     {

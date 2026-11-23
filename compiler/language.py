@@ -31,24 +31,25 @@ MAX_FUNCTION_ARGS = 4
 MAX_FUNCTION_DEPTH = 8
 NAME = re.compile(r"[a-zA-Z_][a-zA-Z_0-9]*\Z")
 CHILDREN = {"kernel": {None}, "onboot": {"kernel"},
-            "print": {"onboot", "if", "repeat", "else"},
-            "let": {"onboot", "function", "if", "repeat", "else"},
-            "set": {"onboot", "function", "if", "repeat", "else"},
-            "if": {"onboot", "function", "if", "repeat", "else"},
-            "repeat": {"onboot", "function", "if", "repeat", "else"},
+            "print": {"onboot", "if", "repeat", "while", "else"},
+            "let": {"onboot", "function", "if", "repeat", "while", "else"},
+            "set": {"onboot", "function", "if", "repeat", "while", "else"},
+            "if": {"onboot", "function", "if", "repeat", "while", "else"},
+            "repeat": {"onboot", "function", "if", "repeat", "while", "else"},
+            "while": {"onboot", "function", "if", "repeat", "while", "else"},
             "halt": {"onboot"},
             "function": {"kernel"},
-            "return": {"function", "if", "repeat", "else"},
+            "return": {"function", "if", "repeat", "while", "else"},
             "else": {"if"},
-            "break": {"repeat", "if", "else"},
-            "continue": {"repeat", "if", "else"}}
+            "break": {"repeat", "while", "if", "else"},
+            "continue": {"repeat", "while", "if", "else"}}
 ALLOWED = {"kernel": {"arch"}, "onboot": set(), "print": {"value"},
            "let": {"name", "type", "value"}, "set": {"name", "value"},
-           "if": {"test"}, "repeat": {"times"}, "halt": set(),
+           "if": {"test"}, "repeat": {"times"}, "while": {"test", "max"}, "halt": set(),
            "function": {"name", "params", "returns"}, "return": {"value"},
            "else": set(), "break": set(), "continue": set()}
 REQUIRED = {"let": {"name", "type", "value"}, "set": {"name", "value"},
-            "if": {"test"}, "repeat": {"times"},
+            "if": {"test"}, "repeat": {"times"}, "while": {"test", "max"},
             "function": {"name", "params", "returns"}, "return": {"value"}}
 
 
@@ -119,9 +120,9 @@ class KernelParser(HTMLParser):
             fail(node, "no statements are allowed after <halt/>")
         if tag == "return" and not inside_function:
             fail(node, "<return> is only allowed inside a <function>")
-        if tag in {"break", "continue"} and not any(item.tag == "repeat" for item in self.stack):
-            fail(node, f"<{tag}> requires an enclosing <repeat>")
-        if tag == "let" and parent in {"if", "repeat", "else"} and not inside_function:
+        if tag in {"break", "continue"} and not any(item.tag in {"repeat", "while"} for item in self.stack):
+            fail(node, f"<{tag}> requires an enclosing <repeat> or <while>")
+        if tag == "let" and parent in {"if", "repeat", "while", "else"} and not inside_function:
             fail(node, "block-scoped <let> is only supported inside functions")
         if len(pairs) != len(attrs):
             fail(node, f"duplicate attributes on <{tag}>")
@@ -148,12 +149,13 @@ class KernelParser(HTMLParser):
                 fail(node, "only type=u32/u64/i32/i64 is implemented")
         elif tag == "set":
             validate_name(node)
-        elif tag == "repeat":
-            count = pairs["times"]
+        elif tag in {"repeat", "while"}:
+            limit_attr = "times" if tag == "repeat" else "max"
+            count = pairs[limit_attr]
             if not count.isascii() or not count.isdecimal() or len(count) > 3:
-                fail(node, "repeat times must be a decimal integer between 0 and 64")
+                fail(node, f"{tag} {limit_attr} must be a decimal integer between 0 and 64")
             if int(count) > MAX_LOOP_TIMES:
-                fail(node, "repeat times must be between 0 and 64")
+                fail(node, f"{tag} {limit_attr} must be between 0 and 64")
         self.nodes += 1
         if self.nodes > MAX_NODES or len(self.stack) >= 16:
             fail(node, "source contains too many nodes or deeply nested elements")
@@ -237,11 +239,15 @@ class KernelParser(HTMLParser):
                 if node.tag == "print":
                     nout = (21 if "value" in node.attrs
                             else len("".join(node.text).encode("utf-8")) + 1)
-                elif node.tag in {"if", "repeat", "else"}:
+                elif node.tag in {"if", "repeat", "while", "else"}:
                     nested_out, nested_steps = estimate(node.children)
-                    scale = int(node.attrs["times"]) if node.tag == "repeat" else 1
+                    scale = (int(node.attrs["times"]) if node.tag == "repeat" else
+                             int(node.attrs["max"]) if node.tag == "while" else 1)
                     nout = scale * nested_out
                     nsteps += scale * nested_steps
+                    if node.tag == "while":
+                        # At most max condition evaluations, including early exits.
+                        nsteps += scale
                 output += nout
                 steps += nsteps
                 if output > MAX_OUTPUT_BYTES:
@@ -280,7 +286,7 @@ class KernelParser(HTMLParser):
                 for index, item in enumerate(branch):
                     if item.tag in {"return", "break", "continue"} and index + 1 != len(branch):
                         fail(item, f"statements after <{item.tag}> are unreachable")
-                    if item.tag in {"if", "repeat"}:
+                    if item.tag in {"if", "repeat", "while"}:
                         check_return_order(item.children)
                 if has_else:
                     check_return_order(nodes[-1].children)

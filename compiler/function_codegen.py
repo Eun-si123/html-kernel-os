@@ -77,14 +77,15 @@ def compile_functions(functions: dict[str, FunctionDef]) -> tuple[list[str], dic
                     fail(node, "function statement work budget exceeded")
 
                 def checked(expr: str, *, boolean: bool = False,
-                            expected_type: str | None = None) -> str:
+                            expected_type: str | None = None,
+                            evaluations: int = 1) -> str:
                     called: list[str] = []
                     value = expression(expr, node, resolve(), boolean=boolean,
                                        functions=functions, calls=called,
                                        variable_types=resolve_types(),
                                        expected_type=expected_type)
                     for callee in called:
-                        counts[callee] += weight
+                        counts[callee] += weight * evaluations
                         referenced.add(callee)
                     return value
 
@@ -133,6 +134,23 @@ def compile_functions(functions: dict[str, FunctionDef]) -> tuple[list[str], dic
                     loops += 1
                     code.append(f"{pad}for (uint64_t {loop} = 0;"
                                 f" {loop} < UINT64_C({count}); ++{loop}) {{")
+                    scopes.append({})
+                    type_scopes.append({})
+                    emit(node.children, indent + 1, weight * count)
+                    scopes.pop()
+                    type_scopes.pop()
+                    code.append(f"{pad}}}")
+                elif node.tag == "while":
+                    count = int(node.attrs["max"])
+                    condition = checked(node.attrs["test"], boolean=True,
+                                        evaluations=count)
+                    body_steps += weight * count  # guard evaluations
+                    if body_steps > MAX_RUNTIME_STEPS:
+                        fail(node, "function statement work budget exceeded")
+                    loop = f"htmlk_repeat_{fn.name}_{loops}"
+                    loops += 1
+                    code.append(f"{pad}for (uint64_t {loop} = 0;"
+                                f" {loop} < UINT64_C({count}) && ({condition}); ++{loop}) {{")
                     scopes.append({})
                     type_scopes.append({})
                     emit(node.children, indent + 1, weight * count)
