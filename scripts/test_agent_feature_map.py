@@ -18,7 +18,7 @@ class FeatureContractTests(unittest.TestCase):
     def test_mapping_has_existing_sources_and_regressions(self):
         self.assertEqual({entry["id"] for entry in validate(self.real)},
                          {"html-grammar-codegen", "static-site", "m3-memory-bootstrap",
-                          "m3-exception-idt"})
+                          "m3-exception-idt", "m3-private-paging"})
 
     def test_changed_m3_c_source_maps_native_regressions(self):
         report = summarize(validate(self.real), ["boot/page_pool.c"])
@@ -34,6 +34,17 @@ class FeatureContractTests(unittest.TestCase):
         self.assertIn("tests/test_exception_idt.py",
                       report["affectedFeatures"][0]["existingRegressionTests"])
         self.assertIn("scripts/test_exception_idt.py",
+                      report["affectedFeatures"][0]["fieldEvidence"])
+        self.assertEqual(report["affectedFeatures"][0]["automatedEvidence"], "not-run")
+
+    def test_changed_private_paging_source_maps_real_cr3_and_pf_proof(self):
+        report = summarize(validate(self.real), ["boot/paging_probe.c"])
+        self.assertEqual(
+            [item["feature"] for item in report["affectedFeatures"]],
+            ["m3-private-paging"])
+        self.assertIn("tests/test_paging_tables.py",
+                      report["affectedFeatures"][0]["existingRegressionTests"])
+        self.assertIn("scripts/test_paging_probe.py",
                       report["affectedFeatures"][0]["fieldEvidence"])
         self.assertEqual(report["affectedFeatures"][0]["automatedEvidence"], "not-run")
 
