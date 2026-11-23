@@ -20,6 +20,10 @@ jobs:
           python scripts/agent_feature_map.py validate
           python scripts/roadmap.py --check
           python scripts/check_docs.py
+      - name: Block private credentials in browser source
+        run: |
+          python3 -m unittest discover -s scripts -p 'test_verify_published_secrets.py' -v
+          python3 scripts/verify_published_secrets.py site
       - name: Validate site JavaScript syntax
         run: |
           node --check site/app.js
