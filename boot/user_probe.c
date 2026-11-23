@@ -363,7 +363,10 @@ bool htmlk_m5_accept_user_fault(unsigned vector, uint64_t rip,
      * a kernel fault, reused frame, forged selector or wrong CR3.
      * For #PF only the CPU error's U/S bit is trusted; user-controlled
      * addresses are not dereferenced by this handler. */
-    if (!selected_app_path || user_faulted || user_exited ||
+    if (!selected_app_path || user_faulted || user_bad_syscall || user_exited ||
+#ifdef HTMLK_M5_USER_TIMEOUT
+        user_timed_out ||
+#endif
         frames_registry.live != 6U || !htmlk_m4_saved_main_rsp ||
         !htmlk_m4_saved_cr3 || frames[0] == htmlk_m4_saved_cr3)
         return false;
@@ -376,6 +379,9 @@ bool htmlk_m5_accept_user_fault(unsigned vector, uint64_t rip,
     (void)cr2; /* CR2 is diagnostic only; no generic fixup on arbitrary faults. */
     user_faulted = true;
     switch (vector) {
+        case 0U: log_text("M5_E_USER_DE\n"); break;
+        case 1U: log_text("M5_E_USER_DB\n"); break;
+        case 3U: log_text("M5_E_USER_BP\n"); break;
         case 6U: log_text("M5_E_USER_UD\n"); break;
         case 13U: log_text("M5_E_USER_GP_0\n"); break;
         case 14U:

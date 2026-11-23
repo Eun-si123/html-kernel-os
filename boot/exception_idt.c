@@ -1,6 +1,8 @@
 /* Opt-in x86-64 exception capture. Uses GCC interrupt ABI and the x86-64
  * baseline ISA (-mgeneral-regs-only, -mno-red-zone in the boot build).
- * Does not support recovery, interrupts, SMP, TSS, IST or user mode.
+ * By default all traps fail-stop. Separate M3/M4/M5 defines enable only
+ * explicitly validated paging, user exception or timer-mode handlers.
+ * This is not an SMP or general-purpose fault recovery subsystem.
  */
 #include "exception_idt.h"
 #if defined(HTMLK_M4_USER_PROBE) || defined(HTMLK_M4_USER_ISOLATION) || \
@@ -114,10 +116,24 @@ static void panic(unsigned vector, uint64_t rip, uint64_t error_code) {
  * intentionally fail-stop and never attempt iretq/recovery.
  */
 __attribute__((interrupt)) static void vector_0(struct interrupt_frame *f) {
+#ifdef HTMLK_M5_USER_FAULT_RECOVER
+    /* Only guard an owned CPL3 program; supervisor-origin traps still panic. */
+    if ((f->cs & 3U) == 3U &&
+        htmlk_m5_accept_user_fault(0U, f->rip, f->cs, f->rflags,
+                                    f->rsp, f->ss, 0U, 0U))
+        htmlk_m4_user_return();
+#endif
     panic(0, f->rip, 0);
 }
 
 __attribute__((interrupt)) static void vector_1(struct interrupt_frame *f) {
+#ifdef HTMLK_M5_USER_FAULT_RECOVER
+    /* Only guard an owned CPL3 program; supervisor-origin traps still panic. */
+    if ((f->cs & 3U) == 3U &&
+        htmlk_m5_accept_user_fault(1U, f->rip, f->cs, f->rflags,
+                                    f->rsp, f->ss, 0U, 0U))
+        htmlk_m4_user_return();
+#endif
     panic(1, f->rip, 0);
 }
 
@@ -126,6 +142,13 @@ __attribute__((interrupt)) static void vector_2(struct interrupt_frame *f) {
 }
 
 __attribute__((interrupt)) static void vector_3(struct interrupt_frame *f) {
+#ifdef HTMLK_M5_USER_FAULT_RECOVER
+    /* Only guard an owned CPL3 program; supervisor-origin traps still panic. */
+    if ((f->cs & 3U) == 3U &&
+        htmlk_m5_accept_user_fault(3U, f->rip, f->cs, f->rflags,
+                                    f->rsp, f->ss, 0U, 0U))
+        htmlk_m4_user_return();
+#endif
     panic(3, f->rip, 0);
 }
 
@@ -384,6 +407,11 @@ void htmlk_idt_install(void) {
         !htmlk_idt_gate_make(&idt[0xffU],
             (uint64_t)(uintptr_t)&htmlk_m4_d1_spurious, cs))
         panic(13, 0, 0);
+#endif
+#ifdef HTMLK_M5_USER_FAULT_RECOVER
+    /* Software INT3/ICEBP delivery: #BP gate must be callable from CPL3.
+     * Keep the existing M3/M4 fail-stop IDT's default DPL0 unchanged. */
+    idt[3].type_attributes = 0xeeU; /* DPL3 interrupt gate */
 #endif
 #if defined(HTMLK_M4_USER_PROBE) || defined(HTMLK_M4_USER_ISOLATION) || \
     defined(HTMLK_M5_USER_LOADER)

@@ -1,6 +1,6 @@
 # M5-F1 — HTML-like language compiles to a *separate* native Ring 3 program
 
-**Status:** feature-branch mini-PC native QEMU BIOS proof PASS; exact PR-head CI and merge must be confirmed separately. This is a constrained user target, not an ELF loader, safe arbitrary-code sandbox, HTML browser runtime or complete M5/M6 OS.
+**Status:** merged M5-F1 PR #83 as `b38adf0` after exact-head QEMU CI runs `45135485279` and `45135491950` and Gitleaks `45135491869` PASS; independent mini-PC native QEMU BIOS verification PASS. This is a constrained user target, not an ELF loader, safe arbitrary-code sandbox, HTML browser runtime or complete M5/M6 OS.
 
 ## Quickstart / reproduce
 

@@ -438,6 +438,9 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
                             ("fault-pf.hke", "fault-pf.S"),
                             ("fault-ro.hke", "fault-ro.S"),
                             ("fault-ud.hke", "fault-ud.S"),
+                            ("fault-de.hke", "fault-de.S"),
+                            ("fault-db.hke", "fault-db.S"),
+                            ("fault-bp.hke", "fault-bp.S"),
                         ):
                             run(sys.executable, ROOT / "scripts/build_user_image.py",
                                 "--source", ROOT / "examples/user-programs" / source,

@@ -138,6 +138,8 @@ jobs:
         run: python scripts/test_m5_user_timeout.py
       - name: M5-E3 mixed Ring3 process lifecycle and owner reuse under real QEMU x2APIC
         run: python scripts/test_m5_process_lifecycle_stress.py
+      - name: M5-E3-B actual CPL3 DIV0 DEBUG INT3 recovery, one-byte trap RIP and legacy fail-stop QEMU
+        run: python scripts/test_m5_user_trap_containment.py
       - name: M5-F1 native HTML-derived HKEX from shared compiler, real CPL3 UART run and source provenance
         run: python scripts/test_m5_html_user.py
       - name: Assemble standalone, non-test boot images

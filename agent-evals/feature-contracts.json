@@ -408,7 +408,10 @@
         "examples/user-programs/fault-pf.S",
         "examples/user-programs/fault-ro.S",
         "examples/user-programs/fault-ud.S",
-        "examples/user-programs/bad-argument.S"
+        "examples/user-programs/bad-argument.S",
+        "examples/user-programs/fault-de.S",
+        "examples/user-programs/fault-db.S",
+        "examples/user-programs/fault-bp.S"
       ],
       "regressions": [
         "tests/test_user_fault_policy.py",
@@ -417,7 +420,8 @@
       "fieldEvidence": [
         "tests/native/test_user_fault_policy.c",
         "scripts/test_m5_user_fault_recovery.py",
-        "docs/M5_USER_FAULT_RECOVERY.md"
+        "docs/M5_USER_FAULT_RECOVERY.md",
+        "scripts/test_m5_user_trap_containment.py"
       ]
     },
     {
