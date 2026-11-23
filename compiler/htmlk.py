@@ -43,15 +43,32 @@ def compile_html(source: str, *, target: str = "kernel") -> str:
                         fail(node, "user text output allows only printable ASCII <=95 bytes")
                 ensure_bounded_reports(node.children)
         ensure_bounded_reports(program)
-        prints = [i for i, node in enumerate(program) if node.tag == 'print']
-        def contains_nested_print(nodes: list[Node]) -> bool:
-            return any(child.tag == 'print' or contains_nested_print(child.children)
-                       for node in nodes for child in node.children)
-        nested = contains_nested_print(program)
-        # M5-C1 syscall sequence intentionally accepts exactly one numeric
-        # or bounded printable-text report. Reject other source shapes.
-        if len(prints) != 1 or nested or prints[0] != len(program) - 2:
-            raise CompileError("user target requires exactly one final top-level <print> or <print value=.../> before <halt/>")
+        # Bound *dynamic* user reports without inventing a second language:
+        # count worst-case loop iterations and the largest possible if branch.
+        # Final unconditional top-level print guarantees an exit-ready report.
+        def report_budget(nodes: list[Node]) -> int:
+            total = 0
+            for node in nodes:
+                if node.tag == "print":
+                    total += 1
+                elif node.tag == "if":
+                    alternate = (node.children[-1] if node.children and
+                                 node.children[-1].tag == "else" else None)
+                    positive = node.children[:-1] if alternate else node.children
+                    total += max(report_budget(positive),
+                                 report_budget(alternate.children) if alternate else 0)
+                elif node.tag in {"repeat", "while"}:
+                    count = int(node.attrs["times" if node.tag == "repeat" else "max"])
+                    total += count * report_budget(node.children)
+                elif node.children:
+                    total += report_budget(node.children)
+                if total > 8:
+                    fail(node, "user output budget exceeds 8 syscall reports")
+            return total
+        if len(program) < 2 or program[-1].tag != "halt" or program[-2].tag != "print":
+            raise CompileError("user target requires a final unconditional top-level <print> before <halt/>")
+        if not 1 <= report_budget(program) <= 8:
+            raise CompileError("user target requires 1..8 bounded report events")
     for fn in functions.values():
         scan(fn.body)
 

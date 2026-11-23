@@ -14,6 +14,7 @@ Start with [AGENTS.md](../AGENTS.md) for AI collaborators and [README.md](../REA
 | How do two distinct Ring3 CR3s survive a task CPU fault? | [M4_FAULT_ISOLATION.md](M4_FAULT_ISOLATION.md) |
 | How does the opt-in M5-A real embedded read-only filesystem work? | [M5_ROMFS.md](M5_ROMFS.md) |
 | How does real QEMU UART command input read embedded files? | [M5_SERIAL_CONSOLE.md](M5_SERIAL_CONSOLE.md) |
+| How do HTML apps print repeatedly while keeping a kernel-enforced syscall budget? | [M5_HTML_MULTI_REPORT.md](M5_HTML_MULTI_REPORT.md) |
 | How does a Ring3 HTML app safely pass printable text to the UART shell? | [M5_HTML_USER_TEXT.md](M5_HTML_USER_TEXT.md) |
 | Can the same HTML-like language compile into a separate Ring3 user executable? | [M5_HTML_USER_PROGRAM.md](M5_HTML_USER_PROGRAM.md) |
 | How does M5-C1 ROMFS user code run in real CPL3? | [M5_USER_LOADER.md](M5_USER_LOADER.md) |

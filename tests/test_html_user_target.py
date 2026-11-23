@@ -32,7 +32,7 @@ class HtmlUserTargetTests(unittest.TestCase):
         samples=[
           EXAMPLE.replace('<print value="triple(score) - 1046"/>', '<print>한글</print>'),
           EXAMPLE.replace('<print value="triple(score) - 1046"/>',
-                          '<print value="1"/><print value="2"/>'),
+                          '<repeat times="8"><print value="1"/></repeat><print value="2"/>'),
           EXAMPLE.replace('<print value="triple(score) - 1046"/>',
                           '<repeat times="2"><print value="2"/></repeat>'),
           EXAMPLE.replace('<print value="triple(score) - 1046"/>',
