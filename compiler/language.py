@@ -26,6 +26,8 @@ MAX_NODES = 1024
 MAX_OUTPUT_BYTES = 16384
 MAX_RUNTIME_STEPS = 20000
 MAX_LOOP_TIMES = 64
+MAX_ARRAY_LENGTH = 64
+MAX_ARRAY_DECLS = 16
 MAX_FUNCTIONS = 32
 MAX_FUNCTION_ARGS = 4
 MAX_FUNCTION_DEPTH = 8
@@ -33,6 +35,8 @@ NAME = re.compile(r"[a-zA-Z_][a-zA-Z_0-9]*\Z")
 CHILDREN = {"kernel": {None}, "onboot": {"kernel"},
             "print": {"onboot", "if", "repeat", "while", "else"},
             "let": {"onboot", "function", "if", "repeat", "while", "else"},
+            "array": {"onboot", "function", "if", "repeat", "while", "else"},
+            "store": {"onboot", "function", "if", "repeat", "while", "else"},
             "set": {"onboot", "function", "if", "repeat", "while", "else"},
             "if": {"onboot", "function", "if", "repeat", "while", "else"},
             "repeat": {"onboot", "function", "if", "repeat", "while", "else"},
@@ -45,10 +49,12 @@ CHILDREN = {"kernel": {None}, "onboot": {"kernel"},
             "continue": {"repeat", "while", "if", "else"}}
 ALLOWED = {"kernel": {"arch"}, "onboot": set(), "print": {"value"},
            "let": {"name", "type", "value"}, "set": {"name", "value"},
+           "array": {"name", "type", "length"}, "store": {"name", "index", "value"},
            "if": {"test"}, "repeat": {"times"}, "while": {"test", "max"}, "halt": set(),
            "function": {"name", "params", "returns"}, "return": {"value"},
            "else": set(), "break": set(), "continue": set()}
 REQUIRED = {"let": {"name", "type", "value"}, "set": {"name", "value"},
+            "array": {"name", "type", "length"}, "store": {"name", "index", "value"},
             "if": {"test"}, "repeat": {"times"}, "while": {"test", "max"},
             "function": {"name", "params", "returns"}, "return": {"value"}}
 
@@ -95,6 +101,18 @@ class Program:
     functions: dict[str, FunctionDef]
 
 
+def array_code(kind: str, length: int) -> str:
+    """Internal-only symbolic type, never accepted as a user scalar type."""
+    return f"array:{kind}:{length}"
+
+
+def array_details(kind: str) -> tuple[str, int] | None:
+    if not kind.startswith("array:"):
+        return None
+    _, element, length = kind.split(":")
+    return element, int(length)
+
+
 class KernelParser(HTMLParser):
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
@@ -106,6 +124,7 @@ class KernelParser(HTMLParser):
         self.functions: list[Node] = []
         self.nodes = 0
         self.saw_print = False
+        self.array_declarations = 0
         self.source_lines: list[str] = []
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
@@ -122,7 +141,7 @@ class KernelParser(HTMLParser):
             fail(node, "<return> is only allowed inside a <function>")
         if tag in {"break", "continue"} and not any(item.tag in {"repeat", "while"} for item in self.stack):
             fail(node, f"<{tag}> requires an enclosing <repeat> or <while>")
-        if tag == "let" and parent in {"if", "repeat", "while", "else"} and not inside_function:
+        if tag in {"let", "array"} and parent in {"if", "repeat", "while", "else"} and not inside_function:
             fail(node, "block-scoped <let> is only supported inside functions")
         if len(pairs) != len(attrs):
             fail(node, f"duplicate attributes on <{tag}>")
@@ -147,7 +166,17 @@ class KernelParser(HTMLParser):
             validate_name(node)
             if pairs["type"] not in INT_TYPES:
                 fail(node, "only type=u32/u64/i32/i64 is implemented")
-        elif tag == "set":
+        elif tag == "array":
+            validate_name(node)
+            if pairs["type"] not in INT_TYPES:
+                fail(node, "array type must be u32/u64/i32/i64")
+            size = pairs["length"]
+            if not size.isascii() or not size.isdecimal() or len(size) > 3 or not 1 <= int(size) <= MAX_ARRAY_LENGTH:
+                fail(node, f"array length must be a decimal integer between 1 and {MAX_ARRAY_LENGTH}")
+            self.array_declarations += 1
+            if self.array_declarations > MAX_ARRAY_DECLS:
+                fail(node, f"at most {MAX_ARRAY_DECLS} bounded arrays are supported")
+        elif tag in {"set", "store"}:
             validate_name(node)
         elif tag in {"repeat", "while"}:
             limit_attr = "times" if tag == "repeat" else "max"
@@ -357,6 +386,33 @@ def expression(source: str, node: Node, variables: set[str] | dict[str, str],
         return False
 
     def kind(item: ast.AST) -> str:
+        if isinstance(item, ast.Subscript):
+            if not isinstance(item.value, ast.Name):
+                fail(node, "only a declared array can be indexed")
+            name = item.value.id
+            detail = array_details(types.get(name, ""))
+            if name not in variables or detail is None:
+                fail(node, f"undefined array {name!r}; declare <array> first")
+            element, length = detail
+            index_type = kind(item.slice)
+            if index_type not in unsigned | {"literal"}:
+                fail(node, "array index must be u32/u64 or a non-negative integer literal")
+            # Reject immediate out-of-range indices during compilation, including
+            # explicit width conversions and a redundant unary plus.
+            def static_index(expr: ast.AST) -> int | None:
+                if isinstance(expr, ast.Constant) and type(expr.value) is int:
+                    return expr.value
+                if isinstance(expr, ast.UnaryOp) and isinstance(expr.op, ast.UAdd):
+                    return static_index(expr.operand)
+                if (isinstance(expr, ast.Call) and isinstance(expr.func, ast.Name)
+                        and expr.func.id in unsigned and len(expr.args) == 1
+                        and not expr.keywords):
+                    return static_index(expr.args[0])
+                return None
+            constant = static_index(item.slice)
+            if constant is not None and constant >= length:
+                fail(node, f"array index {constant} out of bounds for length {length}")
+            return element
         if isinstance(item, ast.Constant) and type(item.value) is int:
             if not 0 <= item.value <= UINT64_MAX:
                 fail(node, "integer literal outside u64 range")
@@ -364,7 +420,10 @@ def expression(source: str, node: Node, variables: set[str] | dict[str, str],
         if isinstance(item, ast.Name):
             if item.id not in variables:
                 fail(node, f"undefined variable {item.id!r}")
-            return types.get(item.id, "u64")
+            item_type = types.get(item.id, "u64")
+            if array_details(item_type) is not None:
+                fail(node, f"array {item.id!r} requires an indexed element; use {item.id}[index]")
+            return item_type
         if isinstance(item, ast.Call):
             if not isinstance(item.func, ast.Name) or item.keywords:
                 fail(node, "unsupported function call; expected a plain name and positional integer arguments")
@@ -454,6 +513,13 @@ def expression(source: str, node: Node, variables: set[str] | dict[str, str],
             if item.value > limit:
                 fail(node, f"integer literal {item.value} outside {resolved} range; use an explicit numeric conversion")
             return f"{literal_macro(resolved)}({item.value})"
+        if isinstance(item, ast.Subscript):
+            name = item.value.id  # kind() already restricted this to a declared array.
+            _, length = array_details(types[name])
+            symbol = variables[name] if isinstance(variables, dict) else "htmlk_" + name
+            index_type = kind(item.slice)
+            index = emit(item.slice, "u64" if index_type == "literal" else None)
+            return f"{symbol}[htmlk_checked_index((uint64_t)({index}), UINT64_C({length}))]"
         if isinstance(item, ast.Name):
             return variables[item.id] if isinstance(variables, dict) else "htmlk_" + item.id
         if isinstance(item, ast.UnaryOp):
