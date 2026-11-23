@@ -69,7 +69,7 @@ On an interactive Ubuntu/QEMU terminal, after the M5-D1 proof use:
 python3 scripts/run_m5_console.py --with-user-program --recover-user-faults
 ```
 
-Run `run /apps/fault-io.hke`, `run /apps/fault-pf.hke`, `run /apps/fault-ro.hke` or `run /apps/fault-ud.hke`: each must cause a **real Ring3 CPU exception**, reclaim its own user memory and return to the original UART command prompt. Then `run /apps/hello.hke` still runs normally. This is a separate opt-in experiment, **not** a sandbox for untrusted binaries: an infinite loop is not yet interruptible here. See [M5-E1 exact QEMU evidence and restrictions](docs/M5_USER_FAULT_RECOVERY.md).
+Run `run /apps/fault-io.hke`, `run /apps/fault-pf.hke`, `run /apps/fault-ro.hke` or `run /apps/fault-ud.hke`: each must cause a **real Ring3 CPU exception**, reclaim its own user memory and return to the original UART command prompt. Then `run /apps/hello.hke` still runs normally. A valid user image that calls an unsupported `INT 0x80` ID or invalid argument now also fails **only that program** (`M5_ERR_USER_SYSCALL`), with the same console and next `run` still usable. This is a separate opt-in experiment, **not** a sandbox for untrusted binaries: an infinite loop is not yet interruptible here. See [M5-E1 exact QEMU evidence and restrictions](docs/M5_USER_FAULT_RECOVERY.md).
 
 ## Run a separate ROMFS user program in native Ring 3 (M5-C1)
 

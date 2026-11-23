@@ -27,6 +27,7 @@ static volatile bool user_reported;
 static const char *selected_app_path;
 #ifdef HTMLK_M5_USER_FAULT_RECOVER
 static volatile bool user_faulted;
+static volatile bool user_bad_syscall;
 #endif
 #endif
 static void log_decimal(uint32_t number) {
@@ -124,6 +125,19 @@ void htmlk_m4_syscall_dispatch(void *raw_frame) {
 #endif
         htmlk_m4_user_return(); /* restores root CR3 and kernel call stack */
     }
+#ifdef HTMLK_M5_USER_FAULT_RECOVER
+    /* Unknown/invalid userspace syscall is a process protocol error,
+     * not a reason to take down the entire native UART shell. The checked
+     * active CR3 and CPL3 frame above are mandatory before this path.
+     * M4-C1/M5-C1 legacy fail-stop oracles are intentionally unchanged. */
+    if (selected_app_path && frames_registry.live == 6U &&
+        !user_faulted && !user_bad_syscall && !user_exited &&
+        htmlk_m4_saved_main_rsp && htmlk_m4_saved_cr3 != frames[0]) {
+        user_bad_syscall = true;
+        log_text("M5_E_USER_BAD_SYSCALL\n");
+        htmlk_m4_user_return();
+    }
+#endif
     reject("M4_UNKNOWN_SYSCALL_REJECTED\n");
 }
 
@@ -233,6 +247,7 @@ void htmlk_m4_user_probe(const struct limine_memmap_response *map,
     user_reported = false;
 #ifdef HTMLK_M5_USER_FAULT_RECOVER
     user_faulted = false;
+    user_bad_syscall = false;
 #endif
     log_text("M5_C_USER_PAGES_READY\n");
 #else
@@ -248,8 +263,10 @@ void htmlk_m4_user_probe(const struct limine_memmap_response *map,
     __asm__ volatile ("mov %%cr3,%0" : "=r"(restored_cr3));
     if (
 #ifdef HTMLK_M5_USER_FAULT_RECOVER
-        (!user_faulted && (!syscall_seen || !user_exited || !user_reported)) ||
-        (user_faulted && user_exited) ||
+        (user_faulted && user_bad_syscall) ||
+        (!user_faulted && !user_bad_syscall &&
+         (!syscall_seen || !user_exited || !user_reported)) ||
+        ((user_faulted || user_bad_syscall) && user_exited) ||
 #else
         !syscall_seen || !user_exited ||
 #ifdef HTMLK_M5_USER_LOADER
@@ -269,6 +286,8 @@ void htmlk_m4_user_probe(const struct limine_memmap_response *map,
 #ifdef HTMLK_M5_USER_LOADER
 #ifdef HTMLK_M5_USER_FAULT_RECOVER
     if (user_faulted) log_text("M5_E_FAULT_FRAMES_RECLAIMED\n");
+    else if (user_bad_syscall)
+        log_text("M5_E_BAD_SYSCALL_FRAMES_RECLAIMED\n");
     else log_text("M5_C_USER_FRAMES_RECLAIMED\n");
 #else
     log_text("M5_C_USER_FRAMES_RECLAIMED\n");
@@ -280,6 +299,7 @@ void htmlk_m4_user_probe(const struct limine_memmap_response *map,
 
 #ifdef HTMLK_M5_USER_FAULT_RECOVER
 bool htmlk_m5_user_last_faulted(void) { return user_faulted; }
+bool htmlk_m5_user_last_bad_syscall(void) { return user_bad_syscall; }
 
 bool htmlk_m5_accept_user_fault(unsigned vector, uint64_t rip,
                                 uint64_t cs, uint64_t flags,
