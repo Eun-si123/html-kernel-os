@@ -3,6 +3,9 @@
  * Does not support recovery, interrupts, SMP, TSS, IST or user mode.
  */
 #include "exception_idt.h"
+#ifdef HTMLK_M3_PAGING_RECOVER_TEST
+#include "paging_probe.h"
+#endif
 #include <stdint.h>
 
 struct __attribute__((packed)) idtr {
@@ -148,6 +151,13 @@ __attribute__((interrupt)) static void vector_13(struct interrupt_frame *f, unsi
 }
 
 __attribute__((interrupt)) static void vector_14(struct interrupt_frame *f, unsigned long code) {
+#ifdef HTMLK_M3_PAGING_RECOVER_TEST
+    uint64_t fault_address;
+    __asm__ volatile ("mov %%cr2, %0" : "=r"(fault_address));
+    if (htmlk_paging_recover_page_fault(fault_address, (uint64_t)code)) {
+        return; /* architectural iretq retries the original CPU load */
+    }
+#endif
     panic(14, f->rip, (uint64_t)code);
 }
 
