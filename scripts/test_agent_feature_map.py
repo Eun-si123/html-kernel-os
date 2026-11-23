@@ -25,7 +25,8 @@ class FeatureContractTests(unittest.TestCase):
                           "m4-ring3-user-syscall",
                           "m4-ring3-fault-containment",
                           "m4-ring3-preemptive-survival",
-                          "m5-romfs-readonly", "m5-serial-console"})
+                          "m5-romfs-readonly", "m5-serial-console",
+                          "m5-romfs-user-executable"})
 
     def test_changed_m4_scheduler_maps_native_qemu_and_state_oracles(self):
         report = summarize(validate(self.real), ["boot/task_switch.S"])
@@ -50,7 +51,8 @@ class FeatureContractTests(unittest.TestCase):
     def test_ring3_entry_has_real_qemu_and_paging_oracles(self):
         report = summarize(validate(self.real), ["boot/user_entry.S"])
         self.assertEqual([item["feature"] for item in report["affectedFeatures"]],
-                         ["m4-ring3-user-syscall", "m4-ring3-fault-containment"])
+                         ["m4-ring3-user-syscall", "m4-ring3-fault-containment",
+                         "m5-romfs-user-executable"])
         self.assertIn("tests/test_user_pages.py",
                       report["affectedFeatures"][0]["existingRegressionTests"])
         self.assertIn("scripts/test_m4_user.py",

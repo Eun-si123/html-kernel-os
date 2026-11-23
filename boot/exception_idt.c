@@ -3,7 +3,8 @@
  * Does not support recovery, interrupts, SMP, TSS, IST or user mode.
  */
 #include "exception_idt.h"
-#if defined(HTMLK_M4_USER_PROBE) || defined(HTMLK_M4_USER_ISOLATION)
+#if defined(HTMLK_M4_USER_PROBE) || defined(HTMLK_M4_USER_ISOLATION) || \
+    defined(HTMLK_M5_USER_LOADER)
 #include "user_probe.h"
 #endif
 #ifdef HTMLK_M4_USER_ISOLATION
@@ -355,7 +356,8 @@ void htmlk_idt_install(void) {
             (uint64_t)(uintptr_t)&htmlk_m4_d1_spurious, cs))
         panic(13, 0, 0);
 #endif
-#if defined(HTMLK_M4_USER_PROBE) || defined(HTMLK_M4_USER_ISOLATION)
+#if defined(HTMLK_M4_USER_PROBE) || defined(HTMLK_M4_USER_ISOLATION) || \
+    defined(HTMLK_M5_USER_LOADER)
     if (!htmlk_idt_gate_make(&idt[0x80U],
             (uint64_t)(uintptr_t)&htmlk_m4_syscall_entry, cs)) {
         panic(13, 0, 0);

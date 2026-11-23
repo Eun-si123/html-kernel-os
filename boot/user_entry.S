@@ -76,6 +76,7 @@ htmlk_m4_user_return:
     retq
 .size htmlk_m4_user_return, .-htmlk_m4_user_return
 
+#ifndef HTMLK_M5_USER_LOADER
 /* Position-independent 64-bit user code copied to a private user page.
  * Immediate operands only; NO relocations or kernel pointers. */
 .section .rodata
@@ -107,4 +108,5 @@ htmlk_m4_user_code_begin:
 .Lm4_user_bad_stack:
     ud2
 htmlk_m4_user_code_end:
+#endif /* not M5 ROMFS external executable mode */
 .section .note.GNU-stack,"",@progbits

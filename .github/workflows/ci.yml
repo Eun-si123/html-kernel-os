@@ -112,6 +112,14 @@ jobs:
           done
       - name: Verify real M5-B QEMU UART RX, ROMFS commands, rejection and source provenance
         run: python scripts/test_m5_console.py
+      - name: Validate M5-C1 user executable format under UBSan O0/O3
+        run: |
+          for opt in 0 3; do
+            gcc -std=c11 -O${opt} -fsanitize=undefined -fno-sanitize-recover=all -Wall -Wextra -Werror -I boot boot/user_image.c tests/native/test_user_image.c -o build/user-image-test-${opt}
+            build/user-image-test-${opt}
+          done
+      - name: Boot ROMFS-backed independent Ring 3 user executable and reject bad code/syscalls in real QEMU
+        run: python scripts/test_m5_user_loader.py
       - name: Assemble standalone, non-test boot images
         run: |
           python scripts/build_boot.py --out build/html-kernel.iso
@@ -138,6 +146,7 @@ jobs:
           python scripts/build_boot.py --exception-idt --tss-ist --user-preempt-probe --out build/html-kernel-m4-user-preempt.iso
           python scripts/build_boot.py --romfs-probe --out build/html-kernel-m5-romfs.iso
           python scripts/build_boot.py --romfs-console --out build/html-kernel-m5-console.iso
+          python scripts/build_boot.py --exception-idt --tss-ist --user-loader-probe --out build/html-kernel-m5-user.iso
           python scripts/build_boot.py --source examples/framebuffer-kernel.html --video-console --out build/html-kernel-video.iso
       - uses: actions/upload-artifact@v4
         with:
@@ -189,6 +198,8 @@ jobs:
             build/html-kernel-m5-romfs.elf
             build/html-kernel-m5-console.iso
             build/html-kernel-m5-console.elf
+            build/html-kernel-m5-user.iso
+            build/html-kernel-m5-user.elf
             build/html-kernel-video.iso
             build/html-kernel-video.elf
             build/html-kernel-video-visible-screen.png

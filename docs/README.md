@@ -14,6 +14,7 @@ Start with [AGENTS.md](../AGENTS.md) for AI collaborators and [README.md](../REA
 | How do two distinct Ring3 CR3s survive a task CPU fault? | [M4_FAULT_ISOLATION.md](M4_FAULT_ISOLATION.md) |
 | How does the opt-in M5-A real embedded read-only filesystem work? | [M5_ROMFS.md](M5_ROMFS.md) |
 | How does real QEMU UART command input read embedded files? | [M5_SERIAL_CONSOLE.md](M5_SERIAL_CONSOLE.md) |
+| How does M5-C1 ROMFS user code run in real CPL3? | [M5_USER_LOADER.md](M5_USER_LOADER.md) |
 | How does compilation work, and what does not work? | [ARCHITECTURE.md](ARCHITECTURE.md) |
 | What has been decided versus proposed? | [DECISIONS.md](DECISIONS.md) |
 | What did the founder answer in interviews 1–20, including deferred choices? | [INTERVIEW_DECISIONS.md](INTERVIEW_DECISIONS.md) |

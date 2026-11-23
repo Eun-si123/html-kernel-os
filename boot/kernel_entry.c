@@ -16,7 +16,7 @@ extern void htmlk_m5_serial_console(void);
 #ifdef HTMLK_M4_X2APIC_PREEMPT
 #include "preempt_x2apic.h"
 #endif
-#ifdef HTMLK_M4_USER_PROBE
+#if defined(HTMLK_M4_USER_PROBE) || defined(HTMLK_M5_USER_LOADER)
 #include "user_probe.h"
 #endif
 #ifdef HTMLK_M4_USER_ISOLATION
@@ -55,6 +55,7 @@ static volatile uint64_t end_marker[] = LIMINE_REQUESTS_END_MARKER;
 
 #if defined(HTMLK_M3_MEMORY_PROBE) || defined(HTMLK_M3_PAGING_PROBE) || \
     defined(HTMLK_M4_USER_PROBE) || defined(HTMLK_M4_USER_ISOLATION) || \
+    defined(HTMLK_M5_USER_LOADER) || \
     defined(HTMLK_M4_USER_PREEMPT)
 /* Opt-in requests reside within the pinned Limine request marker section.
  * Production/default boot tests remain untouched unless M3 memory/paging is enabled.
@@ -146,6 +147,9 @@ void kmain(void) {
     htmlk_m4_preempt_probe(); /* Real timer preempts non-yielding ring-0 tasks. */
 #endif
 #ifdef HTMLK_M4_USER_PROBE
+    htmlk_m4_user_probe(m3_memmap_request.response, m3_hhdm_request.response);
+#endif
+#ifdef HTMLK_M5_USER_LOADER
     htmlk_m4_user_probe(m3_memmap_request.response, m3_hhdm_request.response);
 #endif
 #ifdef HTMLK_M4_USER_ISOLATION
