@@ -1,5 +1,9 @@
 /* Minimal Limine base-revision-6 handoff into code generated from HTML. */
 #include <stdint.h>
+#ifdef HTMLK_M5_ROMFS_PROBE
+#include "romfs.h"
+extern void htmlk_m5_romfs_probe(void);
+#endif
 #include "limine.h"
 #ifdef HTMLK_M4_TASK_PROBE
 #include "task_runtime.h"
@@ -146,6 +150,9 @@ void kmain(void) {
 #ifdef HTMLK_M4_USER_PREEMPT
     htmlk_m4_user_preempt_probe(m3_memmap_request.response,
                                  m3_hhdm_request.response);
+#endif
+#ifdef HTMLK_M5_ROMFS_PROBE
+    htmlk_m5_romfs_probe(); /* Native ELF .rodata file data. */
 #endif
     kernel_main(); /* Generated from examples/kernel.html. */
     for (;;) __asm__ volatile ("cli; hlt");

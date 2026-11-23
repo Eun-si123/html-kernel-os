@@ -305,6 +305,27 @@
         "tests/native/test_user_preempt_frame.c",
         "docs/M4_RING3_PREEMPT.md"
       ]
+    },
+    {
+      "id": "m5-romfs-readonly",
+      "source": [
+        "boot/romfs.h",
+        "boot/romfs.c",
+        "boot/romfs_probe.c",
+        "scripts/gen_romfs.py",
+        "examples/romfs/welcome.txt",
+        "examples/romfs/config/build.txt",
+        "boot/kernel_entry.c",
+        "scripts/build_boot.py"
+      ],
+      "regressions": [
+        "tests/test_romfs_generator.py"
+      ],
+      "fieldEvidence": [
+        "tests/native/test_romfs.c",
+        "scripts/test_m5_romfs.py",
+        "docs/M5_ROMFS.md"
+      ]
     }
   ]
 }
