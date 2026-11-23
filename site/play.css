@@ -101,7 +101,7 @@
 .boot-events span { min-width:0; }
 .trace-explainer { margin:0; padding:10px 16px 14px; font-size:11px; line-height:1.65; color:#bbc9bf; border-top:1px solid #415249; }
 .source-note { min-height:53px; padding:13px 16px; margin:0; color:#bfd0c4; font:11px/1.6 var(--mono); border-bottom:1px solid #415249; }
-.source-view { height:266px; overflow:auto; background:#101915; padding:9px 0; font:12px/1.8 var(--mono); tab-size:2; }
+.source-view { position:relative; height:266px; overflow:auto; background:#101915; padding:9px 0; font:12px/1.8 var(--mono); tab-size:2; }
 .source-view:focus-visible { outline:2px solid #95c99d; outline-offset:-3px; }
 .source-row { display:grid; grid-template-columns:48px minmax(0,1fr); padding:1px 14px 1px 0; min-width:0; }
 .source-line-number { text-align:right; padding-right:12px; user-select:none; color:#82988a; border-right:1px solid #34463b; }
