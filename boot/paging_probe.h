@@ -20,6 +20,16 @@ bool htmlk_paging_wire(volatile uint64_t *root,
                        uint64_t pdpt_phys, uint64_t pd_phys,
                        uint64_t pt_phys, uint64_t page_phys);
 
+/* Restricted 4KiB leaf map/unmap inside a caller-owned private page table.
+ * Never overwrites occupied entries or maps duplicate physical frames.
+ * Unmap requires the expected physical owner; callers must then invalidate
+ * the virtual address TLB entry BEFORE returning its physical page to pool.
+ */
+bool htmlk_paging_leaf_map(volatile uint64_t *pt,
+                           unsigned index, uint64_t phys);
+bool htmlk_paging_leaf_unmap(volatile uint64_t *pt,
+                             unsigned index, uint64_t expected_phys);
+
 struct limine_memmap_response;
 struct limine_hhdm_response;
 
