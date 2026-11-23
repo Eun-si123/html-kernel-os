@@ -179,7 +179,9 @@ The UI must receive actual `screen-put-char` VGA BIOS text events, record v86 li
 
 The deployed build at main `ce833cc9` was checked independently in Chromium after Pages Actions `45110667679` SUCCESS. **Slow actual v86 CPU pacing:** BIOS VGA text 1.99s, first COM1 5.55s, complete source-generated native output 5.56s, glyph RGB `(224,240,228)`, canvas panel 337px, matching source HTML line highlighted, v86 manual pause and resume events, verified replay PASS. **Normal actual v86 run:** M1 `basic` ISO, real SeaBIOS VGA then exact source-generated COM1 by 1.05s PASS; matching HTML source line highlighted. Console errors zero. These are observed wall-clock timestamps from one browser session, not a performance benchmark. The ISO contains *no HTML source*; the HTML shown in the site is copied separately by the Pages workflow. See [BOOT_LAB_LIVE_TRACE.md](BOOT_LAB_LIVE_TRACE.md).
 
-## M4-D post-merge hardening (2026-11-23 local)
+## M4-D post-merge hardening (2026-11-23, GitHub Actions verified)
+
+After preserving the #68 GP/RO-fault-survivor additions, exact PR #69 head 73b55f4 passed full GitHub Actions run 45125073080 and squash-merged at main 6515bbd. This validates the combined native QEMU oracles; it does not turn fixed trusted user tasks into an arbitrary process loader.
 
 The existing native `scripts/test_m4_user_preempt.py` now additionally checks 15 task-specific GPR sentinels from actual ring3 code on every loop, verified by a corrupt-R15 CPU #UD negative (45). It tests wrong active CR3 owner during IRQ (57) and revokes a page-table executable mapping **after B has executed it**, then verifies genuine post-CR3-reload CPL3 instruction #PF error 0x14 with CR2 equal RIP (45). The formerly shared copied-image-outside UD2 target was moved inside each independent image. `tests/test_user_preempt_frame.py` verifies IOPL3, NT and VM bit denial at GCC UBSan -O0/-O3. No real hardware, kernel capability expansion or general user ELF loader follows from these proof gates. [QEMU evidence contract](M4_RING3_PREEMPT.md).
 

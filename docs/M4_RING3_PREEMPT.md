@@ -1,6 +1,6 @@
 # M4-D1/D2 — Real CPL3 preemption and surviving user fault (QEMU-only)
 
-**Status:** opt-in single-vCPU BIOS QEMU experiment. Default HTML kernel remains unchanged.
+**Status:** opt-in single-vCPU BIOS QEMU experiment. Default HTML kernel remains unchanged. D1/D2, additional real #GP/RO #PF variants and hardening are merged (#65, #68, #69). Exact-head GitHub Actions run 45125073080 **SUCCESS**, merge 6515bbd; this is not general-purpose OS maturity.
 
 ## D1: actual CPU timer preempts never-yielding Ring 3 code
 
