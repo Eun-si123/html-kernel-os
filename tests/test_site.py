@@ -65,7 +65,11 @@ class SiteTests(unittest.TestCase):
         self.assertIn("QEMU 로컬 검증 성공", self.html)
         self.assertIn("READ-ONLY PREVIEW", self.html)
         self.assertIn("./play.html", self.html)
-        self.assertIn("아직 미구현/미검증", self.html)
+        self.assertIn("실기기 부팅은 아직 구현·검증되지 않았어", self.html)
+        self.assertIn("공개 M5 웹 실행실", self.html)
+        for name in ("M3", "M4", "M5", "M6"):
+            self.assertIn(f'<span class="milestone-no">{name}</span>', self.html)
+        self.assertNotIn("파일 시스템·스케줄러·실기기 부팅은 아직 미구현", self.html)
         self.assertRegex(self.html, r'<html lang="ko">')
 
     def test_browser_laboratory_has_static_assets_and_truthful_status(self):

@@ -116,7 +116,7 @@ void kernel_main(void) {
         </div>
         <div class="editor-footer"><span>COM1 + debugcon 0xE9 <span class="footer-divider">/</span> C outline은 설명용 발췌</span><button type="button" id="copy-code">코드 복사</button></div>
       </div>
-      <p class="notice"><strong>검증 범위</strong> — 최소 커널의 x86-64 QEMU 부팅과 HTML 소스 변경에 따른 출력 변화는 확인했어. 파일 시스템·스케줄러·실기기 부팅은 아직 미구현/미검증이고, <a href="./play.html">브라우저 부팅</a>은 별도로 검증한 환경에서만 확인된 결과야.</p>
+      <p class="notice"><strong>검증 범위</strong> — HTML형 소스의 실제 x86-64 컴파일·QEMU 부팅 외에도 제한된 ROMFS, 시리얼 명령 입력, 보호된 Ring 3 사용자 프로그램 실행과 메모리 회수를 검증했어. <a href="./live/">공개 M5 웹 실행실</a>에서도 Chromium으로 네이티브 사용자 프로그램 2회 실행·종료 코드 7·메모리 회수를 직접 확인했어. 다만 범용 앱 실행, 임의 코드 보안 격리, 쓰기 가능한 디스크, 실기기 부팅은 아직 구현·검증되지 않았어.</p>
     </section>
 
     <section class="section" id="roadmap" aria-labelledby="roadmap-title">
@@ -128,7 +128,10 @@ void kernel_main(void) {
         <div><span class="milestone-no">M0</span><section><h3>파서와 네이티브 코드 생성</h3><p>HTML 형태의 제한된 구문을 검증하고 x86-64 오브젝트를 생성</p></section><b class="in-progress">구현됨</b></div>
         <div><span class="milestone-no">M1</span><section><h3>실제 커널 부팅</h3><p>Limine ISO 생성, QEMU BIOS 및 Chromium 기반 웹 부팅 검증</p></section><b class="in-progress">검증됨</b></div>
         <div><span class="milestone-no">M2</span><section><h3>프로그래밍 언어 확장</h3><p>정수 4종, 함수, 조건문, 반복문, 비트 연산 구현. 모듈·자료구조는 진행 중</p></section><b class="in-progress">부분 구현</b></div>
-        <div><span class="milestone-no">M3+</span><section><h3>운영체제 핵심 기능</h3><p>메모리 관리, 인터럽트, 드라이버, 파일 시스템, 사용자 프로그램</p></section><b>미구현</b></div>
+        <div><span class="milestone-no">M3</span><section><h3>메모리·CPU 예외</h3><p>4KiB 페이지 할당, 사유 CR3, #PF/#GP 복구 실험과 소유권 검증을 실제 QEMU에서 확인</p></section><b class="in-progress">제한적 검증</b></div>
+        <div><span class="milestone-no">M4</span><section><h3>스케줄링·Ring 3 격리</h3><p>제한된 단일 CPU 환경에서 타이머 인터럽트, 사용자·커널 권한 분리 및 오류 격리 검증</p></section><b class="in-progress">범위 한정 구현</b></div>
+        <div><span class="milestone-no">M5</span><section><h3>읽기 전용 파일·명령·HTML 사용자 프로그램</h3><p>ROMFS, COM1 명령, 별도 실행 파일 로딩·64비트 출력·종료 코드·프레임 회수. <a href="./live/">실제 브라우저 실행 보기 ↗</a></p></section><b class="in-progress">진행 중·실행 가능</b></div>
+        <div><span class="milestone-no">M6</span><section><h3>실기기·운영 안정화</h3><p>물리 PC·UEFI·SMP·범용 드라이버 검증은 아직 하지 않았음</p></section><b>미검증</b></div>
       </div>
     </section>
 
