@@ -48,3 +48,5 @@ Locate the smallest source and test surface. This is a navigation index, **not e
 Do not introduce a long-running agent service, database, or synthetic feature count simply because another larger repository has one.
 
 - `boot/user_timeout.{h,c}`, `boot/user_timeout_frame.{h,c}`: opt-in bounded Ring3 executable CPU x2APIC IRQ timeout using the existing `boot/user_preempt_switch.S` 160-byte M4-D frame ABI; native acceptance `scripts/test_m5_user_timeout.py`, host guard `tests/test_user_timeout_frame.py`; see `docs/M5_USER_TIMEOUT.md`.
+
+- `boot/user_probe.c` M5-E3-D: genuine CPL3 `INT 0x80` postinstruction RIP **exactly** at code end is accepted for a valid exiting syscall; nonterminating/invalid EOF syscalls retire only the active task without IRETQ past code. Native QEMU and legacy fail-stop: `scripts/test_m5_user_syscall_eof.py`, [evidence](docs/M5_USER_SYSCALL_EOF.md).

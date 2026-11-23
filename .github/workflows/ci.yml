@@ -144,6 +144,8 @@ jobs:
         run: python scripts/test_m5_html_user.py
       - name: M5-F2 Ring3 native user text copyin, invalid pointers and real UART recovery in QEMU
         run: python scripts/test_m5_html_user_text.py
+      - name: M5-E3 real INT80 at user code EOF, valid exit, bad report, timer and HTML text, legacy fail-stop QEMU
+        run: python scripts/test_m5_user_syscall_eof.py
       - name: Assemble standalone, non-test boot images
         run: |
           python scripts/build_boot.py --out build/html-kernel.iso

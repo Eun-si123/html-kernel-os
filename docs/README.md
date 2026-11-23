@@ -45,3 +45,5 @@ When a feature changes, update the **one authoritative** owner, then fix any con
 - [M5-E2 real Ring3 x2APIC timeout and UART shell survival](M5_USER_TIMEOUT.md).
 
 - [M5-E3 mixed real QEMU user-process lifecycle and reclamation stress test](M5_PROCESS_LIFECYCLE_STRESS.md).
+
+- [M5-E3-D actual Ring3 INT80 at end-of-code and safe shell recovery](M5_USER_SYSCALL_EOF.md).

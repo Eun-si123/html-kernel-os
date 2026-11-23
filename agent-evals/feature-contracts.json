@@ -421,7 +421,9 @@
         "tests/native/test_user_fault_policy.c",
         "scripts/test_m5_user_fault_recovery.py",
         "docs/M5_USER_FAULT_RECOVERY.md",
-        "scripts/test_m5_user_trap_containment.py"
+        "scripts/test_m5_user_trap_containment.py",
+        "scripts/test_m5_user_syscall_eof.py",
+        "docs/M5_USER_SYSCALL_EOF.md"
       ]
     },
     {

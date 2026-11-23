@@ -103,6 +103,8 @@ The marker `— NEXT` is a **planning recommendation**, not an authoritative com
 
 **M5-F2 opt-in verified locally:** extend shared HTML-to-native Ring3 user target with a single printable-ASCII text result. New `INT 0x80` ID 3 checks actual user RO code-page pointer/length/content before COM1 output; 3× real QEMU `run good → bad pointer/length/control → good → x2APIC timeout` and independent source mutations pass. Unsafe absolute user string relocation was identified by a real rejected syscall and corrected using position-independent C and prelink relocation checks. Exact PR-head CI/merge pending; see [M5-F2 checked text syscall](M5_HTML_USER_TEXT.md). This is not general user pointer access, arbitrary/untrusted app execution or Unicode text support.
 
+**M5-E3-D user syscall EOF boundary repair (local QEMU proof):** allow a legitimate terminating `INT80` at the last user instruction, but retire nonterminating/invalid EOF syscall processes without IRETQ into unverified bytes. Actual QEMU modes with/without x2APIC, F2 HTML string output and legacy fail-stop checks passed locally; PR/CI pending. See [guarded syscall EOF evidence](M5_USER_SYSCALL_EOF.md). Other E3 hardening and M6 physical boot still OPEN.
+
 - Prioritize an input/output terminal and deterministic RAM-backed or embedded filesystem before broad hardware drivers.
 - Add a simple user program loader, error reporting and minimal command interaction.
 - **Gate:** boot the image, enter a command, read an embedded file, execute a separate program, and report controlled invalid-input behavior.
