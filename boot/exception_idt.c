@@ -138,6 +138,12 @@ __attribute__((interrupt)) static void vector_5(struct interrupt_frame *f) {
 }
 
 __attribute__((interrupt)) static void vector_6(struct interrupt_frame *f) {
+#ifdef HTMLK_M5_USER_FAULT_RECOVER
+    if ((f->cs & 3U) == 3U &&
+        htmlk_m5_accept_user_fault(6U, f->rip, f->cs, f->rflags,
+                                    f->rsp, f->ss, 0U, 0U))
+        htmlk_m4_user_return();
+#endif
     panic(6, f->rip, 0);
 }
 
@@ -172,6 +178,12 @@ __attribute__((interrupt)) static void vector_12(struct interrupt_frame *f, unsi
 }
 
 __attribute__((interrupt)) static void vector_13(struct interrupt_frame *f, unsigned long code) {
+#ifdef HTMLK_M5_USER_FAULT_RECOVER
+    if ((f->cs & 3U) == 3U &&
+        htmlk_m5_accept_user_fault(13U, f->rip, f->cs, f->rflags,
+                                    f->rsp, f->ss, (uint64_t)code, 0U))
+        htmlk_m4_user_return();
+#endif
 #if defined(HTMLK_M4_D2_FAULT) && defined(HTMLK_M4_D2_A_GP)
     struct htmlk_m4_d1_irq_frame *d2_survivor =
         htmlk_m4_d1_user_fault(13U, f->rip, f->cs, f->rsp, f->ss,
@@ -192,6 +204,15 @@ __attribute__((interrupt)) static void vector_14(struct interrupt_frame *f, unsi
     __asm__ volatile ("mov %%rsp, %0" : "=r"(current_rsp));
     io_string(htmlk_tss_on_page_fault_stack(current_rsp)
               ? "M3_IST_PF_STACK_OK\n" : "M3_IST_PF_STACK_BAD\n");
+#endif
+#ifdef HTMLK_M5_USER_FAULT_RECOVER
+    uint64_t m5_cr2;
+    __asm__ volatile ("mov %%cr2,%0" : "=r"(m5_cr2));
+    if ((f->cs & 3U) == 3U &&
+        htmlk_tss_on_page_fault_stack(current_rsp) &&
+        htmlk_m5_accept_user_fault(14U, f->rip, f->cs, f->rflags,
+                                    f->rsp, f->ss, (uint64_t)code, m5_cr2))
+        htmlk_m4_user_return();
 #endif
 #ifdef HTMLK_M3_PAGING_RECOVER_TEST
     uint64_t fault_address;

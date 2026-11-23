@@ -5,6 +5,9 @@
 #ifdef HTMLK_M5_USER_LOADER
 #include "romfs.h"
 #include "user_image.h"
+#ifdef HTMLK_M5_USER_FAULT_RECOVER
+#include "user_fault_policy.h"
+#endif
 #endif
 #include <stdbool.h>
 #include <stdint.h>
@@ -22,6 +25,9 @@ static volatile bool user_exited;
 static volatile bool user_reported;
 #ifdef HTMLK_M5_INTERACTIVE_RUN
 static const char *selected_app_path;
+#ifdef HTMLK_M5_USER_FAULT_RECOVER
+static volatile bool user_faulted;
+#endif
 #endif
 static void log_decimal(uint32_t number) {
     char digits[5];
@@ -225,6 +231,9 @@ void htmlk_m4_user_probe(const struct limine_memmap_response *map,
     syscall_seen = user_exited = false;
 #ifdef HTMLK_M5_USER_LOADER
     user_reported = false;
+#ifdef HTMLK_M5_USER_FAULT_RECOVER
+    user_faulted = false;
+#endif
     log_text("M5_C_USER_PAGES_READY\n");
 #else
     log_text("M4_USER_PAGE_TABLES_READY\n");
@@ -237,9 +246,15 @@ void htmlk_m4_user_probe(const struct limine_memmap_response *map,
     __asm__ volatile ("cli" ::: "memory");
     uint64_t restored_cr3;
     __asm__ volatile ("mov %%cr3,%0" : "=r"(restored_cr3));
-    if (!syscall_seen || !user_exited ||
+    if (
+#ifdef HTMLK_M5_USER_FAULT_RECOVER
+        (!user_faulted && (!syscall_seen || !user_exited || !user_reported)) ||
+        (user_faulted && user_exited) ||
+#else
+        !syscall_seen || !user_exited ||
 #ifdef HTMLK_M5_USER_LOADER
         !user_reported ||
+#endif
 #endif
         restored_cr3 != htmlk_m4_saved_cr3)
         reject("M4_USER_NOT_RESTORED\n");
@@ -252,11 +267,53 @@ void htmlk_m4_user_probe(const struct limine_memmap_response *map,
     if (frames_registry.live != 0)
         reject("M4_USER_FRAME_LEAK\n");
 #ifdef HTMLK_M5_USER_LOADER
+#ifdef HTMLK_M5_USER_FAULT_RECOVER
+    if (user_faulted) log_text("M5_E_FAULT_FRAMES_RECLAIMED\n");
+    else log_text("M5_C_USER_FRAMES_RECLAIMED\n");
+#else
     log_text("M5_C_USER_FRAMES_RECLAIMED\n");
+#endif
 #else
     log_text("M4_RING3_MAIN_RESTORED\n");
 #endif
 }
+
+#ifdef HTMLK_M5_USER_FAULT_RECOVER
+bool htmlk_m5_user_last_faulted(void) { return user_faulted; }
+
+bool htmlk_m5_accept_user_fault(unsigned vector, uint64_t rip,
+                                uint64_t cs, uint64_t flags,
+                                uint64_t rsp, uint64_t ss,
+                                uint64_t error, uint64_t cr2) {
+    /* Accept only a real CPL3 fault from an active known process, never
+     * a kernel fault, reused frame, forged selector or wrong CR3.
+     * For #PF only the CPU error's U/S bit is trusted; user-controlled
+     * addresses are not dereferenced by this handler. */
+    if (!selected_app_path || user_faulted || user_exited ||
+        frames_registry.live != 6U || !htmlk_m4_saved_main_rsp ||
+        !htmlk_m4_saved_cr3 || frames[0] == htmlk_m4_saved_cr3)
+        return false;
+    uint64_t current_cr3;
+    __asm__ volatile ("mov %%cr3,%0" : "=r"(current_cr3));
+    if (!htmlk_m5_user_fault_frame_valid(vector,rip,cs,flags,rsp,ss,
+                                          error,current_cr3,frames[0],
+                                          user_code_length))
+        return false;
+    (void)cr2; /* CR2 is diagnostic only; no generic fixup on arbitrary faults. */
+    user_faulted = true;
+    switch (vector) {
+        case 6U: log_text("M5_E_USER_UD\n"); break;
+        case 13U: log_text("M5_E_USER_GP_0\n"); break;
+        case 14U:
+            if (error == 5U) log_text("M5_E_USER_PF_5\n");
+            else if (error == 7U) log_text("M5_E_USER_PF_7\n");
+            else log_text("M5_E_USER_PF_OTHER\n");
+            break;
+        default: return false;
+    }
+    return true;
+}
+#endif
 
 #ifdef HTMLK_M5_INTERACTIVE_RUN
 void htmlk_m5_user_run(const char *path,

@@ -38,6 +38,19 @@ class ConsoleRunnerTests(unittest.TestCase):
                           "--user-preempt-probe"):
             self.assertNotIn(forbidden, cmd)
 
+    def test_recover_faults_only_in_user_mode_and_no_host_drive(self):
+        with self.assertRaisesRegex(ValueError,"interactive Ring3"):
+            build_command(Path("bad.iso"),ROOT / "examples/romfs",
+                          recover_user_faults=True)
+        cmd=build_command(Path("recovery.iso"), ROOT / "examples/romfs",
+                          with_user_program=True,recover_user_faults=True)
+        self.assertIn("--romfs-run-console",cmd)
+        self.assertIn("--user-fault-recover",cmd)
+        self.assertIn("--exception-idt",cmd)
+        self.assertIn("--tss-ist",cmd)
+        for flag in ("--user-loader-probe","--romfs-console","--user-preempt-probe"):
+            self.assertNotIn(flag,cmd)
+
     def test_requires_interactive_tty_without_building(self):
         with patch("sys.stdin.isatty", return_value=False):
             with patch("subprocess.run") as proc:

@@ -16,6 +16,7 @@ Start with [AGENTS.md](../AGENTS.md) for AI collaborators and [README.md](../REA
 | How does real QEMU UART command input read embedded files? | [M5_SERIAL_CONSOLE.md](M5_SERIAL_CONSOLE.md) |
 | How does M5-C1 ROMFS user code run in real CPL3? | [M5_USER_LOADER.md](M5_USER_LOADER.md) |
 | How can a real UART command launch a separate Ring3 program and return to shell? | [M5_INTERACTIVE_RUN.md](M5_INTERACTIVE_RUN.md) |
+| How do actual CPL3 #GP/#PF/#UD exceptions terminate just the task and recover the prompt? | [M5_USER_FAULT_RECOVERY.md](M5_USER_FAULT_RECOVERY.md) |
 | How does compilation work, and what does not work? | [ARCHITECTURE.md](ARCHITECTURE.md) |
 | What has been decided versus proposed? | [DECISIONS.md](DECISIONS.md) |
 | What did the founder answer in interviews 1–20, including deferred choices? | [INTERVIEW_DECISIONS.md](INTERVIEW_DECISIONS.md) |

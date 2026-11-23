@@ -111,7 +111,12 @@ static void run_program(const char *path) {
     }
     send_text("M5_RUN_START "); send_text(path); send_text("\n");
     htmlk_m5_user_run(path, program_map, program_hhdm);
-    send_text("M5_RUN_DONE\n");
+#ifdef HTMLK_M5_USER_FAULT_RECOVER
+    if (htmlk_m5_user_last_faulted())
+        send_text("M5_ERR_USER_FAULT\n");
+    else
+#endif
+        send_text("M5_RUN_DONE\n");
 }
 void htmlk_m5_serial_console_run(const struct limine_memmap_response *map,
                                   const struct limine_hhdm_response *hhdm) {
