@@ -76,7 +76,7 @@ Measure:
 - median lines/characters and **nested depth** for equivalent programs;
 - whether unexpected unsafe behavior can be triggered without explicit permission.
 
-Use matched environments and publish counts/methodology; avoid inventing percentages or superiority claims. **Until M2 exists, this benchmark is NOT RUN.**
+Use matched environments and publish counts/methodology; avoid inventing percentages or superiority claims. **The M2 bounded language subset exists; the human-subject usability benchmark is still NOT RUN.**
 
 ## Open design decisions
 
@@ -88,3 +88,15 @@ Use matched environments and publish counts/methodology; avoid inventing percent
 - Debugger/source maps, module import paths and sandbox policy.
 
 Track decisions in [DECISIONS.md](DECISIONS.md); evaluation gates in [ROADMAP.md](ROADMAP.md); source truth in [STATUS.md](STATUS.md).
+
+## Post-M2 ergonomics review (2026-11-23)
+
+The criticism that deeply nested tags become verbose is materially correct. Real expressions such as `<while test="i &lt; 5" max="8"><set name="i" value="i + 1"/></while>` are safe and explicit, but they require excessive punctuation for a simple operation. **We will not declare Python-level ease or add a second parser based on intuition.**
+
+Three potential improvements, currently **design options, NOT implemented**, are:
+
+1. A pretty-printer and editor language service (completion, cross-tag matching, precise diagnostics), preserving exactly one formal grammar and one lowering path.
+2. An optional *compact syntax* for expressions and statement blocks that lowers to the **same typed AST** as the existing HTML form; no new unsafe semantics or separate runtime. A brace/indentation DSL inside `<script>` is not automatically HTML-compatible, and would require independent parser, escaping and security testing.
+3. A standard library/module layer to make reusable operations short, instead of forcing repeated markup; module boundaries, imports and deterministic builds must be specified first.
+
+Before choosing, compare the five already-verified [native learner exercises](../examples/m2-exercises-kernel.html) as equivalent programs in current HTML, a candidate compact syntax and Python: median visible characters, maximum nesting, typo diagnosis, novice time-to-completion, and generated-code/runtime equivalence. Prefer adding **one documented opt-in syntax surface** only if it improves these measurements without doubling language maintenance or weakening M2 safety checks. The C backend is a valid *build-time intermediate representation*; replacing it does not make the syntax more readable or the resulting kernel more complete. Module/struct/unsafe semantics remain unresolved.
