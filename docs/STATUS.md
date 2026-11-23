@@ -23,7 +23,8 @@
 | Linker/bootloader integration | LOCAL PASS | `boot/`, `scripts/build_boot.py`; pinned Limine 12.11.1 and protocol header, generated ELF + hybrid bootable ISO |
 | QEMU kernel boot | LOCAL PASS + CI PASS (M1) | `scripts/test_boot.py` real x86_64 BIOS QEMU, original and altered HTML source both boot; debugcon output + exit code 33; negative controls pass. GitHub PR #13 Actions run `45027891902` SUCCESS and main run `45029073618` SUCCESS |
 | Physical PC boot | NOT RUN | Browser emulation and QEMU do not establish physical hardware support |
-| Memory, interrupts, tasks, filesystems, drivers | NOT IMPLEMENTED | Architecture-level ambitions only |
+| M3 physical memory-map/HHDM bootstrap (PR #38, opt-in slice) | Initial branch CI `45092535635` SUCCESS; integrated branch CI pending | Pinned Limine memory-map and HHDM requests are made only in explicit `--memory-probe` test images. `boot/page_pool.c` validates <=128 regions and only chooses usable 4KiB pages; 16 real QEMU RAM page writes/reads succeed, 17th allocation rejected. Host GCC -O0/-O3 UBSan tests, changed-source provenance and invalid map copy rejected with QEMU non-success exit 39. Default HTML kernel boot unchanged. M3 virtual page mapping/exception handling and physical hardware NOT RUN; see `docs/M3_MEMORY_BOOTSTRAP.md`. |
+| Virtual page mapping, interrupts, tasks, filesystems, general drivers | NOT IMPLEMENTED | The opt-in M3 physical page probe does not implement page tables, exceptions, a scheduler, isolation or user-space drivers |
 | Project-scoped GitHub Pages deployment | DEPLOYED / LIVE PASS | Project path https://eun-si123.github.io/html-kernel-os/ has HTTP 200 and actual browser boot verified, workflow run `45029073658` SUCCESS. Existing personal `github.io` repository not modified |
 | C++/Rust-class native performance | GOAL / NOT BENCHMARKED | See [PERFORMANCE.md](PERFORMANCE.md); no comparable workloads or reproducible timing evidence yet |
 
