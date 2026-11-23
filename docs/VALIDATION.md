@@ -148,3 +148,12 @@ python3 scripts/test_tss_ist.py         # genuine #PF on IST2, #DF on IST1, comb
 ```
 
 QEMU builds must actually execute `lgdt`, `lretq`, and `ltr`, confirm original/changed-source HTML, and trigger a **real #DF** by poisoning test-only IST2 and causing a CPU #PF that cannot be delivered. It must observe `M3_IST_DF_STACK_OK`, vector8, and QEMU non-success status 45. A normal page fault independently checks IST2, while a positive integration boot performs one-shot CPU #PF repair on IST2 and finishes real framebuffer rendering. Unrecognized flag combinations are compile-time rejections; no synthetic direct handler invocation qualifies. BIOS QEMU only; **UEFI, browser for this ISO, IRQ hardware, and physical PC NOT RUN**.
+
+## M3 bounded multi-page QEMU acceptance evidence
+
+```sh
+python3 -m unittest tests.test_paging_tables -v  # GCC UBSan -O0/-O3 map/unmap constraints
+python3 scripts/test_multimap.py                # actual 3x3 CPU aliases, physical frame reuse, revoked #PF
+```
+
+The positive path must exercise three additional 4KiB leaf PTEs under a private CR3 for *three rounds*, each read/write confirmed via distinct Limine HHDM physical aliases; safely unmap/invlpg before returning owner-tagged frames and verify deterministic reuse and unchanged first-page mapping. The negative path triggers **real CPU #PF** at `0xFFFFA00000002000` after unmap and requires CR2 match plus fail-stop exit 45. The combined real kernel must prove physical pool, TSS/IST, approved first-page `iretq` fault repair, frame ownership and framebuffer pixel writes. CLI flag rejection and modified HTML source are independent controls. Only bounded BIOS QEMU acceptance is implied: no generic heap, ring3 or external IRQ/hardware claim. Independent mini-PC QEMU test passed; final exact GitHub CI to be recorded after run.
