@@ -38,14 +38,15 @@
 <button type="button" data-command="help" disabled>help</button>
 <button type="button" data-command="ls" disabled>ls</button>
 <button type="button" data-command="cat /welcome.txt" disabled>cat /welcome.txt</button>
+<button type="button" data-command="cat /source.html" disabled>cat /source.html</button>
 <button type="button" data-command="run /apps/hello.hke" disabled>run /apps/hello.hke</button>
 <button type="button" data-command="exit" disabled>exit</button></div>
 </section></div>
-<div class="evidence"><span id="iso-hash">ISO SHA-256: 검증 전</span><span id="source-hash">HTML SHA-256: 검증 전</span><span id="boot-event">BIOS 대기 중</span></div>
+<div class="evidence"><span id="romfs-match">ISO 내부 HTML: 커널 읽기 전</span><span id="iso-hash">ISO SHA-256: 검증 전</span><span id="source-hash">HTML SHA-256: 검증 전</span><span id="boot-event">BIOS 대기 중</span></div>
 </section>
 <div class="details">
 <section><div class="section-head"><div><span class="tag">02 / SOURCE</span><h2>실행되는 HTML 소스</h2></div><a href="../examples/user-programs/html-u64-report.html">원본 보기 ↗</a></div>
-<p>읽기 전용 소스야. 이 파일이 컴파일돼 ROMFS의 <code>/apps/hello.hke</code>에 포함돼. COM1에서 <code>run</code>을 실행하면 실제 CPU가 코드를 수행해.</p>
+<p>읽기 전용 소스야. 빌드 시 이 HTML의 <strong>원본 바이트 전체를 <code>/source.html</code>로 ROMFS에 저장</strong>하고, 같은 원본을 컴파일한 네이티브 실행 파일을 <code>/apps/hello.hke</code>에 포함해. 실제 커널에서 <code>cat /source.html</code>을 실행하면 화면의 원본과 일치하는지도 확인할 수 있어.</p>
 <pre id="source" class="source" tabindex="0">원본 HTML을 불러오는 중…</pre></section>
 <section><div class="section-head"><div><span class="tag">03 / HOW IT WORKS</span><h2>실행 경로</h2></div></div>
 <ol class="pipeline"><li><b>HTML source</b><span>&lt;print&gt;와 &lt;halt&gt;로 행동 작성</span></li>

@@ -53,7 +53,9 @@ jobs:
       - name: Compile actual HTML Ring3 user ISO and manifest for dedicated /live/ page
         run: python scripts/build_live_site.py --out-dir build/live-site
       - name: Verify exact published M5 ISO has genuine COM1 input and CPU user output
-        run: python scripts/test_live_site.py --out-dir build/live-site
+        run: |
+          python scripts/test_live_site.py --out-dir build/live-site
+          python scripts/test_live_source_mutation.py --baseline-dir build/live-site
       - name: Assemble static Pages bundle with pinned x86-64 WebAssembly emulator
         run: |
           mkdir -p public/vendor

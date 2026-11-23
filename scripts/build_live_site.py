@@ -5,6 +5,8 @@ import argparse
 import hashlib
 import json
 import os
+import shutil
+import tempfile
 from pathlib import Path
 import subprocess
 import sys
@@ -27,9 +29,24 @@ def build(out_dir: Path) -> tuple[Path, Path]:
     command = [sys.executable, str(ROOT / "scripts/build_boot.py"),
                "--source", str(KERNEL), "--romfs-run-console",
                "--exception-idt", "--tss-ist", "--user-fault-recover",
-               "--user-app-html", str(APP),
                "--out", str(iso), "--test-exit"]
-    subprocess.run(command, cwd=ROOT, check=True)
+    # Embed the *exact same* read-only HTML source bytes visible in Pages.
+    # Do not mutate the shared examples/romfs tree or link through files from
+    # outside this trusted source checkout. ROMFS validates size/path bounds.
+    source_bytes = APP.read_bytes()
+    if len(source_bytes) > 4096:
+        raise ValueError("HTML source exceeds one bounded ROMFS file (4096 bytes)")
+    with tempfile.TemporaryDirectory(prefix="htmlk-live-romfs-") as temp:
+        romfs_root = Path(temp) / "romfs"
+        shutil.copytree(ROOT / "examples/romfs", romfs_root, symlinks=True)
+        (romfs_root / "source.html").write_bytes(source_bytes)
+        # Compile the same immutable snapshot, not a possibly concurrently
+        # edited working-tree file. ROMFS /source.html and HKEX stay in sync.
+        source_snapshot = Path(temp) / "user-source.html"
+        source_snapshot.write_bytes(source_bytes)
+        subprocess.run([*command, "--romfs-root", str(romfs_root),
+                        "--user-app-html", str(source_snapshot)], cwd=ROOT,
+                       check=True)
     revision = os.environ.get("GITHUB_SHA", "")
     if len(revision) != 40 or any(c not in "0123456789abcdefABCDEF" for c in revision):
         revision = "local-build"
@@ -40,7 +57,10 @@ def build(out_dir: Path) -> tuple[Path, Path]:
         "kernel_source": "examples/kernel.html",
         "kernel_source_sha256": sha(KERNEL),
         "user_source": "examples/user-programs/html-u64-report.html",
-        "user_source_sha256": sha(APP), "git_revision": revision,
+        "user_source_sha256": hashlib.sha256(source_bytes).hexdigest(), "git_revision": revision,
+        "embedded_source_path": "/source.html",
+        "embedded_source_sha256": hashlib.sha256(source_bytes).hexdigest(),
+        "embedded_source_bytes": len(source_bytes),
         "user_timer": False, "test_exit": True,
         "user_command": "run /apps/hello.hke",
         "expected_marker": "M5_RUN_EXIT_CODE=7",

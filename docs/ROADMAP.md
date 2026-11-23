@@ -119,6 +119,8 @@ The marker `— NEXT` is a **planning recommendation**, not an authoritative com
 
 **M5-E3-G real CPU #GP with corrupted user RSP (local branch):** the exact 48-byte CPU error-code exception frame is verified independently of prior 40-byte no-error-code #UD/#DE checks; only a currently owned CPL3 task is retired on the proven bad-user-RSP #GP. The original kernel-fatal exit45 was reproduced and actual native QEMU 3×4 hostile GP tasks / 3×5 healthy HTML reruns now PASS; see [E3-G error-frame gate](M5_USER_BAD_GP.md). PR/CI and M6 physical remain OPEN.
 
+**M5 Web-Live B HTML source inside ROMFS (branch):** embed byte-for-byte original user HTML as `/source.html` alongside its genuinely compiled HKEX; real QEMU and Chromium COM1 `cat` readback match raw SHA-256-verified source, then `run` executes real Ring3 user code. Public Pages deployment and exact PR-head CI remain PENDING. See [Web Live provenance](M5_WEB_LIVE.md).
+
 - Prioritize an input/output terminal and deterministic RAM-backed or embedded filesystem before broad hardware drivers.
 - Add a simple user program loader, error reporting and minimal command interaction.
 - **Gate:** boot the image, enter a command, read an embedded file, execute a separate program, and report controlled invalid-input behavior.

@@ -166,6 +166,7 @@ jobs:
         run: |
           python scripts/build_live_site.py --out-dir build/ci-live
           python scripts/test_live_site.py --out-dir build/ci-live
+          python scripts/test_live_source_mutation.py --baseline-dir build/ci-live
       - name: M5-E3-G true CPU general-protection error-code frame and owned bad user RSP recovery
         run: python scripts/test_m5_user_bad_gp_stack.py
       - name: Assemble standalone, non-test boot images
