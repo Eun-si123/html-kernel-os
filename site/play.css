@@ -19,15 +19,27 @@
 .lab-status-bar { display: flex; align-items: baseline; gap: 19px; padding: 15px 25px; min-height: 53px; border-block: 1px solid var(--rule); background: #efede5; }
 .lab-status-label { color: var(--accent-dark); font: 700 10px/1.8 var(--mono); white-space: nowrap; }
 .lab-status { font: 12px/1.6 var(--mono); color: var(--ink-soft); margin: 0; overflow-wrap: anywhere; }
-.lab-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #405047; }
+.lab-grid { display: grid; grid-template-columns: minmax(0,1fr); gap: 1px; background: #405047; }
 .lab-pane { min-width: 0; background: var(--code-deep); color: var(--code-ink); }
 .lab-pane h3 { display: flex; flex-wrap: wrap; align-items: center; gap: 11px; min-height: 55px; border-bottom: 1px solid #414f43; padding: 13px 18px; margin: 0; font-size: 13px; line-height: 1.5; font-weight: 650; }
 .lab-pane-index { color: #b5ad90; font: 10px/1.5 var(--mono); }
 .lab-pane h3 small { color: #99a79d; font: 10px/1.5 var(--mono); margin-left: auto; }
-.emulator-screen, .boot-output { height: 367px; max-height: 490px; min-height: 0; background: #101613; overflow: auto; }
-.emulator-screen { padding: 18px; color: #cbd7ce; }
-.emulator-screen canvas { max-width: 100%; height: auto; }
-.boot-output { margin: 0; padding: 22px; color: #c2e0ba; font: 12px/1.8 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; }
+.emulator-screen { width: 100%; aspect-ratio: 4/3; min-height: 0; position: relative; overflow: hidden; background: #050908; color: #cbd7ce; }
+.emulator-screen > canvas { position: absolute; inset: 0; width: 100% !important; height: 100% !important; object-fit: contain; max-width: none; image-rendering: pixelated; }
+.emulator-screen > div { position: absolute; inset: 0; overflow: hidden; max-width: 100%; pointer-events: none; }
+.emulator-screen:fullscreen { width: 100vw; height: 100vh; aspect-ratio: auto; background: #050908; }
+.emulator-screen:fullscreen > canvas { object-fit: contain; }
+.boot-output { height: 240px; min-height: 0; overflow: auto; margin: 0; padding: 22px; background: #101613; color: #c2e0ba; font: 12px/1.8 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; }
+.replay-controls { display:flex; align-items:center; gap:12px; flex-wrap:wrap; padding:13px 25px; border-top:1px solid var(--rule); background:var(--paper-bright); }
+.replay-context { display:flex; flex:1 1 250px; flex-direction:column; gap:2px; }
+.replay-context strong { font-size:12px; font-weight:700; color:var(--ink); }
+.replay-context span { font-size:11px; color:var(--ink-soft); }
+.replay-controls label { font:700 11px/1.4 var(--mono); color:var(--ink-soft); }
+.replay-controls select { min-height:38px; background:var(--paper); color:var(--ink); border:1px solid var(--rule); padding:5px 9px; }
+.replay-controls .btn { min-height:38px; padding:7px 12px; font-size:12px; }
+.display-fullscreen { margin-left:8px; padding:5px 9px; border:1px solid #809489; background:transparent; color:inherit; font:11px var(--mono); cursor:pointer; }
+.display-fullscreen:hover { background:#314438; }
+.display-fullscreen:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
 .lab-footnote { display: flex; align-items: baseline; gap: 12px; padding: 16px 22px; margin: 0; border-top: 1px solid #415249; background: var(--code-bg); color: #b6c6b6; font-size: 11px; line-height: 1.7; }
 .footnote-mark { display: inline-grid; place-items: center; width: 17px; height: 17px; border: 1px solid #b6c6b6; font: 700 10px var(--mono); flex: none; }
 .lab-explainer { display: grid; grid-template-columns: minmax(200px,.4fr) minmax(0,.6fr); gap: 75px; padding-top: 80px; }
@@ -47,9 +59,9 @@
   .boot-lab { padding: 60px 0 75px; }
   .lab-intro { grid-template-columns: 1fr; gap: 22px; padding-bottom: 37px; }
   .lab-intro h1 { font-size: clamp(48px,8vw,69px); }
-  .lab-grid { grid-template-columns: 1fr; }
+  .lab-grid { grid-template-columns: minmax(0,1fr); }
   .lab-pane:not(:last-child) { border-bottom: 1px solid #55665c; }
-  .emulator-screen, .boot-output { height: 260px; }
+  .boot-output { height: 195px; }
   .lab-explainer { grid-template-columns: 1fr; gap: 20px; padding-top: 65px; }
 }
 @media(max-width:480px) {
@@ -62,8 +74,10 @@
   #boot-start { grid-column: 1 / -1; }
   .lab-status-bar { flex-wrap: wrap; gap: 5px; padding: 14px; }
   .lab-pane h3 { padding: 12px; }
-  .emulator-screen, .boot-output { height: 236px; }
-  .boot-output { padding: 16px; font-size: 11px; }
+  .boot-output { height: 170px; padding: 16px; font-size: 11px; }
+  .replay-controls { padding:13px; gap:9px; }
+  .lab-pane h3 small { margin-left:0; }
+  .display-fullscreen { margin-left:auto; }
   .lab-footnote { padding: 13px; }
   .lab-explainer h2 { font-size: 32px; }
 }

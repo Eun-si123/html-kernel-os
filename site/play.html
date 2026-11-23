@@ -8,8 +8,8 @@
 <meta name="description" content="HTML Kernel OS의 실제 x86-64 커널 ISO를 브라우저 안의 가상 PC에서 부팅하는 공개 실험실.">
 <title>Boot Lab — HTML Kernel OS</title>
 <link rel="stylesheet" href="./styles.css?v=20261123-auto-theme2">
-<link rel="stylesheet" href="./play.css?v=20261123-auto-theme3">
-<script type="module" src="./play.js?v=20261123-signed"></script>
+<link rel="stylesheet" href="./play.css?v=20261123-vga-fit4">
+<script type="module" src="./play.js?v=20261123-boot-replay4"></script>
 </head>
 <body>
 <a class="skip-link" href="#main">본문으로 이동</a>
@@ -30,7 +30,7 @@
   <main class="boot-lab" id="main">
     <div class="lab-intro">
       <div>
-        <p class="eyebrow"><span class="eyebrow-rule" aria-hidden="true"></span> 07 NATIVE KERNEL IMAGES / BOOT LAB</p>
+        <p class="eyebrow"><span class="eyebrow-rule" aria-hidden="true"></span> 08 NATIVE KERNEL IMAGES / BOOT LAB</p>
         <h1>커널을<br><span class="display-serif">직접</span> 부팅해 보자.</h1>
       </div>
       <div class="lab-intro-side">
@@ -45,6 +45,7 @@
         <div class="demo-choice">
           <label for="kernel-demo">01 / 커널 이미지 선택</label>
           <select id="kernel-demo">
+            <option value="video" selected>실제 VGA 화면에 글자 출력 (M3 프레임버퍼)</option>
             <option value="basic">기본 부팅 메시지 (M1)</option>
             <option value="math">변수·계산·반복·조건 (M2 부분 구현)</option>
             <option value="functions">사용자 정의 함수·매개변수·중첩 호출 (M2 확장)</option>
@@ -60,25 +61,35 @@
           <a id="iso-download" class="btn secondary" href="./html-kernel.iso" download>ISO 내려받기 ↓</a>
         </div>
       </div>
+      <div class="replay-controls">
+        <div class="replay-context"><strong>부팅 기록 감상</strong><span>CPU는 실제 속도로 부팅해. 완료 후 검증된 COM1 출력만 천천히 재생해.</span></div>
+        <label for="replay-speed">재생 속도</label>
+        <select id="replay-speed" aria-label="시리얼 기록 재생 속도">
+          <option value="100">느리게</option>
+          <option value="55" selected>보통</option>
+          <option value="20">빠르게</option>
+        </select>
+        <button type="button" class="btn secondary" id="boot-replay" disabled>기록 다시 보기</button>
+      </div>
       <div class="lab-status-bar"><span class="lab-status-label">SESSION STATUS</span><p id="boot-status" class="lab-status" role="status" aria-live="polite">준비됨 · 아직 가상머신을 시작하지 않았어.</p></div>
       <div class="lab-grid">
         <section class="lab-pane" aria-label="가상 PC 화면">
-          <h3><span class="lab-pane-index">01 / DISPLAY</span>가상 PC 화면<small>VGA framebuffer</small></h3>
-          <div id="screen_container" class="emulator-screen"><div style="white-space:pre;font:14px monospace;line-height:14px"></div><canvas style="display:none"></canvas></div>
+          <h3><span class="lab-pane-index">01 / DISPLAY</span>가상 PC 화면<small>실제 VGA · 4:3</small><button type="button" class="display-fullscreen" id="display-fullscreen">화면 크게 보기</button></h3>
+          <div id="screen_container" class="emulator-screen" aria-label="가상 PC VGA 화면"><div style="white-space:pre;font:14px monospace;line-height:14px"></div><canvas style="display:none"></canvas></div>
         </section>
         <section class="lab-pane" aria-label="커널 시리얼 출력">
           <h3><span class="lab-pane-index">02 / SERIAL</span>커널 출력<small>COM1 · 0x3F8</small></h3>
           <pre id="boot-output" class="boot-output" role="log" aria-live="polite">부팅을 시작하면 HTML에서 생성한 커널의 시리얼 출력을 이곳에 표시해.</pre>
         </section>
       </div>
-      <p class="lab-footnote"><span class="footnote-mark" aria-hidden="true">i</span> 실행 중 브라우저 자원을 사용해. 느리거나 반응이 없다면 정지한 뒤 다시 시도해. 모바일 환경에서는 메모리가 부족할 수 있어.</p>
+      <p class="lab-footnote"><span class="footnote-mark" aria-hidden="true">i</span> VGA 예제는 실제 부팅한 커널이 픽셀을 그려. 나머지 예제는 COM1 중심이라 화면이 비어 있을 수 있어. 기록 다시 보기는 실제 CPU 부팅을 늦추는 기능이 아니야. 모바일에서는 메모리 사용량에 주의해.</p>
     </section>
 
     <section class="lab-explainer">
       <div><p class="section-id">ABOUT THIS EXPERIMENT</p><h2>무엇을 검증하는가?</h2></div>
       <div>
-        <p>이 페이지는 HTML 형태의 언어로 작성된 커널을 미리 컴파일한 ISO를 내려받아, 브라우저 내부의 x86-64 에뮬레이터로 실행해. 결과는 <strong>실제 커널의 COM1 시리얼 출력</strong>으로 확인해.</p>
-        <p class="notice"><strong>정확한 범위</strong> — 현재는 M2의 정수 자료형·함수·조건·반복·비트 연산 등 일부가 구현됐어. 재귀 호출, 함수 내부 입출력, 일반 프로그램 실행, 메모리 관리, 키보드 드라이버, 그래픽 데스크톱은 아직 구현되지 않았어. 브라우저 가상머신 부팅이 물리적 PC 지원을 증명하지는 않아.</p>
+        <p>이 페이지는 HTML 형태의 언어로 작성된 커널을 미리 컴파일한 ISO를 내려받아, 브라우저 내부의 x86-64 에뮬레이터로 실행해. <strong>VGA 데모는 실제 커널의 프레임버퍼 픽셀</strong>을 보여주며, 결과의 정확성은 <strong>실제 COM1 시리얼 출력</strong>으로 확인해.</p>
+        <p class="notice"><strong>정확한 범위</strong> — 현재는 M2의 정수 자료형·함수·조건·반복·배열 등 핵심 부분과 M3의 선택적 물리·가상 메모리 및 CPU 예외 실험이 구현됐어. 범용 메모리 관리, 파일 저장, 키보드 드라이버, 스케줄러, 그래픽 데스크톱은 아직 구현되지 않았어. 브라우저 가상머신 부팅이 물리적 PC 지원을 증명하지는 않아.</p>
         <div class="lab-links"><a href="https://github.com/Eun-si123/html-kernel-os">GitHub 소스 ↗</a><a href="https://github.com/Eun-si123/html-kernel-os/blob/main/docs/VALIDATION.md">검증 방법 ↗</a><a href="./v86-LICENSE.txt">에뮬레이터 라이선스 ↗</a></div>
       </div>
     </section>
