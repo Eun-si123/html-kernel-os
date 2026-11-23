@@ -43,7 +43,7 @@ Generated C defines `kernel_main()`, writes to QEMU debugcon `0xE9` and COM1 ser
 
 ## Test real M2 language features
 
-The experimental language now supports **signed i32/i64 and unsigned u32/u64**, fixed-width wrapping arithmetic, defined integer division/remainder with divide-by-zero traps, explicit conversions, unsigned bitwise/shift operations, bounded repeat and capped conditional `while` loops with `break`/`continue`, `if/else` and scoped typed functions (up to four parameters). The compiler's signed arithmetic avoids undefined C signed-overflow behavior. For example, [signed-bits-kernel.html](examples/signed-bits-kernel.html) prints the signed minimum values, safely wrapped results and loop-control output from an actual native kernel. The **same HTML source compiles to x86-64 kernel or an unprivileged Linux executable**. Neither functions nor ordinary source can directly access arbitrary hardware, I/O or memory; recursion and unbounded loops remain unavailable. **M2 is partially implemented, not a complete OS.**
+The experimental language now supports **signed i32/i64 and unsigned u32/u64**, fixed-width wrapping arithmetic, defined integer division/remainder with divide-by-zero traps, zero-initialized fixed-size typed arrays with checked indexes, explicit conversions, unsigned bitwise/shift operations, bounded repeat and capped conditional `while` loops with `break`/`continue`, `if/else` and scoped typed functions (up to four parameters). The compiler's signed arithmetic avoids undefined C signed-overflow behavior. For example, [signed-bits-kernel.html](examples/signed-bits-kernel.html) prints the signed minimum values, safely wrapped results and loop-control output from an actual native kernel. The **same HTML source compiles to x86-64 kernel or an unprivileged Linux executable**. Neither functions nor ordinary source can directly access arbitrary hardware, I/O or memory; recursion and unbounded loops remain unavailable. **M2 is partially implemented, not a complete OS.**
 
 To verify this locally with GCC, QEMU and xorriso, run:
 
@@ -56,6 +56,7 @@ python3 scripts/test_u32.py
 python3 scripts/test_signed_bits.py
 python3 scripts/test_division.py
 python3 scripts/test_division_oracle.py
+python3 scripts/test_arrays.py
 python3 scripts/test_integer_oracle.py
 python3 scripts/build_boot.py --source examples/math-kernel.html --out build/html-kernel-math.iso
 python3 scripts/build_boot.py --source examples/functions-kernel.html --out build/html-kernel-functions.iso
@@ -64,6 +65,7 @@ python3 scripts/build_boot.py --source examples/else-kernel.html --out build/htm
 python3 scripts/build_boot.py --source examples/u32-kernel.html --out build/html-kernel-u32.iso
 python3 scripts/build_boot.py --source examples/signed-bits-kernel.html --out build/html-kernel-signed.iso
 python3 scripts/build_boot.py --source examples/division-kernel.html --out build/html-kernel-division.iso
+python3 scripts/build_boot.py --source examples/array-kernel.html --out build/html-kernel-array.iso
 ~~~
 
 The [language contract](docs/M2_LANGUAGE_CONTRACT.md) documents syntax, safety bounds and unsupported expressions. The public [web boot lab](https://eun-si123.github.io/html-kernel-os/play.html) provides real x86-64 kernel examples for arithmetic, functions, scoped bodies, `if/else` branches u32/u64 native types and signed/bitwise/loop control (each ISO is generated and validated independently).
