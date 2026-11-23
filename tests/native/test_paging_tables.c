@@ -57,6 +57,36 @@ int main(void) {
     CHECK(pt[0] == 0x9003);
     pt[0] = 0;
     CHECK(pt[0] == 0 && pml4[511] == UINT64_C(0x00fe0003));
+
+    /* Additional leaf APIs must never clobber or alias another physical
+     * frame, and unmap must require the expected owner's physical address.
+     */
+    CHECK(!htmlk_paging_leaf_map(0, 1, 0xa000));
+    CHECK(!htmlk_paging_leaf_map(pt, 512, 0xa000));
+    CHECK(!htmlk_paging_leaf_map(pt, 1, 0));
+    CHECK(!htmlk_paging_leaf_map(pt, 1, 0xa001));
+    CHECK(!htmlk_paging_leaf_map(pt, 1, UINT64_C(0x0010000000000000)));
+    CHECK(htmlk_paging_leaf_map(pt, 1, 0xa000));
+    CHECK(pt[1] == 0xa003 && (pt[1] & 4) == 0);
+    CHECK(!htmlk_paging_leaf_map(pt, 1, 0xb000));
+    CHECK(!htmlk_paging_leaf_map(pt, 2, 0xa000));
+    CHECK(!htmlk_paging_leaf_unmap(0, 1, 0xa000));
+    CHECK(!htmlk_paging_leaf_unmap(pt, 512, 0xa000));
+    CHECK(!htmlk_paging_leaf_unmap(pt, 1, 0xb000));
+    CHECK(!htmlk_paging_leaf_unmap(pt, 1, 0xa001));
+    CHECK(!htmlk_paging_leaf_unmap(pt, 0, 0xa000));
+    CHECK(pt[1] == 0xa003 && pml4[511] == UINT64_C(0x00fe0003));
+    /* Genuine hardware is permitted to set the Accessed/Dirty leaf bits. */
+    pt[1] |= UINT64_C(1) << 5 | UINT64_C(1) << 6;
+    CHECK(htmlk_paging_leaf_unmap(pt, 1, 0xa000));
+    CHECK(pt[1] == 0);
+    CHECK(!htmlk_paging_leaf_unmap(pt, 1, 0xa000));
+    CHECK(htmlk_paging_leaf_map(pt, 511, 0xb000));
+    CHECK(!htmlk_paging_leaf_map(pt, 510, 0xb000));
+    CHECK(htmlk_paging_leaf_unmap(pt, 511, 0xb000));
+    CHECK(htmlk_paging_leaf_map(pt, 1, 0xa000)); /* reused */
+    CHECK(htmlk_paging_leaf_unmap(pt, 1, 0xa000));
+    CHECK(pt[0] == 0 && pt[511] == 0);
     (void)puts("M3 PRIVATE PAGE TABLE C11 CONTRACT PASS");
     return 0;
 }
