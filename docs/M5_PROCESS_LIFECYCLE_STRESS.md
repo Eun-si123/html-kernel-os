@@ -10,15 +10,15 @@ python3 scripts/test_m5_process_lifecycle_stress.py
 
 The test uses **the same actual native kernel**, pinned Limine boot flow, real emulated 16550 COM1 UART RX and E9 debugcon, and the real single-vCPU x2APIC timer used by merged M5-E2. Two additional, independently assembled user programs are embedded via `--romfs-root` without altering the source ROMFS directory: an unknown `INT 0x80` ID and a recognized syscall with an out-of-range argument. These are **executed in CPU CPL3**, not software mocks, and the existing M5-E1 process-only retirement takes effect.
 
-In each of three separate complete BIOS QEMU boots, the host sends 19 actual UART commands. Each boot interleaves:
+The original merged #80 version sent 19 commands and exercised four user CPU fault vectors; this **M5-E3-C follow-on test branch** adds #DE/#DB/#BP to the same mixed guest lifecycle. In each of three separate complete BIOS QEMU boots, the host now sends **22 actual UART commands**. Each boot interleaves:
 
 - Seven successful executions of the separately assembled `/apps/hello.hke`, reporting `M5_C_USER_VALUE=2026` and a fresh six-frame reclaim each time.
 - Two runs of truly nonyielding `/apps/spin.hke`: an actual x2APIC timer interrupts Ring3 and terminates only that program on its fourth real IRQ. Kernel-owned frames are reclaimed and the prompt resumes.
-- Four real CPL3 CPU faults: privileged port I/O (#GP), supervisor access (#PF 5), write to read-only user executable page (#PF 7), and UD2 (#UD). IST2 and privilege checks remain active; every offending process retires without kernel reset.
+- **Seven real CPL3 CPU faults/traps:** privileged port I/O (#GP), supervisor access (#PF 5), write to read-only user code (#PF 7), UD2 (#UD), division by zero (#DE), single-byte ICEBP (#DB) and INT3 (#BP). Dedicated independent guest CPU opcodes trigger each; IST2 and privilege/owner checks remain active, and each offending process retires without kernel reset.
 - Two protocol-invalid user syscalls, separately encoded in the HKEX payloads, each with its own six-frame reclaim and `M5_ERR_USER_SYSCALL`. These must **not** be falsely treated as CPU exceptions.
 - `help`, `cat`, a missing file path, a clean `exit` and the *actual HTML-derived native kernel output*.
 
-The test checks event ordering, exactly seven process-success traces, two timeout traces, four CPU-fault reclamations, two invalid-syscall reclamations, successful serial output, zero stale fatal markers and the correct QEMU debug-exit status. This is a stronger **cross-feature regression** than running M5-C1/D1/E1/E2 in isolation. No harness-internal timer or prerecorded guest log can pass these QEMU assertions.
+The test checks event ordering, exactly seven process-success traces, two timeout traces, **seven CPU-fault reclamations**, two invalid-syscall reclamations, successful serial output, zero stale fatal markers and the correct QEMU debug-exit status. This is a stronger **cross-feature regression** than running M5-C1/D1/E1/E2 in isolation. No harness-internal timer or prerecorded guest log can pass these QEMU assertions.
 
 ## Limits and remaining E3 work
 

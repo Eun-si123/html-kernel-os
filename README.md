@@ -98,6 +98,18 @@ python3 scripts/test_m5_html_user_text.py
 
 A bad supervisor pointer, overflowing length, or terminal escape causes **that user program** to be terminated with `M5_ERR_USER_SYSCALL`; the live shell continues and can run a correct app again. This is build-time trusted ASCII, **not** arbitrary userspace pointer/string access, Unicode printing or general-purpose process security. The real QEMU + negative evidence is in [M5-F2 contract](docs/M5_HTML_USER_TEXT.md).
 
+## Repeat HTML user output safely (M5-F3)
+
+The same native HTML user target can now run bounded `<print>` statements in conditions and capped loops, instead of producing only one message per process. **Both compiler and kernel enforce a maximum of eight reports per program**; a forged ninth syscall terminates only that user task and leaves the real UART console alive. Reuse the same one-command runner:
+
+```sh
+python3 scripts/run_m5_console.py --html-user-app examples/user-programs/html-multireport.html
+# Native QEMU: run /apps/hello.hke; exit
+python3 scripts/test_m5_html_multi_report.py
+```
+
+The example prints `tick` twice followed by `2026`; string bytes are still limited to printable ASCII and checked user-code-page pointers. [M5-F3 independent native acceptance evidence](docs/M5_HTML_MULTI_REPORT.md).
+
 ## Run a separate ROMFS user program in native Ring 3 (M5-C1)
 
 This opt-in test assembles `examples/user-programs/hello.S` into a small, checked `HKEX` executable and embeds it as `/apps/hello.hke` in the native kernel's immutable ROMFS. After bounded file validation the kernel loads **actual independent machine-code bytes** into a private CPL3 code page, checks register-only system calls, returns to generated HTML code and reclaims the user frames. To reproduce:
@@ -257,3 +269,5 @@ For Ubuntu with QEMU and GCC, run `python3 scripts/run_m5_console.py --with-user
 **M5-E3 process lifecycle regression:** `python3 scripts/test_m5_process_lifecycle_stress.py` interleaves successful Ring3 executions, actual x2APIC timeouts, CPU exception recovery and invalid syscall recovery on a live QEMU UART shell, three full boots. See [M5-E3 test contract](docs/M5_PROCESS_LIFECYCLE_STRESS.md). This is not a full security audit or hardware compatibility claim.
 
 **M5-E3-B CPU user-trap containment (experimental):** real x86-64 CPL3 `DIV/0` (#DE), `ICEBP` (#DB) and `INT3` (#BP) now abort only the active known HKEX program in the opt-in guarded recovery mode, preserving the live COM1 shell. Run `python3 scripts/test_m5_user_trap_containment.py` to check true QEMU CPU delivery, one-byte trap-end RIP, healthy reruns, original M5-D1 fatal behavior and active x2APIC integration. See [M5 user fault contract](docs/M5_USER_FAULT_RECOVERY.md). This is not full arbitrary-user-program safety or a general debugger.
+
+**M5-E3-C guarded user syscall frame (experimental):** a separate Ring3 HKEX program can deliberately corrupt its own RSP before `INT 0x80`; only an independently verified live user owner/privilege/TSS/CR3 context permits per-program retirement. The COM1 prompt and next HTML-compiled user program survive. Run `python3 scripts/test_m5_user_syscall_frame.py` for genuine CPU/COM1 QEMU and pre-fix fail-stop comparison; [exact limits](docs/M5_USER_SYSCALL_FRAME.md). This is not full untrusted-program safety.

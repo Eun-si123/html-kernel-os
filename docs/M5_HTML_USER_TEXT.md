@@ -1,6 +1,6 @@
 # M5-F2 — checked read-only user text (real Ring 3, ROMFS, COM1)
 
-**Status:** native QEMU BIOS and GCC UBSan O0/O3 locally verified on an opt-in development branch. Exact PR-head CI and merge separately pending. The system is not an untrusted-executable sandbox or broadly compatible OS.
+**Status:** M5-F2 PR #85 merged as `92d1132` after exact-head QEMU Actions `45137570954`/`45137579777` plus Gitleaks `45137575662` PASS, with independent native QEMU and GCC UBSan O0/O3 verification. The system is not an untrusted-executable sandbox or broadly compatible OS.
 
 ## One-command live console
 
@@ -26,3 +26,7 @@ The generated string was initially linked from `R_X86_64_32` absolute relocation
 ## Hard limits
 
 A single final **printable ASCII** literal (at most 95 visible bytes plus one newline) or a single numeric report per program, not arbitrary pointer/string length, no Unicode/format strings/terminal control characters. Only the trusted build-time RO code page can be read; user stack, dynamic strings, kernel memory and separate user data pages are deliberately unsupported. No dynamic file writes, multiple text outputs, general user copyin/copyout, SMP, FS/GS/FPU save, arbitrary binaries, actual device testing or calibrated timeouts. The checksum in the HKEX file is **not** an authenticity signature; caller supplies trusted source at build time.
+
+## Subsequent opt-in extension
+
+[M5-F3](M5_HTML_MULTI_REPORT.md) supports up to eight bounded report calls per HTML user process. The earlier one-report contract above describes the F2 standalone slice. The F2 pointer and ASCII validators remain mandatory on *every* text report.

@@ -411,17 +411,23 @@
         "examples/user-programs/bad-argument.S",
         "examples/user-programs/fault-de.S",
         "examples/user-programs/fault-db.S",
-        "examples/user-programs/fault-bp.S"
+        "examples/user-programs/fault-bp.S",
+        "boot/user_syscall_policy.h",
+        "boot/user_syscall_policy.c"
       ],
       "regressions": [
         "tests/test_user_fault_policy.py",
-        "tests/test_console_runner.py"
+        "tests/test_console_runner.py",
+        "tests/test_user_syscall_policy.py"
       ],
       "fieldEvidence": [
         "tests/native/test_user_fault_policy.c",
         "scripts/test_m5_user_fault_recovery.py",
         "docs/M5_USER_FAULT_RECOVERY.md",
         "scripts/test_m5_user_trap_containment.py",
+        "tests/native/test_user_syscall_policy.c",
+        "scripts/test_m5_user_syscall_frame.py",
+        "docs/M5_USER_SYSCALL_FRAME.md",
         "scripts/test_m5_user_syscall_eof.py",
         "docs/M5_USER_SYSCALL_EOF.md"
       ]
@@ -503,6 +509,25 @@
         "tests/native/test_user_text_policy.c",
         "scripts/test_m5_html_user_text.py",
         "docs/M5_HTML_USER_TEXT.md"
+      ]
+    },
+    {
+      "id": "m5-bounded-html-user-multi-report",
+      "source": [
+        "compiler/htmlk.py",
+        "boot/user_probe.c",
+        "scripts/build_boot.py",
+        "examples/user-programs/html-multireport.html",
+        "examples/user-programs/bad-report-budget.S"
+      ],
+      "regressions": [
+        "tests/test_html_user_multi_report.py",
+        "tests/test_html_user_target.py",
+        "tests/test_html_user_text.py"
+      ],
+      "fieldEvidence": [
+        "scripts/test_m5_html_multi_report.py",
+        "docs/M5_HTML_MULTI_REPORT.md"
       ]
     }
   ]

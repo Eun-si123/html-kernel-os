@@ -165,6 +165,7 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
         define = ["-DHTMLK_QEMU_TEST_EXIT"] if test_exit else []
         if user_app_html is not None:
             define.append("-DHTMLK_M5_USER_TEXT")
+            define.append("-DHTMLK_M5_USER_MULTI_REPORT")
         if user_loader or interactive_run:
             define.append("-DHTMLK_M5_USER_LOADER")
         if interactive_run:
@@ -372,7 +373,7 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
             if user_app_html is not None:
                 sources.append("user_text_policy")
             if user_fault_recover:
-                sources.append("user_fault_policy")
+                sources.extend(("user_fault_policy", "user_syscall_policy"))
             if user_timeout:
                 sources.extend(("user_timeout_frame", "user_timeout"))
             if task_probe:

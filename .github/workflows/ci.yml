@@ -142,9 +142,15 @@ jobs:
         run: python scripts/test_m5_user_trap_containment.py
       - name: M5-F1 native HTML-derived HKEX from shared compiler, real CPL3 UART run and source provenance
         run: python scripts/test_m5_html_user.py
+      - name: M5-E3-C syscall origin/owner frame guard UBSan O0 O3
+        run: python -m unittest tests.test_user_syscall_policy -v
+      - name: M5-E3-C genuine CPL3 malformed stack INT80 recovery and HTML user reruns in QEMU
+        run: python scripts/test_m5_user_syscall_frame.py
       - name: M5-F2 Ring3 native user text copyin, invalid pointers and real UART recovery in QEMU
         run: python scripts/test_m5_html_user_text.py
-      - name: M5-E3 real INT80 at user code EOF, valid exit, bad report, timer and HTML text, legacy fail-stop QEMU
+      - name: M5-F3 bounded mixed Ring3 reports, overbudget syscall rejection and x2APIC QEMU recovery
+        run: python scripts/test_m5_html_multi_report.py
+      - name: M5-E3 guarded terminal INT80 user code-end exit and bad syscall, real QEMU
         run: python scripts/test_m5_user_syscall_eof.py
       - name: Assemble standalone, non-test boot images
         run: |

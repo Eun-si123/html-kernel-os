@@ -28,7 +28,8 @@ class FeatureContractTests(unittest.TestCase):
                           "m5-romfs-readonly", "m5-serial-console",
                           "m5-romfs-user-executable", "m5-interactive-romfs-run",
                           "m5-guarded-user-fault-recovery", "m5-x2apic-user-timeout",
-                          "m5-html-language-user-program", "m5-checked-user-text-syscall"})
+                          "m5-html-language-user-program", "m5-checked-user-text-syscall",
+                          "m5-bounded-html-user-multi-report"})
 
     def test_changed_m4_scheduler_maps_native_qemu_and_state_oracles(self):
         report = summarize(validate(self.real), ["boot/task_switch.S"])
