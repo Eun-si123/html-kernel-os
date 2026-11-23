@@ -17,6 +17,9 @@ Only user-confirmed decisions belong under **Confirmed**. Proposals are not blan
 
 ## Proposals / not yet authorizations
 
+- **M3 CPU exception semantics (experimental PR #40):** enable an opt-in x86-64 IDT for CPU exceptions with distinct real QEMU #DE/#UD/#GP/#PF negative controls; log RIP/error/CR2 and halt rather than trying to resume at a corrupted instruction. No IRQ enabling, TSS/IST, physical PC claims or automatic installation to legacy images without a separately validated acceptance gate.
+
+
 - **M3 on-screen console (implemented in experimental PR #39):** request a Limine framebuffer only for an explicit video ISO; support validated 32-bit RGB, render a small original ASCII bitmap font, and keep COM1 as an independent fallback. A working QEMU monitor screenshot is necessary before claiming an on-screen result; public v86 presentation, keyboard input and language syntax design remain separate unapproved changes. The freestanding GCC CPU architecture must be pinned to x86-64 baseline (prevent unsupported BMI2 SHLX).
 
 - **M2 array safety semantics (proposed 2026-11-23):** support bounded 1..64-element, zero-initialized per-scope arrays without raw pointer escape; literal out-of-bounds accesses fail at compile-time, computed out-of-bounds accesses fatally trap with distinct kernel/Linux markers. This does **not** establish full memory safety, and runtime or syntax changes need deliberate review. The implementation remains an independent PR until verified.
