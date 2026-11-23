@@ -1,6 +1,9 @@
 /* Minimal Limine base-revision-6 handoff into code generated from HTML. */
 #include <stdint.h>
 #include "limine.h"
+#ifdef HTMLK_M3_EXCEPTION_IDT
+#include "exception_idt.h"
+#endif
 #ifdef HTMLK_FB_CONSOLE
 #include "console_fb.h"
 #endif
@@ -73,6 +76,13 @@ void kmain(void) {
 #endif
         for (;;) __asm__ volatile ("cli; hlt");
     }
+#ifdef HTMLK_M3_EXCEPTION_IDT
+    htmlk_idt_install(); /* install fail-stop CPU exceptions before probes */
+#if defined(HTMLK_M3_FAULT_UD) || defined(HTMLK_M3_FAULT_PF) || \
+    defined(HTMLK_M3_FAULT_DE) || defined(HTMLK_M3_FAULT_GP)
+    htmlk_idt_inject_test_fault(); /* real CPU exception, no return */
+#endif
+#endif
 #ifdef HTMLK_M3_MEMORY_PROBE
     htmlk_memory_probe(m3_memmap_request.response, m3_hhdm_request.response);
 #endif

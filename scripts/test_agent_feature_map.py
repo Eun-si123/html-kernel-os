@@ -17,12 +17,24 @@ class FeatureContractTests(unittest.TestCase):
 
     def test_mapping_has_existing_sources_and_regressions(self):
         self.assertEqual({entry["id"] for entry in validate(self.real)},
-                         {"html-grammar-codegen", "static-site", "m3-memory-bootstrap"})
+                         {"html-grammar-codegen", "static-site", "m3-memory-bootstrap",
+                          "m3-exception-idt"})
 
     def test_changed_m3_c_source_maps_native_regressions(self):
         report = summarize(validate(self.real), ["boot/page_pool.c"])
         self.assertEqual(report["affectedFeatures"][0]["feature"], "m3-memory-bootstrap")
         self.assertIn("tests/test_m3_memory.py", report["affectedFeatures"][0]["existingRegressionTests"])
+        self.assertEqual(report["affectedFeatures"][0]["automatedEvidence"], "not-run")
+
+    def test_new_exception_idt_source_maps_real_cpu_fault_evidence(self):
+        report = summarize(validate(self.real), ["boot/exception_idt.c"])
+        self.assertEqual(
+            [item["feature"] for item in report["affectedFeatures"]],
+            ["m3-exception-idt"])
+        self.assertIn("tests/test_exception_idt.py",
+                      report["affectedFeatures"][0]["existingRegressionTests"])
+        self.assertIn("scripts/test_exception_idt.py",
+                      report["affectedFeatures"][0]["fieldEvidence"])
         self.assertEqual(report["affectedFeatures"][0]["automatedEvidence"], "not-run")
 
     def test_changed_compiler_reports_tests_but_not_pass(self):

@@ -126,7 +126,7 @@ Then open http://127.0.0.1:8000 in your browser.
 
 ## M3 memory bootstrap experiment (separate from normal boot)
 
-An opt-in Limine memory-map/HHDM probe now selects exactly 16 usable, 4KiB-aligned physical pages, performs actual RAM readback through HHDM, and checks exhaustion. The ordinary HTML-derived kernel image is unchanged. Run `python3 scripts/test_m3_memory.py` to check the freestanding C page-pool logic with GCC UBSan and run positive/negative real BIOS QEMU boots, or build a manually bootable test ISO with `python3 scripts/build_boot.py --memory-probe --out build/html-kernel-m3-memory.iso`. This is **only the initial M3 physical memory slice**: no virtual page mapping, interrupt/fault handler, real PC verification or user-program isolation. Full design and limitations: [M3 memory bootstrap](docs/M3_MEMORY_BOOTSTRAP.md).
+An opt-in Limine memory-map/HHDM probe now selects exactly 16 usable, 4KiB-aligned physical pages, performs actual RAM readback through HHDM, and checks exhaustion. The ordinary HTML-derived kernel image is unchanged. Run `python3 scripts/test_m3_memory.py` to check the freestanding C page-pool logic with GCC UBSan and run positive/negative real BIOS QEMU boots, or build a manually bootable test ISO with `python3 scripts/build_boot.py --memory-probe --out build/html-kernel-m3-memory.iso`. This is **only the initial M3 physical memory slice**: no virtual page mapping, IRQ/TSS support, real PC verification or user-program isolation (a separate opt-in fail-stop CPU IDT now exists). Full design and limitations: [M3 memory bootstrap](docs/M3_MEMORY_BOOTSTRAP.md).
 
 ## Native screen output experiment (M3, not a graphical desktop)
 
@@ -139,3 +139,14 @@ python3 scripts/test_video_screen.py
 ```
 
 The original five-by-seven bitmap renderer is implemented in `boot/console_fb.c`, with safe mode validation, bounded dimensions, line wrapping and a dark display palette. GCC/QEMU's x86-64 ISA is pinned explicitly; previously an unsupported BMI2 `SHLX` instruction caused a real QEMU #UD/triple fault before screen output, now fixed with `-march=x86-64 -mno-bmi2`. Tests distinguish actual Limine pixel readback from serial text, and a separate QEMU VGA screenshot oracle checks visible pixels. This is an **opt-in native ISO and GitHub Actions artifact**, not yet wired to the public browser Boot Lab. There is no keyboard interaction, Unicode font, window manager, general graphics driver or verified physical PC display. See [M3 framebuffer contract](docs/M3_FRAMEBUFFER_CONSOLE.md).
+
+## M3 native CPU exception IDT (fail-stop prototype)
+
+The new opt-in `--exception-idt` flag installs a 256-descriptor x86-64 IDT with ring-0 CPU exception vectors 0–31, then proceeds into the **same source-generated HTML kernel**. Actual QEMU tests generate real `#DE` divide faults, `#UD` invalid instructions, `#GP` protection faults and `#PF` page faults; instead of silently triple-faulting/rebooting, the kernel logs vector number, RIP, error code and CR2 where relevant, then halts. This is **fault detection and fail-stop only**, not error recovery, page table isolation or keyboard/IRQ support. Tests independently verify native gate ABI/descriptor layout and combined operation with previous M3 memory/framebuffer features:
+
+```sh
+python3 scripts/test_exception_idt.py
+python3 scripts/build_boot.py --exception-idt --out build/html-kernel-m3-exceptions.iso
+```
+
+See [M3_EXCEPTION_IDT.md](docs/M3_EXCEPTION_IDT.md). Real hardware/UEFI and browser testing for this new feature are NOT RUN; the public Boot Lab remains on its existing seven older demos.
