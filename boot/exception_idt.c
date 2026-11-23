@@ -3,6 +3,9 @@
  * Does not support recovery, interrupts, SMP, TSS, IST or user mode.
  */
 #include "exception_idt.h"
+#ifdef HTMLK_M3_IST_STACK
+#include "tss_ist.h"
+#endif
 #ifdef HTMLK_M3_PAGING_RECOVER_TEST
 #include "paging_probe.h"
 #endif
@@ -127,6 +130,12 @@ __attribute__((interrupt)) static void vector_7(struct interrupt_frame *f) {
 }
 
 __attribute__((interrupt)) static void vector_8(struct interrupt_frame *f, unsigned long code) {
+#ifdef HTMLK_M3_IST_STACK
+    uint64_t current_rsp;
+    __asm__ volatile ("mov %%rsp, %0" : "=r"(current_rsp));
+    io_string(htmlk_tss_on_double_fault_stack(current_rsp)
+              ? "M3_IST_DF_STACK_OK\n" : "M3_IST_DF_STACK_BAD\n");
+#endif
     panic(8, f->rip, (uint64_t)code);
 }
 
@@ -151,6 +160,12 @@ __attribute__((interrupt)) static void vector_13(struct interrupt_frame *f, unsi
 }
 
 __attribute__((interrupt)) static void vector_14(struct interrupt_frame *f, unsigned long code) {
+#ifdef HTMLK_M3_IST_STACK
+    uint64_t current_rsp;
+    __asm__ volatile ("mov %%rsp, %0" : "=r"(current_rsp));
+    io_string(htmlk_tss_on_page_fault_stack(current_rsp)
+              ? "M3_IST_PF_STACK_OK\n" : "M3_IST_PF_STACK_BAD\n");
+#endif
 #ifdef HTMLK_M3_PAGING_RECOVER_TEST
     uint64_t fault_address;
     __asm__ volatile ("mov %%cr2, %0" : "=r"(fault_address));
@@ -271,6 +286,10 @@ void htmlk_idt_install(void) {
             panic(13, 0, 0); /* impossible on a valid Limine long-mode handoff */
         }
     }
+#ifdef HTMLK_M3_IST_STACK
+    idt[8].ist = 1;  /* #DF uses its own dedicated stack even if RSP is broken */
+    idt[14].ist = 2; /* #PF never shares the double-fault emergency stack */
+#endif
     const struct idtr pointer = { (uint16_t)(sizeof(idt) - 1), (uint64_t)(uintptr_t)idt };
     __asm__ volatile ("lidt %0" : : "m"(pointer) : "memory");
     io_string("M3_IDT_READY\n");
