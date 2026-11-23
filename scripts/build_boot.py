@@ -55,7 +55,8 @@ def get_limine(cache: Path) -> tuple[Path, Path]:
     return dist / "limine-binary", header
 def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool,
           memory_probe: bool = False, memory_probe_badmap: bool = False,
-          video_console: bool = False, video_test: bool = False) -> None:
+          video_console: bool = False, video_test: bool = False,
+          exception_idt: bool = False, fault_test: str | None = None) -> None:
     dist, header = get_limine(cache)
     work_root.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="htmlk-boot-", dir=work_root) as temp:
@@ -74,6 +75,15 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
                  "-mno-red-zone", "-mcmodel=kernel", "-mgeneral-regs-only",
                  "-fcf-protection=none", "-Wall", "-Wextra", "-Werror"]
         define = ["-DHTMLK_QEMU_TEST_EXIT"] if test_exit else []
+        if fault_test is not None and not exception_idt:
+            raise ValueError("CPU fault injection requires the opt-in exception IDT")
+        if exception_idt:
+            define.append("-DHTMLK_M3_EXCEPTION_IDT")
+        faults = {"ud": "UD", "page": "PF", "divide": "DE", "general": "GP"}
+        if fault_test is not None:
+            if fault_test not in faults:
+                raise ValueError(f"unsupported CPU fault test {fault_test!r}")
+            define.append("-DHTMLK_M3_FAULT_" + faults[fault_test])
         if memory_probe_badmap and not memory_probe:
             raise ValueError("bad-map injection requires an explicit M3 memory probe")
         if video_test and not video_console:
@@ -90,8 +100,10 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
         run("gcc", *flags, *define, "-I", header.parent, "-c",
             ROOT / "boot/kernel_entry.c", "-o", entry_obj)
         extra_objects: list[Path] = []
-        if memory_probe or video_console:
+        if memory_probe or video_console or exception_idt:
             sources = (["page_pool", "memory_probe"] if memory_probe else [])
+            if exception_idt:
+                sources.append("exception_idt")
             if video_console:
                 sources.append("console_fb")
             for source_name in sources:
@@ -143,14 +155,20 @@ def main() -> None:
                         help="Opt-in M3 native Limine RGB framebuffer text output")
     parser.add_argument("--video-test", action="store_true",
                         help="QEMU-only framebuffer on-device pixel verification")
+    parser.add_argument("--exception-idt", action="store_true",
+                        help="Opt-in M3 32-vector x86-64 fail-stop exception handling")
+    parser.add_argument("--fault-test", choices=("ud", "page", "divide", "general"),
+                        help="Test-only genuine CPU fault; requires --exception-idt")
     a = parser.parse_args()
+    if a.fault_test is not None and not a.exception_idt:
+        parser.error("--fault-test requires --exception-idt")
     if a.video_test and not a.video_console:
         parser.error("--video-test requires --video-console")
     if a.memory_probe_badmap and not a.memory_probe:
         parser.error("--memory-probe-badmap requires --memory-probe")
     build(a.source, a.out, a.cache_dir, a.work_dir, a.test_exit,
           a.memory_probe, a.memory_probe_badmap,
-          a.video_console, a.video_test)
+          a.video_console, a.video_test, a.exception_idt, a.fault_test)
 
 
 if __name__ == "__main__":
