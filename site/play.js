@@ -259,10 +259,6 @@ import V86 from './vendor/libv86.mjs';
       replay.disabled = false;
       logEvent('KERNEL PASS', '실제 COM1 바이트가 선택한 커널의 기대 출력과 정확히 일치');
       setStatus('실제 커널 부팅 검증 성공 · COM1 전체 기록을 볼 수 있고 다시 재생할 수도 있어.');
-      if (paceStopPending) {
-        // If a paced pause was already requested, leave the completed VM paused.
-        paceStopPending = false;
-      }
     }
   }
 
@@ -282,7 +278,7 @@ import V86 from './vendor/libv86.mjs';
   }
 
   function playRecordedSerial() {
-    if (!serialVerified || userStopped) return;
+    if (!serialVerified) return;
     clearPlayback();
     replaying = true;
     playbackPosition = 0;
@@ -399,13 +395,15 @@ import V86 from './vendor/libv86.mjs';
         }
         if (paceStopPending) {
           paceStopPending = false;
-          if (!serialVerified && !userStopped) {
+          if (!userStopped) {
+            // After validation, resume without further pacing. During boot,
+            // genuine v86 CPU pauses separate brief execution windows.
             paceTimer = setTimeout(async () => {
               paceTimer = null;
-              if (!machine || userPaused || userStopped || serialVerified) return;
+              if (!machine || userPaused || userStopped) return;
               try { await machine.run(); }
               catch (error) { setStatus('관찰 속도 재개 실패: ' + String(error?.message || error)); }
-            }, 450);
+            }, serialVerified ? 0 : 450);
           }
           return;
         }
