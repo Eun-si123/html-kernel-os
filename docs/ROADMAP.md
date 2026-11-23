@@ -18,7 +18,7 @@
 
 The completed [founder interview](INTERVIEW_DECISIONS.md) confirms **D + E** success criteria: prove actual source-derived kernel boot first, then expand real HTML-language kernel functions and practical use; adjust later gates only with observed evidence. The [implementation plan](IMPLEMENTATION_PLAN.md) maps work into **P0–P5 execution slices**: language-core reliability, M1 boot, minimal Linux userspace target, language usability, browser/Windows demos, and existing M3–M6 kernel capabilities. **P-slices are planning workstreams, not replacement M-milestones or shipped features.**
 
-M1 QEMU BIOS boot and one Chromium browser boot are verified; the next language gate is **M2**, while Linux-native compilation is now verified for the existing language subset; Linux OS/distribution support remains a separate, unimplemented goal. Continue developing reusable compiler semantics and target-specific execution support. Any website/browser UI simulation must be labeled separately from real boot emulation.
+M1 QEMU BIOS boot and one Chromium browser boot are verified; the M2 **core boot-integrated programming subset is verified** (see STATUS), with M3 now the next acceptance gate; Linux-native compilation is now verified for the existing language subset; Linux OS/distribution support remains a separate, unimplemented goal. Continue developing reusable compiler semantics and target-specific execution support. Any website/browser UI simulation must be labeled separately from real boot emulation.
 
 ## Milestone overview
 
@@ -26,8 +26,8 @@ M1 QEMU BIOS boot and one Chromium browser boot are verified; the next language 
 | --- | --- | --- | --- |
 | **M0** | HTML → freestanding native object | — | Parser tests + generated C + x86-64 object from the same source (baseline achieved; see STATUS) |
 | **M1** | **Boot HTML-derived code in QEMU** | M0 | Reproducible x86-64 boot image; headless QEMU emits exact expected message from `kernel.html`; bounded automated PASS and negative FAIL |
-| **M2 — NEXT** | Readable core programming language | M0; M1 for OS-integrated gate (design work can start earlier) | Variables, types, arithmetic, branches, loops, functions + safe diagnostics; representative source examples compile and run in the boot environment |
-| **M3** | Memory and fault handling | M1, relevant M2 primitives | Memory map, bounded physical allocator and virtual mapping, deliberate fault evidence, repeatable QEMU tests |
+| **M2** | Readable core programming language | M0; M1 for OS-integrated gate (design work can start earlier) | Variables, types, arithmetic, branches, loops, functions + safe diagnostics; representative source examples compile and run in the boot environment |
+| **M3 — NEXT** | Memory and fault handling | M1, relevant M2 primitives | Memory map, bounded physical allocator and virtual mapping, deliberate fault evidence, repeatable QEMU tests |
 | **M4** | Scheduling and privilege separation | M3 | Two distinct tasks execute deterministically; user/kernel isolation and bad-access rejection are demonstrable |
 | **M5** | Minimal useful operating environment | M4 | Console input, small read-only initial filesystem, independent user program execution and reproducible tests |
 | **M6** | Reliability + carefully scoped real-hardware trial | M5 | Recoverable, read-only-first physical test on an explicitly supported machine with reproducible observations; no untested hardware-wide support claim |
@@ -54,7 +54,7 @@ M1 QEMU BIOS boot and one Chromium browser boot are verified; the next language 
 
 ### M2 — easy-to-read but systems-capable language
 
-**Partial implementation:** u32/u64 arithmetic, scoped typed functions, if/else and bounded repeat are CI-verified with QEMU/Linux and a Chromium browser boot. Signed i32/i64, explicit width/signedness conversions, unsigned bitwise/shifts and repeat break/continue have **real Linux + QEMU, PR/main CI and Chromium browser boot PASS** (PR #29). Independent 464-case Python-vs-GCC (-O0/-O3 UBSan) arithmetic differential test passes locally. See [M2_LANGUAGE_CONTRACT.md](M2_LANGUAGE_CONTRACT.md). Bounded condition-driven `while` and integer division/remainder are merged (#35/#36); checked local arrays and the five-task native proof are implemented in PR #37 pending CI. Structs, modular compilation, memory-safe low-level APIs, external novice evaluation and comparative performance measurements remain OPEN.
+**Partial implementation:** u32/u64 arithmetic, scoped typed functions, if/else and bounded repeat are CI-verified with QEMU/Linux and a Chromium browser boot. Signed i32/i64, explicit width/signedness conversions, unsigned bitwise/shifts and repeat break/continue have **real Linux + QEMU, PR/main CI and Chromium browser boot PASS** (PR #29). Independent 464-case Python-vs-GCC (-O0/-O3 UBSan) arithmetic differential test passes locally. See [M2_LANGUAGE_CONTRACT.md](M2_LANGUAGE_CONTRACT.md). Bounded condition-driven `while` and integer division/remainder are merged (#35/#36); checked local arrays and five representative native learner tasks are merged and CI-verified (PR #37, main run `45092578504`). The M2 core gate is met for its **documented supported subset**, with real QEMU/Linux positive and negative tests. This is **not** the full general-purpose language goal. Structs, modular compilation, memory-safe low-level APIs, external novice evaluation and comparative performance measurements remain OPEN.
 
 1. Write a versioned [language design](LANGUAGE_DESIGN.md): grammar, nesting, attributes, names, expressions, whitespace, entities, Unicode, errors, versioning.
 2. Implement a typed AST/semantic validation (no silent HTML browser error-recovery); accept/reject fixtures before native codegen.
