@@ -112,7 +112,7 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
             if memory_probe:
                 sources.append("memory_probe")
             if paging_probe:
-                sources.append("paging_probe")
+                sources.extend(("paging_tables", "paging_probe"))
             if exception_idt:
                 sources.append("exception_idt")
             if video_console:
