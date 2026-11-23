@@ -115,6 +115,8 @@ The marker `— NEXT` is a **planning recommendation**, not an authoritative com
 
 **M5-E3-F poisoned user RSP and real divide error (local feature branch):** independent pre-fix QEMU confirms kernel-fatal #DE exit45. E3-E's exact 40-byte CPU frame/owner guard is reused for only the two fault-class, no-error-code vectors #DE/#UD; existing error-code and trap guards are unchanged. Real QEMU 3×4 malicious user task retirements, 3×5 healthy HTML reruns, no-timer and legacy fatal controls, host UBSan negatives PASS; [M5-E3-F scope/acceptance](M5_USER_BAD_DE.md). Exact PR-head GitHub CI/merge still pending. M5-E3 overall and M6 physical remain OPEN.
 
+**M5 Web Live (separate Pages path; local browser proof):** serve a dedicated `/live/` page with actual read-only HTML-derived user source, exactly compiled native ISO and SHA-256 manifest. Native QEMU proves COM1 help/ROMFS/run twice/exit with real Ring3 U64/exit 7, while local Chromium 158 v86 has independently shown real SeaBIOS VGA/COM1, actual Ring3 U64/exit7 twice and live UART commands; public Pages deployment/PR CI remain pending. The no-timer browser image does not assert x2APIC compatibility. See [Web Live build and evidence](M5_WEB_LIVE.md).
+
 - Prioritize an input/output terminal and deterministic RAM-backed or embedded filesystem before broad hardware drivers.
 - Add a simple user program loader, error reporting and minimal command interaction.
 - **Gate:** boot the image, enter a command, read an embedded file, execute a separate program, and report controlled invalid-input behavior.

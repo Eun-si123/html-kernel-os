@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="HTML 코드로 만든 실제 Ring3 프로그램과 x86-64 커널을 브라우저에서 부팅">
+<title>Native HTML OS — Live</title>
+<link rel="stylesheet" href="./live.css">
+<script type="module" src="./live.js"></script>
+</head>
+<body>
+<a class="skip" href="#machine">가상 PC로 이동</a>
+<div class="page">
+<header class="top"><a class="brand" href="../index.html"><span class="mark">HK<span>/</span></span><span>HTML Kernel OS<small>Native execution lab</small></span></a>
+<nav aria-label="이동"><a href="../play.html">Boot Lab</a><a href="https://github.com/Eun-si123/html-kernel-os">GitHub ↗</a></nav></header>
+<main>
+<section class="hero">
+<p class="tag">M5 / NATIVE HTML EXPERIMENT</p>
+<h1>HTML로 작성하고.<br><em>실제 CPU에서 실행한다.</em></h1>
+<p class="sub">HTML 형태의 프로그래밍 언어가 네이티브 커널과 Ring 3 사용자 프로그램으로 컴파일돼. 이 페이지는 <strong>실제 x86-64 부팅 ISO를 브라우저 에뮬레이터에 넣고</strong> 명령을 가상 COM1로 전송하는 실행실이야.</p>
+<p class="caveat"><strong>정확한 의미:</strong> 표준 HTML 파일 자체를 CPU가 실행하는 건 아니야. 프로젝트의 HTML형 언어 → C/어셈블리 → ELF/HKEX → 실행 순서야. GitHub Pages는 정적 사이트라 원본을 수정해 즉시 재컴파일하는 기능은 아직 없어.</p>
+</section>
+<section id="machine" aria-label="실제 가상 PC" class="machine">
+<div class="section-head"><div><span class="tag">01 / LIVE HARDWARE</span><h2>Emulated x86-64 PC</h2></div><span class="state" id="state" role="status" aria-live="polite">NOT STARTED</span></div>
+<div class="controls"><button id="start" class="primary" type="button">실제 ISO 부팅</button><button id="stop" type="button" disabled>CPU 정지</button><button id="fullscreen" type="button">VGA 확대</button><a href="../html-kernel-live.iso" download>ISO 내려받기</a></div>
+<p class="message" id="message" role="status" aria-live="polite">부팅하면 ISO·HTML SHA-256 확인 후 실제 가상머신을 시작해.</p>
+<div class="columns">
+<section class="panel"><h3><span>01.A</span> VGA / BIOS <small>실제 화면 출력</small></h3>
+<div id="screen_container" class="vga" tabindex="0"><div style="white-space:pre;font:14px monospace;line-height:14px"></div><canvas style="display:none"></canvas></div>
+<p class="panel-note">128 MiB RAM · 단일 CPU · CD-ROM · 게스트 네트워크 없음</p></section>
+<section class="panel"><h3><span>01.B</span> COM1 / UART <small>0x3F8 · CPU가 보낸 바이트</small></h3>
+<pre id="terminal" class="terminal" role="log" aria-live="off">실제 커널의 시리얼 출력을 기다리는 중…</pre>
+<form id="command-form" class="command-form" autocomplete="off">
+<label for="command">$</label><input id="command" maxlength="88" disabled placeholder="부팅 완료 후 입력: help" aria-label="가상 COM1에 전송할 명령" spellcheck="false" autocapitalize="off" autocomplete="off">
+<button id="send" type="submit" disabled>입력 ↵</button></form>
+<div class="quick">
+<button type="button" data-command="help" disabled>help</button>
+<button type="button" data-command="ls" disabled>ls</button>
+<button type="button" data-command="cat /welcome.txt" disabled>cat /welcome.txt</button>
+<button type="button" data-command="run /apps/hello.hke" disabled>run /apps/hello.hke</button>
+<button type="button" data-command="exit" disabled>exit</button></div>
+</section></div>
+<div class="evidence"><span id="iso-hash">ISO SHA-256: 검증 전</span><span id="source-hash">HTML SHA-256: 검증 전</span><span id="boot-event">BIOS 대기 중</span></div>
+</section>
+<div class="details">
+<section><div class="section-head"><div><span class="tag">02 / SOURCE</span><h2>실행되는 HTML 소스</h2></div><a href="../examples/user-programs/html-u64-report.html">원본 보기 ↗</a></div>
+<p>읽기 전용 소스야. 이 파일이 컴파일돼 ROMFS의 <code>/apps/hello.hke</code>에 포함돼. COM1에서 <code>run</code>을 실행하면 실제 CPU가 코드를 수행해.</p>
+<pre id="source" class="source" tabindex="0">원본 HTML을 불러오는 중…</pre></section>
+<section><div class="section-head"><div><span class="tag">03 / HOW IT WORKS</span><h2>실행 경로</h2></div></div>
+<ol class="pipeline"><li><b>HTML source</b><span>&lt;print&gt;와 &lt;halt&gt;로 행동 작성</span></li>
+<li><b>Compiler</b><span>빌드 시 HTML → C → 네이티브 ELF → HKEX</span></li>
+<li><b>Boot</b><span>WASM x86-64 에뮬레이터에서 SeaBIOS → Limine</span></li>
+<li><b>Ring 3</b><span>ROMFS 실행 파일을 사용자 전용 페이지로 로드</span></li>
+<li><b>COM1</b><span>실제 CPU syscall 출력·종료 코드·메모리 회수</span></li></ol></section>
+</div>
+<p class="footnote">이 브라우저용 빌드는 x2APIC 타임아웃 없이 작동해. 오류가 있는 프로그램이 멈출 가능성이 있으며, 범용 앱·하드웨어 보안이나 실기기 호환성을 보장하지 않아. <a href="https://github.com/Eun-si123/html-kernel-os/blob/main/docs/M5_HTML_U64_OUTPUT.md">기술 검증 ↗</a> · <a href="../v86-LICENSE.txt">v86 라이선스 ↗</a></p>
+</main>
+<footer>HTML Kernel OS · Native execution experiment <span>Read-only ISO · No guest network</span></footer>
+</div>
+</body></html>

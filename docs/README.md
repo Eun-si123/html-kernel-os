@@ -59,3 +59,5 @@ When a feature changes, update the **one authoritative** owner, then fix any con
 - [M5-E3-E actual CPL3 UD2 after corrupted RSP and exact trusted CPU-frame recovery](M5_USER_BAD_UD.md).
 
 - [M5-E3-F actual CPL3 divide by zero with bad RSP, shared exact CPU ownership proof](M5_USER_BAD_DE.md).
+
+- [M5 Web Live: dedicated GitHub Pages x86-64 CPU boot of HTML-compiled Ring3 app](M5_WEB_LIVE.md).

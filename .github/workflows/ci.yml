@@ -162,6 +162,10 @@ jobs:
         run: python scripts/test_m5_user_bad_ud_stack.py
       - name: M5-E3-F genuine owned CPL3 divide error with corrupted RSP and live UART shell
         run: python scripts/test_m5_user_bad_de_stack.py
+      - name: Verify Pages live HTML user program ISO and actual QEMU serial commands
+        run: |
+          python scripts/build_live_site.py --out-dir build/ci-live
+          python scripts/test_live_site.py --out-dir build/ci-live
       - name: Assemble standalone, non-test boot images
         run: |
           python scripts/build_boot.py --out build/html-kernel.iso

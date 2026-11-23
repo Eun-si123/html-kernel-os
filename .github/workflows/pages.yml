@@ -50,6 +50,10 @@ jobs:
           python scripts/build_boot.py --source examples/else-kernel.html --out build/html-kernel-else.iso
           python scripts/build_boot.py --source examples/u32-kernel.html --out build/html-kernel-u32.iso
           python scripts/build_boot.py --source examples/signed-bits-kernel.html --out build/html-kernel-signed.iso
+      - name: Compile actual HTML Ring3 user ISO and manifest for dedicated /live/ page
+        run: python scripts/build_live_site.py --out-dir build/live-site
+      - name: Verify exact published M5 ISO has genuine COM1 input and CPU user output
+        run: python scripts/test_live_site.py --out-dir build/live-site
       - name: Assemble static Pages bundle with pinned x86-64 WebAssembly emulator
         run: |
           mkdir -p public/vendor
@@ -63,6 +67,10 @@ jobs:
           cp build/html-kernel-else.iso public/html-kernel-else.iso
           cp build/html-kernel-u32.iso public/html-kernel-u32.iso
           cp build/html-kernel-signed.iso public/html-kernel-signed.iso
+          cp build/live-site/html-kernel-live.iso public/html-kernel-live.iso
+          cp build/live-site/html-kernel-live.json public/html-kernel-live.json
+          mkdir -p public/examples/user-programs
+          cp examples/user-programs/html-u64-report.html public/examples/user-programs/html-u64-report.html
           # Ship the exact, unchanged source files used to compile these ISOs.
           # Only these eight public-safe examples are included (not all repo files).
           mkdir -p public/examples
@@ -84,6 +92,12 @@ jobs:
           test -s public/html-kernel-else.iso
           test -s public/html-kernel-u32.iso
           test -s public/html-kernel-signed.iso
+          test -s public/html-kernel-live.iso
+          test -s public/html-kernel-live.json
+          test -s public/live/index.html
+          test -s public/live/live.js
+          test -s public/live/live.css
+          test -s public/examples/user-programs/html-u64-report.html
           test -s public/examples/kernel.html
           test -s public/examples/framebuffer-kernel.html
           test -s public/examples/math-kernel.html
