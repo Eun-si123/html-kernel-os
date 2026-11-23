@@ -10,10 +10,12 @@ import argparse
 from pathlib import Path
 import re
 import socket
+import struct
 import subprocess
 import sys
 import tempfile
 import time
+import zlib
 
 from test_boot import ROOT
 
@@ -62,6 +64,33 @@ def check_display(image: bytes) -> None:
             raise AssertionError(
                 f"{name}: QEMU monitor captured {actual.hex()}, expected {color.hex()}"
             )
+
+
+def png_from_ppm(image: bytes) -> bytes:
+    """Lossless 8-bit RGB PNG, pure stdlib; no extra CI image dependency."""
+    head = re.match(rb"P6\s+(\d+)\s+(\d+)\s+255\s", image)
+    if not head:
+        raise AssertionError("not a raw PPM screenshot")
+    width, height = int(head[1]), int(head[2])
+    raw = image[head.end():]
+    stride = width * 3
+    if len(raw) != stride * height:
+        raise AssertionError("PPM image data length mismatch")
+
+    def chunk(name: bytes, data: bytes) -> bytes:
+        return (struct.pack(">I", len(data)) + name + data +
+                struct.pack(">I", zlib.crc32(name + data) & 0xffffffff))
+
+    scanlines = b"".join(
+        b"\x00" + raw[y * stride:(y + 1) * stride]
+        for y in range(height)
+    )
+    result = (b"\x89PNG\r\n\x1a\n" +
+              chunk(b"IHDR", struct.pack(">IIBBBBB", width, height,
+                                          8, 2, 0, 0, 0)) +
+              chunk(b"IDAT", zlib.compress(scanlines, 9)) +
+              chunk(b"IEND", b""))
+    return result
 
 
 def main() -> None:
@@ -116,7 +145,13 @@ def main() -> None:
                 if not screenshot.exists():
                     response = sock.recv(4096).decode("utf-8", errors="replace")
                     raise AssertionError(f"QEMU HMP did not write screenshot: {response!r}")
-            check_display(screenshot.read_bytes())
+            image = screenshot.read_bytes()
+            check_display(image)
+            png = opt.work_dir / "html-kernel-video-visible-screen.png"
+            png.write_bytes(png_from_ppm(image))
+            if not png.read_bytes().startswith(b"\x89PNG"):
+                raise AssertionError("visual evidence PNG was corrupted")
+            print(f"M3 QEMU VGA screenshot evidence PNG: {png}")
             print("M3 HOST VGA SCREENSHOT: REAL KERNEL TEXT PIXELS PASS")
         finally:
             proc.terminate()
