@@ -4,7 +4,7 @@
 
 The old Boot Lab showed serial text beside a black virtual PC monitor. A real OS kernel should also be able to draw pixels in its own bootloader-supplied display. This feature adds a **native x86-64 Limine framebuffer text path**, not a JavaScript overlay or an HTML/CSS screen simulation.
 
-It is deliberately opt-in until a real QEMU boot and a visible browser run are verified. The ordinary ISO, COM1 output, existing site/Pages workflow, and Linux target are not changed.
+It remains deliberately opt-in even though **real QEMU BIOS framebuffer-pixel readback and the independently captured QEMU VGA monitor screenshot both passed** (branch CI `45095698115`, source `1a82b79`). The actual v86 browser monitor is not verified yet. The ordinary ISO, COM1 output, existing site/Pages workflow, and Linux target are not changed.
 
 ## Runtime path
 
@@ -23,6 +23,12 @@ examples/framebuffer-kernel.html
 - The framebuffer is written directly through a mapped virtual address. This is **not** a general graphics driver, page-table manager, desktop, GPU acceleration or physical-hardware compatibility guarantee.
 - In test-only mode, `--video-console --video-test --test-exit`, the kernel reads back a pixel from the last source-generated glyph. If no framebuffer or pixel readback fails, it reports `FB_PIXELS_FAIL` and triggers non-success QEMU exit 41; successful evidence is `FB_PIXELS_OK` plus normal QEMU test exit 33. A headless QEMU framebuffer readback is stronger than serial-only evidence but does **not** replace a screenshot/eyeball check of the actual browser monitor.
 - `tests/test_video_console.py` compiles and exercises the same freestanding framebuffer rasterizer using real RAM under GCC UBSan -O0/-O3 with border sentinels and malformed-mode cases. `scripts/test_video_console.py` builds and boots the real HTML-derived source and a changed-source variant in QEMU; mere compilation does not count as proof.
+
+## Independent screenshot and x86-64 CPU ISA evidence
+
+`python3 scripts/test_video_screen.py` starts a normal non-debug-exit QEMU guest, waits for exact HTML-derived debugcon output, issues the QEMU monitor `screendump` command, and checks the **actual emulator VGA display buffer** for the expected green header, dark body and first source-generated glyph pixels. It exports a lossless PNG (`build/html-kernel-video-visible-screen.png`) for the CI artifact. This is stronger than merely checking in-kernel memory writes, but does not verify v86/browser visual output. RGB mode fallback is exercised by the independent native C test.
+
+First attempts found a real guest crash: QEMU returned 0 with no serial bytes. CPU exception tracing showed `#UD` at RIP `ffffffff8000185d`; direct disassembly revealed `SHLX` (BMI2 extension) emitted by hosted GCC and unsupported by the default QEMU CPU. Pinning the freestanding target to `-march=x86-64 -mno-bmi2` fixed it, without relaxing RGB safety checks or hiding the failure.
 
 ## Why not invent an OS screen in JavaScript?
 
