@@ -3,6 +3,15 @@
 #include "limine.h"
 #ifdef HTMLK_FB_CONSOLE
 #include "console_fb.h"
+#ifdef HTMLK_FB_TEST
+static void video_trace(const char *text) {
+    while (*text) {
+        unsigned char b = (unsigned char)*text++;
+        __asm__ volatile ("outb %0, %1" : :
+                          "a"(b), "Nd"((unsigned short)0xe9));
+    }
+}
+#endif
 #endif
 #ifdef HTMLK_M3_MEMORY_PROBE
 #include "memory_probe.h"
@@ -38,11 +47,20 @@ static volatile struct limine_framebuffer_request fb_request = {
 };
 
 static void configure_framebuffer(void) {
+#ifdef HTMLK_FB_TEST
+    video_trace("FB_INIT_ENTER\n");
+#endif
     const struct limine_framebuffer_response *response = fb_request.response;
     if (response == 0 || response->framebuffer_count == 0 ||
         response->framebuffers == 0 || response->framebuffers[0] == 0) {
+#ifdef HTMLK_FB_TEST
+        video_trace("FB_MISSING\n");
+#endif
         return; /* Serial/debugcon remains the fallback. */
     }
+#ifdef HTMLK_FB_TEST
+    video_trace("FB_RESPONSE_OK\n");
+#endif
     const struct limine_framebuffer *frame = response->framebuffers[0];
     const struct htmlk_fb_mode mode = {
         .address = (volatile uint8_t *)frame->address,
@@ -58,7 +76,15 @@ static void configure_framebuffer(void) {
         .blue_size = frame->blue_mask_size,
         .blue_shift = frame->blue_mask_shift
     };
-    (void)htmlk_fb_init(&mode);
+#ifdef HTMLK_FB_TEST
+    video_trace("FB_MODE_READ\n");
+#endif
+    const bool ok = htmlk_fb_init(&mode);
+#ifdef HTMLK_FB_TEST
+    video_trace(ok ? "FB_INIT_OK\n" : "FB_UNSUPPORTED_MODE\n");
+#else
+    (void)ok;
+#endif
 }
 #endif
 
