@@ -572,6 +572,23 @@
         "scripts/test_m5_html_u64_output.py",
         "docs/M5_HTML_U64_OUTPUT.md"
       ]
+    },
+    {
+      "id": "m5-github-pages-live",
+      "source": [
+        "scripts/build_live_site.py",
+        "site/live/index.html",
+        "site/live/live.js",
+        "site/live/live.css",
+        ".github/workflows/pages.yml"
+      ],
+      "regressions": [
+        "tests/test_live_pages.py"
+      ],
+      "fieldEvidence": [
+        "scripts/test_live_site.py",
+        "docs/M5_WEB_LIVE.md"
+      ]
     }
   ]
 }
