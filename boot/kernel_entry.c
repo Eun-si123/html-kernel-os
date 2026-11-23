@@ -1,6 +1,9 @@
 /* Minimal Limine base-revision-6 handoff into code generated from HTML. */
 #include <stdint.h>
 #include "limine.h"
+#ifdef HTMLK_M3_MEMORY_PROBE
+#include "memory_probe.h"
+#endif
 
 __attribute__((used, section(".limine_requests_start")))
 static volatile uint64_t start_marker[] = LIMINE_REQUESTS_START_MARKER;
@@ -10,6 +13,20 @@ static volatile uint64_t base_revision[] = LIMINE_BASE_REVISION(6);
 
 __attribute__((used, section(".limine_requests_end")))
 static volatile uint64_t end_marker[] = LIMINE_REQUESTS_END_MARKER;
+
+#ifdef HTMLK_M3_MEMORY_PROBE
+/* Opt-in requests reside within the pinned Limine request marker section.
+ * Production/default boot tests remain untouched unless --memory-probe is set.
+ */
+__attribute__((used, section(".limine_requests")))
+static volatile struct limine_memmap_request m3_memmap_request = {
+    .id = LIMINE_MEMMAP_REQUEST_ID, .revision = 0, .response = 0
+};
+__attribute__((used, section(".limine_requests")))
+static volatile struct limine_hhdm_request m3_hhdm_request = {
+    .id = LIMINE_HHDM_REQUEST_ID, .revision = 0, .response = 0
+};
+#endif
 
 extern void kernel_main(void);
 __attribute__((noreturn))
@@ -22,6 +39,9 @@ void kmain(void) {
 #endif
         for (;;) __asm__ volatile ("cli; hlt");
     }
+#ifdef HTMLK_M3_MEMORY_PROBE
+    htmlk_memory_probe(m3_memmap_request.response, m3_hhdm_request.response);
+#endif
     kernel_main(); /* Generated from examples/kernel.html. */
     for (;;) __asm__ volatile ("cli; hlt");
 }
