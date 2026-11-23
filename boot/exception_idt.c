@@ -143,6 +143,14 @@ __attribute__((interrupt)) static void vector_1(struct interrupt_frame *f) {
         htmlk_m5_accept_user_fault(1U, f->rip, f->cs, f->rflags,
                                     f->rsp, f->ss, 0U, 0U))
         htmlk_m4_user_return();
+    /* A saved user RSP can be invalid while the CPU still uses the
+     * exact trusted RSP0 five-qword trap frame. Saved RIP points after
+     * the ICEBP/INT3 trap and may be one-past verified user code. */
+    if ((f->cs & 3U) == 3U &&
+        htmlk_m5_accept_bad_user_rsp_trap(1U,(uintptr_t)f,
+                                          f->rip,f->cs,f->rflags,
+                                          f->rsp,f->ss))
+        htmlk_m4_user_return();
 #endif
     panic(1, f->rip, 0);
 }
@@ -157,6 +165,14 @@ __attribute__((interrupt)) static void vector_3(struct interrupt_frame *f) {
     if ((f->cs & 3U) == 3U &&
         htmlk_m5_accept_user_fault(3U, f->rip, f->cs, f->rflags,
                                     f->rsp, f->ss, 0U, 0U))
+        htmlk_m4_user_return();
+    /* A saved user RSP can be invalid while the CPU still uses the
+     * exact trusted RSP0 five-qword trap frame. Saved RIP points after
+     * the ICEBP/INT3 trap and may be one-past verified user code. */
+    if ((f->cs & 3U) == 3U &&
+        htmlk_m5_accept_bad_user_rsp_trap(3U,(uintptr_t)f,
+                                          f->rip,f->cs,f->rflags,
+                                          f->rsp,f->ss))
         htmlk_m4_user_return();
 #endif
     panic(3, f->rip, 0);

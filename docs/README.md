@@ -65,3 +65,5 @@ When a feature changes, update the **one authoritative** owner, then fix any con
 - [M5-E3-G genuine CPU #GP after poisoned user stack and distinct 48-byte error-word proof](M5_USER_BAD_GP.md).
 
 - [M5-E3-H real poisoned Ring3 RSP #PF5/#PF7 IST2 provenance and owner recovery](M5_USER_BAD_PF.md).
+
+- [M5-E3-I actual Ring3 #DB/#BP trap-class CPU frame after corrupted user RSP](M5_USER_BAD_TRAP.md).

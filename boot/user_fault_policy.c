@@ -81,6 +81,24 @@ bool htmlk_m5_bad_noerr_stack_owned(const struct htmlk_m5_bad_noerr_owner *c) {
            bad_rsp_owner_valid(c);
 }
 
+/* Trap-class #DB/#BP save RIP *after* the trap opcode, including the
+ * exact one-past-end byte. Preserve all original strict owner checks and
+ * special-case only the trusted CPU trap RIP bound in a local copy.
+ * Fault-class #DE/#UD, #GP and #PF continue to reject code-end RIP. */
+bool htmlk_m5_bad_trap_stack_owned(unsigned vector,
+                                   const struct htmlk_m5_bad_noerr_owner *ctx) {
+    if ((vector != 1U && vector != 3U) || !ctx ||
+        ctx->frame_address != ctx->tss_rsp0 - UINT64_C(40) ||
+        ctx->rip <= HTMLK_M4_USER_BASE)
+        return false;
+    struct htmlk_m5_bad_noerr_owner owner = *ctx;
+    if (owner.code_bytes != 0 && owner.code_bytes <= HTMLK_HKE_MAX_CODE_BYTES &&
+        owner.rip - HTMLK_M4_USER_BASE == owner.code_bytes) {
+        owner.rip -= 1U; /* validate previous instruction within bound */
+    }
+    return bad_rsp_owner_valid(&owner);
+}
+
 /* CPU #GP pushes an extra 8-byte error word BEFORE five IRET words.
  * GCC passes f pointing at the first IRET word (RIP), NOT the error code.
  * Require both exact words relative to the *trusted* TSS.RSP0, plus
