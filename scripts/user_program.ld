@@ -2,6 +2,7 @@
 ENTRY(htmlk_user_program_start)
 SECTIONS {
   . = 0;
-  .text : { KEEP(*(.text.entry)) *(.text .text.*) }
+  /* Only literal read-only data may share the single user RO code page. */
+  .text : { KEEP(*(.text.entry)) *(.text .text.*) *(.rodata .rodata.*) }
   /DISCARD/ : { *(.note.*) *(.comment) *(.eh_frame*) *(.gnu-stack) }
 }
