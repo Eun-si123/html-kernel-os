@@ -104,38 +104,41 @@ static bool canonical(uint64_t value) {
     const uint64_t top = value >> 48U;
     return top == (((value >> 47U) & 1U) ? UINT64_C(0xffff) : 0U);
 }
-/* A user can change its RSP without touching memory and then INT80.
- * An invalid saved user stack/RIP is therefore *not* evidence of a kernel
- * fault. Abandon it only if the CPU/TSS stack, Ring3 selectors, live owner
- * registry and current CR3 all independently match the active user task.
- * Do not dereference an unproven user RSP or RIP. */
+/* The actual CPL3 syscall *and* x2APIC IRQ use the same 160-byte
+ * 15-GPR + five-word CPU frame, both on trusted TSS.RSP0. A task can
+ * corrupt its saved user RIP/RSP with ordinary register instructions;
+ * do not trust or dereference either field while deciding whose fault it is.
+ * Callers MUST read saved CS first: a CPL0-origin CPU frame is shorter. */
+#ifdef HTMLK_M5_USER_FAULT_RECOVER
+static bool htmlk_m5_owned_cpu_entry(uintptr_t frame_address,
+                                      uint64_t cs,uint64_t ss,uint64_t flags) {
+    uint64_t active_root;
+    __asm__ volatile("mov %%cr3,%0":"=r"(active_root));
+    const struct htmlk_m5_syscall_provenance ctx = {
+        .frame_address=(uint64_t)frame_address,
+        .tss_rsp0=htmlk_tss_rsp0(),
+        .cs=cs,.ss=ss,.rflags=flags,
+        .active_cr3=active_root,.owned_cr3=frames[0],
+        .saved_cr3=htmlk_m4_saved_cr3,
+        .saved_main_rsp=(uint64_t)(uintptr_t)htmlk_m4_saved_main_rsp,
+        .live_frames=frames_registry.live,
+        .has_active_app=selected_app_path!=0,
+        .already_terminated=user_faulted || user_bad_syscall || user_exited
+#ifdef HTMLK_M5_USER_TIMEOUT
+            || user_timed_out
+#endif
+    };
+    return htmlk_m5_bad_syscall_frame_is_owned(&ctx);
+}
+#endif
 __attribute__((noreturn))
 static void invalid_syscall_frame(struct user_irq_frame *f,const char *message) {
 #ifdef HTMLK_M5_USER_FAULT_RECOVER
-    /* CPL0-origin INT80 has only a 3-word CPU frame. Never read user SS
-     * until the real CS value proves this was a CPL3 privilege transition. */
-    if (f && f->cs==user_cs) {
-        uint64_t active_root;
-        __asm__ volatile("mov %%cr3,%0":"=r"(active_root));
-        const struct htmlk_m5_syscall_provenance ctx = {
-            .frame_address=(uint64_t)(uintptr_t)f,
-            .tss_rsp0=htmlk_tss_rsp0(),
-            .cs=f->cs, .ss=f->ss, .rflags=f->rflags,
-            .active_cr3=active_root, .owned_cr3=frames[0],
-            .saved_cr3=htmlk_m4_saved_cr3,
-            .saved_main_rsp=(uint64_t)(uintptr_t)htmlk_m4_saved_main_rsp,
-            .live_frames=frames_registry.live,
-            .has_active_app=selected_app_path!=0,
-            .already_terminated=user_faulted || user_bad_syscall || user_exited
-#ifdef HTMLK_M5_USER_TIMEOUT
-                || user_timed_out
-#endif
-        };
-        if (htmlk_m5_bad_syscall_frame_is_owned(&ctx)) {
-            user_bad_syscall=true;
-            log_text("M5_E_USER_BAD_SYSCALL_FRAME\n");
-            htmlk_m4_user_return();
-        }
+    if (f && f->cs==user_cs &&
+        htmlk_m5_owned_cpu_entry((uintptr_t)f,f->cs,f->ss,f->rflags)) {
+        user_bad_syscall=true;
+        log_text("M5_E_USER_BAD_SYSCALL_FRAME\n");
+        htmlk_m4_user_return();
     }
 #else
     (void)f;
@@ -460,6 +463,12 @@ bool htmlk_m5_user_last_faulted(void) { return user_faulted; }
 bool htmlk_m5_user_last_bad_syscall(void) { return user_bad_syscall; }
 #ifdef HTMLK_M5_USER_TIMEOUT
 bool htmlk_m5_user_last_timed_out(void) { return user_timed_out; }
+bool htmlk_m5_timeout_irq_origin_owned(const struct htmlk_m4_d1_irq_frame *f) {
+    /* Provenance without trusting saved user RIP/RSP. A forged CPL0 IRQ
+     * has no user SS/RSP and MUST NOT reach the five-word frame access. */
+    return f && f->cs==user_cs && (f->rflags&0x202U)==0x202U &&
+        htmlk_m5_owned_cpu_entry((uintptr_t)f,f->cs,f->ss,f->rflags);
+}
 bool htmlk_m5_timeout_irq_context_valid(const struct htmlk_m4_d1_irq_frame *f) {
     if (!selected_app_path || user_faulted || user_bad_syscall ||
         user_timed_out || user_exited || frames_registry.live != 6U ||
