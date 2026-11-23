@@ -1,6 +1,6 @@
 # M5-D1 — actual UART `run` command launches ROMFS user code in Ring 3
 
-**Status:** independent branch local actual x86-64 BIOS QEMU acceptance PASS. Merge of prerequisite M5-C1 and exact-head GitHub CI for this slice are tracked separately. This is a **single trusted build-time embedded user executable** experiment; not a generic untrusted-program OS or broad hardware claim.
+**Status:** local actual x86-64 BIOS QEMU acceptance PASS, stacked M5-D1 PR [#72](https://github.com/Eun-si123/html-kernel-os/pull/72). Prerequisite M5-C1 PR #70 **merged** as `4d3d735`; M5-D1 exact-head GitHub CI and merge remain separate acceptance gates. This is a **single trusted build-time embedded user executable** experiment; not a generic untrusted-program OS or broad hardware claim.
 
 ## Execution contract
 
