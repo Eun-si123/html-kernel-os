@@ -56,6 +56,8 @@ jobs:
         run: |
           python scripts/test_live_site.py --out-dir build/live-site
           python scripts/test_live_source_mutation.py --baseline-dir build/live-site
+      - name: Verify local HTML source changes native ISO and actual CPU output before Pages
+        run: python scripts/test_local_live_iso.py
       - name: Assemble static Pages bundle with pinned x86-64 WebAssembly emulator
         run: |
           mkdir -p public/vendor
