@@ -175,7 +175,7 @@ class SiteTests(unittest.TestCase):
         boot_css = (SITE / "play.css").read_text(encoding="utf-8")
         self.assertIn('@media (prefers-color-scheme: dark)', boot_css)
         self.assertIn('.lab-status-bar { background:#222b25;', boot_css)
-        self.assertIn('play.css?v=20261123-vga-fit4', lab)
+        self.assertIn('play.css?v=20261123-live-source5', lab)
 
     def test_copy_button_and_tabs_have_handlers(self):
         js = (SITE / "app.js").read_text(encoding="utf-8")
