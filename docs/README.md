@@ -50,3 +50,4 @@ When a feature changes, update the **one authoritative** owner, then fix any con
 - [M5-E3-C guarded malformed Ring3 syscall frame process-only abort](M5_USER_SYSCALL_FRAME.md).
 
 - [M5-E3 guarded last-instruction Ring3 INT80 EOF and safe terminal exit](M5_USER_SYSCALL_EOF.md).
+- [M5-E3-D independently owned Ring3 x2APIC malformed user stack IRQ recovery](M5_USER_BAD_IRQ.md).
