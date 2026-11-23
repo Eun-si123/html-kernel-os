@@ -19,7 +19,8 @@ GOOD = """# Roadmap
 class RoadmapContractTests(unittest.TestCase):
     def test_real_repository_roadmap(self):
         report = parse_roadmap(ROADMAP.read_text(encoding="utf-8"))
-        self.assertEqual(report["nextSuggested"], "M2")
+        # M2 bounded core has native QEMU/Linux evidence; M3 is the next gate.
+        self.assertEqual(report["nextSuggested"], "M3")
         self.assertEqual([m["id"] for m in report["milestones"]],
                          [f"M{i}" for i in range(7)])
         self.assertIn("M1", report["milestones"][2]["dependsOn"])
