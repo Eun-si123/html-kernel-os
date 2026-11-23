@@ -53,11 +53,13 @@ def main() -> None:
                                   encoding="utf-8")
             iso = work / (label + ".iso")
             build(source, iso, args.cache_dir, args.work_dir)
-            code, output = boot(iso, timeout=20)
+            trace = work / f"{label}-qemu-trace.txt"
+            code, output = boot(iso, timeout=20, trace_file=trace)
             if code != SUCCESS_EXIT or output != expected:
+                debug = trace.read_text(errors="replace")[-7000:] if trace.exists() else ""
                 raise AssertionError(
                     f"real QEMU framebuffer {label} failed: exit={code}, output={output!r}; "
-                    f"expected {expected!r}")
+                    f"expected {expected!r}; CPU trace tail={debug!r}")
             if baseline_bytes is None:
                 baseline_bytes = iso.read_bytes()
             elif baseline_bytes == iso.read_bytes():
