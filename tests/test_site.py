@@ -97,12 +97,13 @@ class SiteTests(unittest.TestCase):
             self.assertIn(f"examples/{filename} public/examples/{filename}", pages)
             self.assertIn(f"source: '{filename}'", script)
             self.assertTrue((ROOT / "examples" / filename).is_file())
-        for control in ("vm-pace", "vm-pause", "boot-events",
+        for control in ("vm-pace", "vm-pause", "boot-latest", "boot-events",
                         "boot-source", "boot-source-note", "boot-source-path",
                         "live-tag"):
             self.assertIn(f'id="{control}"', html)
         self.assertIn("screen-put-char", script)
         self.assertIn("recordVgaCell", script)
+        self.assertIn("latestEvent.textContent = kind", script)
         self.assertIn("sourceLineForLiteral", script)
         self.assertIn("output.textContent = serial", script)
         self.assertIn("machine.run()", script)
