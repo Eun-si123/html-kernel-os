@@ -230,6 +230,25 @@
         "scripts/test_m5_romfs.py",
         "docs/M5_ROMFS.md"
       ]
+    },
+    {
+      "id": "m5-serial-console",
+      "source": [
+        "boot/serial_command.c",
+        "boot/serial_command.h",
+        "boot/serial_console.c",
+        "boot/romfs.c",
+        "boot/kernel_entry.c",
+        "scripts/build_boot.py"
+      ],
+      "regressions": [
+        "tests/test_serial_command.py"
+      ],
+      "fieldEvidence": [
+        "tests/native/test_serial_command.c",
+        "scripts/test_m5_console.py",
+        "docs/M5_SERIAL_CONSOLE.md"
+      ]
     }
   ]
 }
