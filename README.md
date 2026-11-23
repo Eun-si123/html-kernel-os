@@ -98,6 +98,18 @@ python3 scripts/test_m5_html_user_text.py
 
 A bad supervisor pointer, overflowing length, or terminal escape causes **that user program** to be terminated with `M5_ERR_USER_SYSCALL`; the live shell continues and can run a correct app again. This is build-time trusted ASCII, **not** arbitrary userspace pointer/string access, Unicode printing or general-purpose process security. The real QEMU + negative evidence is in [M5-F2 contract](docs/M5_HTML_USER_TEXT.md).
 
+## Repeat HTML user output safely (M5-F3)
+
+The same native HTML user target can now run bounded `<print>` statements in conditions and capped loops, instead of producing only one message per process. **Both compiler and kernel enforce a maximum of eight reports per program**; a forged ninth syscall terminates only that user task and leaves the real UART console alive. Reuse the same one-command runner:
+
+```sh
+python3 scripts/run_m5_console.py --html-user-app examples/user-programs/html-multireport.html
+# Native QEMU: run /apps/hello.hke; exit
+python3 scripts/test_m5_html_multi_report.py
+```
+
+The example prints `tick` twice followed by `2026`; string bytes are still limited to printable ASCII and checked user-code-page pointers. [M5-F3 independent native acceptance evidence](docs/M5_HTML_MULTI_REPORT.md).
+
 ## Run a separate ROMFS user program in native Ring 3 (M5-C1)
 
 This opt-in test assembles `examples/user-programs/hello.S` into a small, checked `HKEX` executable and embeds it as `/apps/hello.hke` in the native kernel's immutable ROMFS. After bounded file validation the kernel loads **actual independent machine-code bytes** into a private CPL3 code page, checks register-only system calls, returns to generated HTML code and reclaims the user frames. To reproduce:

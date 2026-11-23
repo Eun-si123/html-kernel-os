@@ -148,6 +148,8 @@ jobs:
         run: python scripts/test_m5_user_syscall_frame.py
       - name: M5-F2 Ring3 native user text copyin, invalid pointers and real UART recovery in QEMU
         run: python scripts/test_m5_html_user_text.py
+      - name: M5-F3 bounded mixed Ring3 reports, overbudget syscall rejection and x2APIC QEMU recovery
+        run: python scripts/test_m5_html_multi_report.py
       - name: Assemble standalone, non-test boot images
         run: |
           python scripts/build_boot.py --out build/html-kernel.iso

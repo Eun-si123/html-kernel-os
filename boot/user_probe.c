@@ -32,6 +32,12 @@ static volatile bool syscall_seen;
 static volatile bool user_exited;
 #ifdef HTMLK_M5_USER_LOADER
 static volatile bool user_reported;
+#ifdef HTMLK_M5_USER_MULTI_REPORT
+/* Actual per-task syscall budget, independent of source-level loop estimates.
+ * Enforced even if a crafted executable bypasses the shared HTML compiler. */
+enum { HTMLK_M5_USER_REPORT_LIMIT = 8 };
+static volatile unsigned user_report_count;
+#endif
 #ifdef HTMLK_M5_INTERACTIVE_RUN
 static const char *selected_app_path;
 #ifdef HTMLK_M5_USER_FAULT_RECOVER
@@ -163,16 +169,29 @@ void htmlk_m4_syscall_dispatch(void *raw_frame) {
         return; /* assembly iretq resumes same ring3 task */
     }
 #ifdef HTMLK_M5_USER_LOADER
-    if (id == 2U && syscall_seen && !user_reported && !user_exited &&
-        f->rdi <= 9999U) {
+    if (id == 2U && syscall_seen && !user_exited && f->rdi <= 9999U &&
+#ifdef HTMLK_M5_USER_MULTI_REPORT
+        user_report_count < HTMLK_M5_USER_REPORT_LIMIT
+#else
+        !user_reported
+#endif
+        ) {
         user_reported = true;
+#ifdef HTMLK_M5_USER_MULTI_REPORT
+        ++user_report_count;
+#endif
         log_text("M5_C_USER_VALUE=");
         log_decimal((uint32_t)f->rdi);
         log_text("\n");
         return;
     }
 #ifdef HTMLK_M5_USER_TEXT
-    if (id == 3U && syscall_seen && !user_reported && !user_exited &&
+    if (id == 3U && syscall_seen && !user_exited &&
+#ifdef HTMLK_M5_USER_MULTI_REPORT
+        user_report_count < HTMLK_M5_USER_REPORT_LIMIT &&
+#else
+        !user_reported &&
+#endif
         htmlk_m5_user_text_range(f->rdi, f->rsi, user_code_length)) {
         const volatile uint8_t *text = (const volatile uint8_t *)(uintptr_t)f->rdi;
         /* Validate *every byte* before printing, no partial prompt injection. */
@@ -183,6 +202,9 @@ void htmlk_m4_syscall_dispatch(void *raw_frame) {
         }
         if (printable) {
             user_reported = true;
+#ifdef HTMLK_M5_USER_MULTI_REPORT
+            ++user_report_count;
+#endif
             log_text("M5_F2_USER_TEXT=");
             for (uint64_t i=0; i<f->rsi; ++i) user_text_emit_byte(text[i]);
             return;
@@ -323,6 +345,9 @@ void htmlk_m4_user_probe(const struct limine_memmap_response *map,
     syscall_seen = user_exited = false;
 #ifdef HTMLK_M5_USER_LOADER
     user_reported = false;
+#ifdef HTMLK_M5_USER_MULTI_REPORT
+    user_report_count = 0U;
+#endif
 #ifdef HTMLK_M5_USER_FAULT_RECOVER
     user_faulted = false;
     user_bad_syscall = false;
