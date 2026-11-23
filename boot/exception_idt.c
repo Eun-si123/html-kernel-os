@@ -12,6 +12,9 @@
 #ifdef HTMLK_M4_X2APIC_PREEMPT
 #include "preempt_x2apic.h"
 #endif
+#ifdef HTMLK_M4_USER_PREEMPT
+#include "user_preempt.h"
+#endif
 #ifdef HTMLK_M4_TIMER_PROBE
 #include "timer_irq.h"
 #endif
@@ -190,6 +193,17 @@ __attribute__((interrupt)) static void vector_14(struct interrupt_frame *f, unsi
         return; /* architectural iretq retries the original CPU load */
     }
 #endif
+#ifdef HTMLK_M4_D2_FAULT
+    uint64_t d2_cr2;
+    __asm__ volatile ("mov %%cr2,%0" : "=r"(d2_cr2));
+    if (!htmlk_tss_on_page_fault_stack(current_rsp))
+        panic(14, f->rip, (uint64_t)code); /* never recover on wrong stack */
+    struct htmlk_m4_d1_irq_frame *survivor =
+        htmlk_m4_d1_page_fault(f->rip, f->cs, f->rsp, f->ss,
+                               (uint64_t)code, d2_cr2);
+    if (survivor)
+        htmlk_m4_d1_switch_from_fault(survivor);
+#endif
 #ifdef HTMLK_M4_USER_ISOLATION
     uint64_t fault_cr2;
     __asm__ volatile ("mov %%cr2,%0" : "=r"(fault_cr2));
@@ -327,6 +341,13 @@ void htmlk_idt_install(void) {
             (uint64_t)(uintptr_t)&htmlk_m4_x2apic_spurious_entry, cs)) {
         panic(13, 0, 0);
     }
+#endif
+#ifdef HTMLK_M4_USER_PREEMPT
+    if (!htmlk_idt_gate_make(&idt[0x40U],
+            (uint64_t)(uintptr_t)&htmlk_m4_d1_irq_entry, cs) ||
+        !htmlk_idt_gate_make(&idt[0xffU],
+            (uint64_t)(uintptr_t)&htmlk_m4_d1_spurious, cs))
+        panic(13, 0, 0);
 #endif
 #if defined(HTMLK_M4_USER_PROBE) || defined(HTMLK_M4_USER_ISOLATION)
     if (!htmlk_idt_gate_make(&idt[0x80U],

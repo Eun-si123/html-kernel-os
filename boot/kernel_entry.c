@@ -13,6 +13,9 @@
 #ifdef HTMLK_M4_USER_ISOLATION
 #include "user_isolation.h"
 #endif
+#ifdef HTMLK_M4_USER_PREEMPT
+#include "user_preempt.h"
+#endif
 #ifdef HTMLK_M4_TIMER_PROBE
 #include "timer_irq.h"
 #endif
@@ -42,7 +45,8 @@ __attribute__((used, section(".limine_requests_end")))
 static volatile uint64_t end_marker[] = LIMINE_REQUESTS_END_MARKER;
 
 #if defined(HTMLK_M3_MEMORY_PROBE) || defined(HTMLK_M3_PAGING_PROBE) || \
-    defined(HTMLK_M4_USER_PROBE) || defined(HTMLK_M4_USER_ISOLATION)
+    defined(HTMLK_M4_USER_PROBE) || defined(HTMLK_M4_USER_ISOLATION) || \
+    defined(HTMLK_M4_USER_PREEMPT)
 /* Opt-in requests reside within the pinned Limine request marker section.
  * Production/default boot tests remain untouched unless M3 memory/paging is enabled.
  */
@@ -138,6 +142,10 @@ void kmain(void) {
 #ifdef HTMLK_M4_USER_ISOLATION
     htmlk_m4_user_isolation_probe(m3_memmap_request.response,
                                   m3_hhdm_request.response);
+#endif
+#ifdef HTMLK_M4_USER_PREEMPT
+    htmlk_m4_user_preempt_probe(m3_memmap_request.response,
+                                 m3_hhdm_request.response);
 #endif
     kernel_main(); /* Generated from examples/kernel.html. */
     for (;;) __asm__ volatile ("cli; hlt");
