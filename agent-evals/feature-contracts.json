@@ -155,6 +155,24 @@
         "scripts/test_tss_ist.py",
         "docs/M3_TSS_IST.md"
       ]
+    },
+    {
+      "id": "m3-bounded-multipage",
+      "source": [
+        "boot/paging_tables.c",
+        "boot/paging_probe.c",
+        "boot/paging_probe.h",
+        "boot/frame_owner.c",
+        "scripts/build_boot.py"
+      ],
+      "regressions": [
+        "tests/test_paging_tables.py"
+      ],
+      "fieldEvidence": [
+        "tests/native/test_paging_tables.c",
+        "scripts/test_multimap.py",
+        "docs/M3_MULTIPAGE.md"
+      ]
     }
   ]
 }
