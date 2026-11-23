@@ -58,3 +58,5 @@ Do not introduce a long-running agent service, database, or synthetic feature co
 - M5-F4 bounded HTML user exit status: `compiler/language.py` / `compiler/htmlk.py` final `<halt code>` validation, `boot/user_probe.c` guarded syscall-1 exit status, `boot/serial_console.c` post-reclaim COM1 output, `scripts/test_m5_html_exit_status.py` actual QEMU acceptance; [evidence](docs/M5_HTML_EXIT_STATUS.md).
 
 - M5-F5 full unsigned user reports: `boot/user_probe.c` native 20-digit formatter and opt-in user syscall ID 2 bound, `scripts/build_boot.py` HTML-only mode, `examples/user-programs/html-u64-report.html`, `scripts/test_m5_html_u64_output.py` actual QEMU tests, host `tests/test_html_user_u64_output.py`; [proof](docs/M5_HTML_U64_OUTPUT.md).
+
+- M5-E3-E poisoned user RSP plus actual CPU #UD: `boot/user_fault_policy.{h,c}` pure five-qword CPU exception frame/owner guard, `boot/user_probe.{h,c}` narrow supervisor-side abort, `boot/exception_idt.c` #UD-only fallback, `scripts/test_m5_user_bad_ud_stack.py` actual QEMU positive/legacy negatives, `tests/native/test_user_fault_policy.c` GCC UBSan guard; [proof](docs/M5_USER_BAD_UD.md).

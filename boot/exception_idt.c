@@ -42,6 +42,8 @@ struct interrupt_frame {
     uint64_t rsp;
     uint64_t ss;
 };
+_Static_assert(sizeof(struct interrupt_frame) == 40U,
+               "x86-64 privilege-changing CPU exception frame is five qwords");
 
 static struct htmlk_idt_gate idt[256];
 
@@ -165,6 +167,14 @@ __attribute__((interrupt)) static void vector_6(struct interrupt_frame *f) {
     if ((f->cs & 3U) == 3U &&
         htmlk_m5_accept_user_fault(6U, f->rip, f->cs, f->rflags,
                                     f->rsp, f->ss, 0U, 0U))
+        htmlk_m4_user_return();
+    /* The saved user RSP can be poisoned while CPU still switches onto
+     * the trusted TSS.RSP0 for this no-error-code #UD exception. The
+     * independent, exact 40-byte frame/owner proof must pass first. */
+    if ((f->cs & 3U) == 3U &&
+        htmlk_m5_accept_bad_user_rsp_ud((uintptr_t)f,
+                                        f->rip, f->cs, f->rflags,
+                                        f->rsp, f->ss))
         htmlk_m4_user_return();
 #endif
     panic(6, f->rip, 0);

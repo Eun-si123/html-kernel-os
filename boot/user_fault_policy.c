@@ -32,3 +32,36 @@ bool htmlk_m5_user_fault_frame_valid(unsigned vector, uint64_t rip,
         return (error & 4U) != 0U && (error & ~UINT64_C(0x7f)) == 0;
     return false;
 }
+
+/* Unlike INT80/x2APIC 160-byte frames, hardware #UD without an error code
+ * enters with exactly five 64-bit CPU words: RIP, CS, RFLAGS, RSP, SS.
+ * TSS.RSP0 and the original private-user CR3 are supervisor-owned values.
+ * This narrow fallback MUST NOT rescue a kernel-origin or unexpected fault. */
+bool htmlk_m5_bad_ud_stack_owned(const struct htmlk_m5_bad_ud_owner *c) {
+    if (!c || !c->has_active_app || c->already_terminated ||
+        c->live_frames != 6U ||
+        c->tss_rsp0 < UINT64_C(40) ||
+        (c->tss_rsp0 & UINT64_C(15)) != 0 ||
+        (c->tss_rsp0 >> 48U) != UINT64_C(0xffff) ||
+        (c->tss_rsp0 & (UINT64_C(1) << 47)) == 0 ||
+        c->frame_address != c->tss_rsp0 - UINT64_C(40) ||
+        c->cs != UINT64_C(0x2b) || c->ss != UINT64_C(0x33) ||
+        (c->rflags & UINT64_C(2)) == 0 ||
+        (((c->rflags >> 9U) & UINT64_C(1)) != (uint64_t)c->expected_if) ||
+        (c->rflags & (UINT64_C(3) << 12 | UINT64_C(1) << 14 |
+                      UINT64_C(1) << 17)) != 0 ||
+        c->code_bytes == 0 || c->code_bytes > HTMLK_HKE_MAX_CODE_BYTES ||
+        c->rip < HTMLK_M4_USER_BASE ||
+        c->rip - HTMLK_M4_USER_BASE >= c->code_bytes ||
+        c->owned_cr3 == 0 || (c->owned_cr3 & UINT64_C(4095)) != 0 ||
+        c->active_cr3 != c->owned_cr3 ||
+        c->saved_cr3 == 0 || c->saved_cr3 == c->owned_cr3 ||
+        c->saved_main_rsp == 0 ||
+        (c->saved_main_rsp >> 48U) != UINT64_C(0xffff) ||
+        (c->saved_main_rsp & (UINT64_C(1) << 47)) == 0)
+        return false;
+    /* Only an actually bad user stack can use this exception-specific
+     * fallback. Valid-stack CPU exceptions still use the strict policy. */
+    return c->user_rsp <= HTMLK_M4_USER_BASE + UINT64_C(4096) ||
+           c->user_rsp > HTMLK_M4_USER_STACK;
+}

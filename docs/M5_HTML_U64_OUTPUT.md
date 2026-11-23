@@ -1,6 +1,6 @@
 # M5-F5 — full unsigned 64-bit native HTML user reports
 
-**Scope:** opt-in trusted build-time HTML → C → ELF → HKEX → actual x86-64 CPL3 user mode in BIOS QEMU. Local guest and host checks PASS; PR-head CI/Gitleaks and merge must be checked on the exact submitted revision. This is not a general-purpose application security boundary.
+**Scope:** opt-in trusted build-time HTML → C → ELF → HKEX → actual x86-64 CPL3 user mode in BIOS QEMU. Local guest and host checks PASS. PR #93 exact-head QEMU Actions `45144365569`/`45144419904` and Gitleaks `45144420245` PASS; merged `b88c182`. This is not a general-purpose application security boundary.
 
 ## Before/after: a concrete type/ABI mismatch
 

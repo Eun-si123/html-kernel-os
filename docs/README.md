@@ -55,3 +55,5 @@ When a feature changes, update the **one authoritative** owner, then fix any con
 - [M5-F4 HTML Ring3 user program exit status and live UART result](M5_HTML_EXIT_STATUS.md).
 
 - [M5-F5 full unsigned u64 from HTML user code to native COM1](M5_HTML_U64_OUTPUT.md).
+
+- [M5-E3-E actual CPL3 UD2 after corrupted RSP and exact trusted CPU-frame recovery](M5_USER_BAD_UD.md).
