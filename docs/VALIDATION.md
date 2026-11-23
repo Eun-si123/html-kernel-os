@@ -121,3 +121,12 @@ python3 scripts/test_exception_idt.py       # genuine #DE/#UD/#GP/#PF and normal
 ```
 
 CI actually boots six source-generated ISOs or more (normal, changed HTML, four distinct CPU fault images, and a combined IDT+memory+framebuffer image). Each intentional fault must emit a deterministic `M3_EXCEPTION V=..` vector, 16-digit saved RIP and error-code field (plus CR2 for #PF), then exit QEMU with **non-success code 45** rather than silently resetting or reaching `kernel_main`. A simulated call to the output function would not meet this evidence gate. The IDT can only **detect and halt**, not recover or resume. No real UEFI/physical machine or v86 browser execution was checked for this opt-in image. The specific evidence baseline is branch GitHub Actions `45096792405` (SUCCESS, before final documentation changes).
+
+## M3 private CR3 map/unmap, fault and restoration gate
+
+```sh
+python3 -m unittest tests.test_paging_tables -v # pure GCC UBSan -O0/-O3 table layout and invalid-frame controls
+python3 scripts/test_paging_probe.py      # real BIOS QEMU independent normal/modified/invalid alias boots
+```
+
+A positive mapping proof requires a genuine CPU virtual-address load/store after writing a private CR3, equality with the Limine HHDM physical address, PTE clearing, TLB invalidation and **successful return to the original CR3** before executing an HTML source-derived kernel. An invalid-mapping proof requires actual CPU #PF after unmap, reported CR2 `FFFFA00000000000` and non-success exit 45, never a fake diagnostic call. The combined source boot must keep the existing physical pool + IDT + native RGB framebuffer working. Branch real QEMU CI `45097571139` passed, but this isolated test is **not** an arbitrary map/unmap, concurrency, recovery, browser or physical-hardware proof.
