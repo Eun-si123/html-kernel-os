@@ -177,9 +177,16 @@ void htmlk_paging_probe(const struct limine_memmap_response *map,
     /* This actual CPU load #PFs. The IDT installs one zeroed DATA page,
      * iretq retries the load, and execution resumes with value zero. */
     const uint64_t zero = *virtual_alias;
-    if (zero != 0 || recovery_armed || recovery_count != 1 ||
-        recovery_frame == 0 || pt[0] != (recovery_frame | HTMLK_PAGING_ENTRY_RW))
-        failed("M3_PAGING_RECOVERY_CONTRACT_FAILED\n");
+    if (zero != 0)
+        failed("M3_PAGING_RECOVERY_NONZERO\n");
+    if (recovery_armed)
+        failed("M3_PAGING_RECOVERY_STILL_ARMED\n");
+    if (recovery_count != 1)
+        failed("M3_PAGING_RECOVERY_COUNT_WRONG\n");
+    if (recovery_frame == 0)
+        failed("M3_PAGING_RECOVERY_FRAME_MISSING\n");
+    if (pt[0] != (recovery_frame | HTMLK_PAGING_ENTRY_RW))
+        failed("M3_PAGING_RECOVERY_PTE_MISMATCH\n");
     *virtual_alias = UINT64_C(0x123456789ABCDEF0);
     volatile uint64_t *recovered_phys =
         (volatile uint64_t *)(uintptr_t)(offset + recovery_frame);
