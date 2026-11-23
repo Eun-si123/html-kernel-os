@@ -20,7 +20,7 @@ python3 scripts/test_paging_recovery.py
 python3 scripts/test_tss_ist.py
 ```
 
-Host C11 oracle: exact 4-level structure, permission flags, occupied/alias detection, zero/unaligned/out-of-range physical frames, unmap wrong-owner denial, idempotent negative controls and hardware Accessed/Dirty bit tolerance; compiled and executed with GCC `-O0` and `-O3` UBSan. Guest tests: source-original and source-modified BIOS QEMU images, true CPU physical aliasing for three pages over three rounds, actual revoked-page #PF, CLI failure controls, plus all M3 integration. Mini-PC independent actual QEMU and host GCC runs passed on 2026-11-23. The final GitHub Actions run and SHA must also pass before claiming a main-branch completion gate.
+Host C11 oracle: exact 4-level structure, permission flags, occupied/alias detection, zero/unaligned/out-of-range physical frames, unmap wrong-owner denial, idempotent negative controls and hardware Accessed/Dirty bit tolerance; compiled and executed with GCC `-O0` and `-O3` UBSan. Guest tests: source-original and source-modified BIOS QEMU images, true CPU physical aliasing for three pages over three rounds, actual revoked-page #PF, CLI failure controls, plus all M3 integration. Mini-PC independent actual QEMU and host GCC runs passed on 2026-11-23. GitHub branch push CI `45105414876`, PR CI `45105421245` and PR security check `45105418201` all completed SUCCESS at exactly `7bfa7a149fd28673fec730b9c11ab9824d983b7d`. This supplies the repository's **bounded M3 QEMU acceptance evidence**; post-merge main-branch re-verification remains separate.
 
 ## What this does not imply
 
