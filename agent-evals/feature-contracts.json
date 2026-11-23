@@ -70,11 +70,12 @@
         "scripts/build_boot.py"
       ],
       "regressions": [
-        "tests/native/test_page_pool.c"
+        "tests/test_m3_memory.py"
       ],
       "fieldEvidence": [
         "scripts/test_m3_memory.py",
-        "docs/M3_MEMORY_BOOTSTRAP.md"
+        "docs/M3_MEMORY_BOOTSTRAP.md",
+        "tests/native/test_page_pool.c"
       ]
     }
   ]
