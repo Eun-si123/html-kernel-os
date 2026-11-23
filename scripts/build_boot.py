@@ -77,6 +77,9 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
           user_preempt_survivor_fault: bool = False,
           user_preempt_fault_gp: bool = False,
           user_preempt_fault_ro: bool = False,
+          user_preempt_corrupt_gpr: bool = False,
+          user_preempt_bad_cr3: bool = False,
+          user_preempt_revoke_b: bool = False,
           romfs_probe: bool = False, romfs_negative: bool = False,
           romfs_root: Path | None = None,
           romfs_console: bool = False) -> None:
@@ -175,20 +178,29 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
                     task_probe or timer_probe or fault_test is not None or double_fault_test):
                 raise ValueError("M4 D1 user preemption requires only IDT and TSS")
             define.append("-DHTMLK_M4_USER_PREEMPT")
-        if (user_preempt_mask or user_preempt_bad_frame) and not (user_preempt and test_exit):
+        d1_negatives=(user_preempt_mask, user_preempt_bad_frame,
+                      user_preempt_corrupt_gpr, user_preempt_bad_cr3,
+                      user_preempt_revoke_b)
+        if any(d1_negatives) and not (user_preempt and test_exit):
             raise ValueError("M4 D1 negatives require probe and test-exit")
-        if user_preempt_mask and user_preempt_bad_frame:
+        if sum(bool(x) for x in d1_negatives)>1:
             raise ValueError("M4 D1 negative controls are exclusive")
         if user_preempt_mask:
             define.append("-DHTMLK_M4_D1_TIMER_MASK")
         if user_preempt_bad_frame:
             define.append("-DHTMLK_M4_D1_BAD_FRAME")
+        if user_preempt_corrupt_gpr:
+            define.append("-DHTMLK_M4_D1_CORRUPT_GPR")
+        if user_preempt_bad_cr3:
+            define.append("-DHTMLK_M4_D1_WRONG_CR3")
+        if user_preempt_revoke_b:
+            define.append("-DHTMLK_M4_D1_REVOKE_B_CODE")
         if (user_preempt_fault or user_preempt_survivor_fault) and not (
                 user_preempt and test_exit):
             raise ValueError("M4 D2 fault requires user preempt and test-exit")
         if user_preempt_survivor_fault and not user_preempt_fault:
             raise ValueError("M4 D2 survivor fault requires A recovery first")
-        if user_preempt_fault and (user_preempt_mask or user_preempt_bad_frame):
+        if user_preempt_fault and any(d1_negatives):
             raise ValueError("M4 D2 fault cannot mix D1 negatives")
         if user_preempt_fault:
             define.append("-DHTMLK_M4_D2_FAULT")
@@ -461,6 +473,12 @@ def main() -> None:
                         help="M4-D2: actual A #GP error0 instead of supervisor read #PF5")
     parser.add_argument("--user-preempt-fault-ro", action="store_true",
                         help="M4-D2: actual A read-only code write #PF7")
+    parser.add_argument("--user-preempt-corrupt-gpr", action="store_true",
+                        help="M4-D hardening: corrupted A R15 must cause actual CPU #UD")
+    parser.add_argument("--user-preempt-bad-cr3", action="store_true",
+                        help="M4-D hardening: wrong active CR3 owner rejected in APIC IRQ")
+    parser.add_argument("--user-preempt-revoke-b", action="store_true",
+                        help="M4-D hardening: revoked B code causes #PF after CR3 reload")
     parser.add_argument("--romfs-probe", action="store_true",
                         help="M5-A opt-in bounded read-only files in native ELF")
     parser.add_argument("--romfs-console", action="store_true",
@@ -492,7 +510,9 @@ def main() -> None:
             a.user_preempt_survivor_fault and
             (a.user_preempt_fault_gp or a.user_preempt_fault_ro)):
         parser.error("M4 D2 alternate fault probes are exclusive")
-    if a.user_preempt_fault and (a.user_preempt_mask or a.user_preempt_bad_frame):
+    if a.user_preempt_fault and any((a.user_preempt_mask, a.user_preempt_bad_frame,
+                                     a.user_preempt_corrupt_gpr, a.user_preempt_bad_cr3,
+                                     a.user_preempt_revoke_b)):
         parser.error("M4 D2 faults cannot combine D1 negative controls")
     if a.user_preempt_probe and (
         not a.exception_idt or not a.tss_ist or a.user_probe or
@@ -500,10 +520,12 @@ def main() -> None:
         a.timer_probe or a.memory_probe or a.paging_probe or
         a.video_console or a.fault_test is not None or a.double_fault_test):
         parser.error("--user-preempt-probe needs only --exception-idt --tss-ist")
-    if (a.user_preempt_mask or a.user_preempt_bad_frame) and not (
-        a.user_preempt_probe and a.test_exit):
+    d1_negatives=(a.user_preempt_mask, a.user_preempt_bad_frame,
+                  a.user_preempt_corrupt_gpr, a.user_preempt_bad_cr3,
+                  a.user_preempt_revoke_b)
+    if any(d1_negatives) and not (a.user_preempt_probe and a.test_exit):
         parser.error("M4 D1 negative requires --user-preempt-probe --test-exit")
-    if a.user_preempt_mask and a.user_preempt_bad_frame:
+    if sum(bool(x) for x in d1_negatives)>1:
         parser.error("M4 D1 negatives are mutually exclusive")
     if a.user_isolation_probe and (
         not a.exception_idt or not a.tss_ist or a.user_probe or
@@ -586,6 +608,8 @@ def main() -> None:
           a.user_preempt_probe, a.user_preempt_mask, a.user_preempt_bad_frame,
           a.user_preempt_fault, a.user_preempt_survivor_fault,
           a.user_preempt_fault_gp, a.user_preempt_fault_ro,
+          a.user_preempt_corrupt_gpr, a.user_preempt_bad_cr3,
+          a.user_preempt_revoke_b,
           a.romfs_probe, a.romfs_negative, a.romfs_root,
           a.romfs_console)
 

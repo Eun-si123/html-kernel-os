@@ -21,7 +21,7 @@ stacks are separate 16 KiB arrays with independent canaries.
 The timer IRQ begins on the selected task's TSS.RSP0 kernel stack,
 saves 15 GPRs and all five CPL3 IRET fields, and verifies CS/SS,
 RIP/RSP, IF, current CR3, RSP0, stack bounds, RBX/R12 sentinels
-and private physical stack counter progress. It updates TSS.RSP0,
+and private physical stack counter progress. Each task now additionally checks **all 15 general-purpose registers** in its actual CPL3 busy loop using task-specific values (including RIP-relative 64-bit RBX/R12 constants); a deliberately corrupted R15 triggers a real CPU #UD. It updates TSS.RSP0,
 reloads CR3, EOIs the APIC, then uses hardware IRETQ to return
 to the other task. A spurious vector 0xff IRETs without EOI.
 
@@ -96,6 +96,10 @@ with the unexpected-survivor-B injection. No arbitrary fault is approved.
 - Deliberate unexpected survivor B #GP raises genuine vector 13 and
   fails with exit 45, never reusing A's fault cleanup handler.
 - Invalid probe combinations cannot produce an ISO.
+- Full 15-GPR user-mode check: deliberately corrupt A's initial R15, require genuine CPU #UD vector 6 on its own mapped code page and failure exit 45; the per-task invalid opcode must be **inside** its copied physical user image. This fixes a prior cross-image jump that actually raised an unrelated #PF instead.
+- Deliberately change the active CR3 while servicing B's real timer IRQ; the IRQ owner guard must fail closed (exit 57), not accept the corrupted context.
+- Run B once, revoke its executable PTE, then reload CR3 as A yields; QEMU must raise an instruction-fetch #PF with error 0x14, and CR2 must equal the user RIP within B's code page (exit 45). No stale-TLB progress is allowed.
+- Reject forged user IRET RFLAGS IOPL=3, nested-task NT or VM in GCC UBSan O0/O3 frame-guard tests. IF and canonical CPL3 selectors remain required.
 - Native pure-C 160-byte IRQ frame validator: GCC UBSan -O0/-O3;
   rejects selectors, IF, stack bounds, invalid RIP and RBX/R12.
 - Legacy M1/M3/M4-A/B1/B2/C1/C2 tests remain independent.
