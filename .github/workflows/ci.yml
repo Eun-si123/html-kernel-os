@@ -40,6 +40,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends qemu-system-x86 xorriso
+      - name: Verify actual Limine RGB framebuffer writes and source-derived pixels in QEMU
+        run: python scripts/test_video_console.py
       - name: Boot and verify HTML-derived kernel in QEMU
         run: python scripts/test_boot.py
       - name: Verify M2 variables and control flow boot
@@ -64,8 +66,6 @@ jobs:
         run: python scripts/test_m2_gate.py
       - name: Verify M3 Limine memory-map, 16 physical page readbacks and malformed map in real QEMU
         run: python scripts/test_m3_memory.py
-      - name: Verify actual Limine RGB framebuffer writes and source-derived pixels in QEMU
-        run: python scripts/test_video_console.py
       - name: Assemble standalone, non-test boot images
         run: |
           python scripts/build_boot.py --out build/html-kernel.iso
