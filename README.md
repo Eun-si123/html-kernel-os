@@ -61,6 +61,16 @@ python3 scripts/run_m5_console.py --with-user-program
 
 Type `ls`, `cat /welcome.txt`, `run /apps/hello.hke` (repeat it if you like), then `exit`. This is an **actual** guest COM1 serial command launching a separate native program in CPL3 from a read-only ROMFS image; it returns to the shell. Invalid paths, absent and invalid executable files are handled without killing the shell. The original `python3 scripts/run_m5_console.py` remains the simpler M5-B console by default. The trusted app is still embedded at build time: it is not an arbitrary external executable or an HTML-compiled user app. [Exact M5-D1 evidence and limits](docs/M5_INTERACTIVE_RUN.md).
 
+## Return to the native shell after a real user CPU fault (M5-E1)
+
+On an interactive Ubuntu/QEMU terminal, after the M5-D1 proof use:
+
+```sh
+python3 scripts/run_m5_console.py --with-user-program --recover-user-faults
+```
+
+Run `run /apps/fault-io.hke`, `run /apps/fault-pf.hke`, `run /apps/fault-ro.hke` or `run /apps/fault-ud.hke`: each must cause a **real Ring3 CPU exception**, reclaim its own user memory and return to the original UART command prompt. Then `run /apps/hello.hke` still runs normally. This is a separate opt-in experiment, **not** a sandbox for untrusted binaries: an infinite loop is not yet interruptible here. See [M5-E1 exact QEMU evidence and restrictions](docs/M5_USER_FAULT_RECOVERY.md).
+
 ## Run a separate ROMFS user program in native Ring 3 (M5-C1)
 
 This opt-in test assembles `examples/user-programs/hello.S` into a small, checked `HKEX` executable and embeds it as `/apps/hello.hke` in the native kernel's immutable ROMFS. After bounded file validation the kernel loads **actual independent machine-code bytes** into a private CPL3 code page, checks register-only system calls, returns to generated HTML code and reclaims the user frames. To reproduce:

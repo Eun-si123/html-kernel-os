@@ -85,7 +85,10 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
           romfs_console: bool = False,
           user_loader: bool = False, user_app_source: Path | None = None,
           user_app_image: Path | None = None,
-          interactive_run: bool = False) -> None:
+          interactive_run: bool = False,
+          user_fault_recover: bool = False) -> None:
+    if user_fault_recover and not (interactive_run and exception_idt and tss_ist):
+        raise ValueError("M5-E1 requires interactive run + exception IDT and TSS")
     if interactive_run:
         if not (exception_idt and tss_ist) or any((
             memory_probe, video_console, paging_probe, task_probe,
@@ -148,6 +151,8 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
             define.append("-DHTMLK_M5_USER_LOADER")
         if interactive_run:
             define.extend(("-DHTMLK_M5_INTERACTIVE_RUN", "-DHTMLK_M5_SERIAL_CONSOLE"))
+        if user_fault_recover:
+            define.append("-DHTMLK_M5_USER_FAULT_RECOVER")
         if romfs_probe:
             define.append("-DHTMLK_M5_ROMFS_PROBE")
         if romfs_console:
@@ -340,8 +345,10 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
                 sources.extend(("romfs", "serial_command", "serial_console"))
             if user_loader or interactive_run:
                 sources.extend(("user_image", "frame_owner", "user_pages", "user_probe"))
-                if user_loader:
-                    sources.append("romfs")
+            if user_loader:
+                sources.append("romfs")
+            if user_fault_recover:
+                sources.append("user_fault_policy")
             if task_probe:
                 sources.extend(("task_model", "task_runtime"))
             if timer_probe:
@@ -395,6 +402,16 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
                         run(sys.executable, ROOT / "scripts/build_user_image.py",
                             "--source", (user_app_source or ROOT / "examples/user-programs/hello.S").resolve(),
                             "--out", app_file)
+                    if user_fault_recover:
+                        for dest, source in (
+                            ("fault-io.hke", "privileged-io.S"),
+                            ("fault-pf.hke", "fault-pf.S"),
+                            ("fault-ro.hke", "fault-ro.S"),
+                            ("fault-ud.hke", "fault-ud.S"),
+                        ):
+                            run(sys.executable, ROOT / "scripts/build_user_image.py",
+                                "--source", ROOT / "examples/user-programs" / source,
+                                "--out", app_dir / dest)
                 run(sys.executable, ROOT / "scripts/gen_romfs.py",
                     "--root", selected_root, "--out", generated_romfs)
                 generated_romfs_obj = build_dir / "romfs_generated.o"
@@ -551,6 +568,8 @@ def main() -> None:
                         help="M5-C1 relocation-free x86-64 assembly for external Ring3 program")
     parser.add_argument("--user-app-image", type=Path,
                         help="M5-C1 prebuilt HKEX file (guest validates integrity/format)")
+    parser.add_argument("--user-fault-recover", action="store_true",
+                        help="M5-E1 guarded real CPL3 #PF/#GP/#UD recovery to UART prompt")
     parser.add_argument("--romfs-run-console", action="store_true",
                         help="M5-D1 interactive COM1 run /apps/hello.hke in actual CPL3")
     parser.add_argument("--romfs-probe", action="store_true",
@@ -562,6 +581,9 @@ def main() -> None:
     parser.add_argument("--romfs-root", type=Path, default=ROOT / "examples/romfs",
                         help="Trusted ROMFS input (16 files, up to 4KiB each)")
     a = parser.parse_args()
+    if a.user_fault_recover and not (a.romfs_run_console and
+                                      a.exception_idt and a.tss_ist):
+        parser.error("M5-E1 needs --romfs-run-console --exception-idt --tss-ist")
     if a.romfs_run_console:
         if not (a.exception_idt and a.tss_ist) or any((
             a.user_loader_probe, a.user_probe, a.user_isolation_probe,
@@ -710,7 +732,7 @@ def main() -> None:
           a.romfs_probe, a.romfs_negative, a.romfs_root,
           a.romfs_console, a.user_loader_probe,
           a.user_app_source, a.user_app_image,
-          a.romfs_run_console)
+          a.romfs_run_console, a.user_fault_recover)
 
 
 if __name__ == "__main__":

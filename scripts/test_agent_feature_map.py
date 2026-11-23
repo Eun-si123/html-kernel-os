@@ -26,7 +26,7 @@ class FeatureContractTests(unittest.TestCase):
                           "m4-ring3-fault-containment",
                           "m4-ring3-preemptive-survival",
                           "m5-romfs-readonly", "m5-serial-console",
-                          "m5-romfs-user-executable", "m5-interactive-romfs-run"})
+                          "m5-romfs-user-executable", "m5-interactive-romfs-run", "m5-guarded-user-fault-recovery"})
 
     def test_changed_m4_scheduler_maps_native_qemu_and_state_oracles(self):
         report = summarize(validate(self.real), ["boot/task_switch.S"])
@@ -92,7 +92,8 @@ class FeatureContractTests(unittest.TestCase):
              "m3-owned-fault-recovery", "m3-tss-ist",
              "m4-x2apic-preemption", "m4-ring3-user-syscall",
              "m4-ring3-fault-containment",
-             "m4-ring3-preemptive-survival"])
+             "m4-ring3-preemptive-survival",
+             "m5-guarded-user-fault-recovery"])
         m3_entry = next(item for item in report["affectedFeatures"]
                         if item["feature"] == "m3-exception-idt")
         self.assertIn("tests/test_exception_idt.py",
