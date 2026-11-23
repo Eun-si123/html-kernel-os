@@ -128,6 +128,8 @@ def compile_functions(functions: dict[str, FunctionDef]) -> tuple[list[str], dic
                     variables = resolve()
                     if name not in variables:
                         fail(node, f"undefined variable {name!r}")
+                    if array_details(resolve_types()[name]) is not None:
+                        fail(node, f"array {name!r} requires an indexed element; use <store>")
                     code.append(f"{pad}{variables[name]} = "
                                 f"{checked(node.attrs['value'], expected_type=resolve_types()[name])};")
                 elif node.tag == "if":
