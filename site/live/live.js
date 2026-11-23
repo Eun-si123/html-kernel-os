@@ -5,7 +5,7 @@ import V86 from '../vendor/libv86.mjs';
 const $ = id => document.getElementById(id);
 const ui = Object.fromEntries(
   ['start','stop','fullscreen','state','message','terminal','command','send',
-   'command-form','source','source-hash','iso-hash','boot-event','screen_container']
+   'command-form','source','source-hash','iso-hash','boot-event','romfs-match','screen_container']
     .map(id => [id, $(id)]));
 const buttons = [...document.querySelectorAll('button[data-command]')];
 let machine = null;
@@ -17,6 +17,9 @@ let promptReady = false;
 let userFinished = false;
 let sourceVerified = false;
 let metadata = null;
+let expectedSourceBytes = null;
+const SOURCE_BEGIN = 'M5_CAT_BEGIN /source.html\n';
+const SOURCE_END = 'M5_CAT_END\n';
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 function status(label, message) {
@@ -48,12 +51,22 @@ async function loadEvidence() {
       manifest.user_source !== 'examples/user-programs/html-u64-report.html' ||
       !/^[0-9a-f]{64}$/.test(manifest.image_sha256) ||
       !/^[0-9a-f]{64}$/.test(manifest.user_source_sha256) ||
+      manifest.embedded_source_path !== '/source.html' ||
+      manifest.embedded_source_sha256 !== manifest.user_source_sha256 ||
+      !Number.isInteger(manifest.embedded_source_bytes) ||
+      manifest.embedded_source_bytes < 0 || manifest.embedded_source_bytes > 4096 ||
       manifest.user_timer !== false) {
     throw Error('예상하지 못한 빌드 명세. 실제 부팅을 중단했어.');
   }
   const bytes = await fetchBytes('../examples/user-programs/html-u64-report.html');
   if (await digest(bytes) !== manifest.user_source_sha256)
     throw Error('HTML 소스 해시 불일치: 부팅 소스 증거가 일치하지 않아.');
+  if (bytes.byteLength !== manifest.embedded_source_bytes)
+    throw Error('ROMFS에 기록했다고 주장한 원본 HTML의 길이가 일치하지 않아.');
+  // Actual UART output exposes byte values directly; preserve exact original
+  // bytes even if source contains UTF-8 multibyte characters.
+  expectedSourceBytes = Array.from(new Uint8Array(bytes),
+                                   char => String.fromCharCode(char)).join('');
   ui.source.textContent = new TextDecoder('utf-8', {fatal:true}).decode(bytes);
   ui['source-hash'].textContent = 'HTML SHA-256: ' + manifest.user_source_sha256;
   sourceVerified = true;
@@ -94,6 +107,21 @@ function onSerial(byte) {
   serial += String.fromCharCode(byte);
   ui.terminal.textContent = serial;
   ui.terminal.scrollTop = ui.terminal.scrollHeight;
+  // Compare ONLY actual CPU COM1 bytes read back from the guest's ROMFS,
+  // never a JavaScript reconstruction of a pretend 'cat' result.
+  if (serial.endsWith(SOURCE_END)) {
+    const first = serial.lastIndexOf(SOURCE_BEGIN);
+    if (first !== -1) {
+      const actual = serial.slice(first + SOURCE_BEGIN.length,
+                                  serial.length - SOURCE_END.length);
+      if (expectedSourceBytes !== null && actual === expectedSourceBytes) {
+        ui['romfs-match'].textContent = 'ISO 내부 HTML: 실제 ROMFS 읽기 · 바이트 완전 일치';
+      } else {
+        ui['romfs-match'].textContent = 'ISO 내부 HTML: 실제 읽기 내용 불일치';
+        status('SOURCE MISMATCH', '커널에서 읽은 HTML이 공개 원본과 다르므로 실행 출처를 확인할 수 없어.');
+      }
+    }
+  }
   if (serial.endsWith('M5_PROMPT> ')) {
     promptReady = true;
     if (!sending) {

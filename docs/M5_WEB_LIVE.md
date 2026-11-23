@@ -12,11 +12,34 @@ At the guest COM1 prompt, `help`, `ls`, `cat /welcome.txt`, `run /apps/hello.hke
 
 The separate site displays actual VGA, UART bytes, a read-only copy of the exact source, and checks SHA-256 of both the fetched HTML source and downloaded ISO against the same reproducible, source-generated manifest. **SHA-256 matching this public manifest is consistency evidence only, not code signing, provenance authentication, or a secure update mechanism.**
 
+## M5 Web-Live B: the HTML source is INSIDE the booted kernel image
+
+In addition to publishing the read-only source beside the ISO, the Pages ISO
+builder creates a bounded temporary **ROMFS** tree copied from the existing
+sample files and writes **byte-for-byte identical** user source to `/source.html`
+before generating the HKEX executable. The source is not trimmed, normalized,
+re-encoded, or retyped; the ROMFS input path is stable and its original source
+bytes are embedded by the existing kernel generator. A source longer than one
+ROMFS 4KiB file is rejected without silently truncating the code. The original
+`examples/romfs` checkout is never overwritten.
+
+The live page adds a real `cat /source.html` guest command, not a JavaScript
+simulation. When the CPU emits the `M5_CAT_BEGIN /source.html` and `M5_CAT_END`
+markers over the real COM1 port, the frontend compares the bytes between them
+to the exact raw source bytes it fetched and SHA-256-checked. It shows success
+only for an **exact byte match**; a hash shown on the page alone is not proof
+that the original text is embedded inside the guest. Real native QEMU and
+browser tests independently confirm the guest output equals the exact source
+and the **same guest** can run the independently generated HTML-based HKEX
+and return status 7 afterwards. The demonstration still uses a compiled
+HTML-shaped language, not standard HTML interpreted by the CPU.
+
 ## Rebuild and independently verify
 
 ```sh
 python3 scripts/build_live_site.py --out-dir build/live-site
 python3 scripts/test_live_site.py --out-dir build/live-site
+python3 scripts/test_live_source_mutation.py --baseline-dir build/live-site
 node --check site/live/live.js
 python3 -m unittest tests.test_live_pages
 ```

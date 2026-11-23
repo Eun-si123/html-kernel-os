@@ -66,3 +66,5 @@ Do not introduce a long-running agent service, database, or synthetic feature co
 - M5 browser native HTML user lab: `scripts/build_live_site.py` generates real HTML user HKEX + BIOS ISO + source/image manifest; `site/live/*` renders actual emulator CPU VGA and COM1 byte I/O; `.github/workflows/pages.yml` builds/publishes exact ISO and `scripts/test_live_site.py` checks real QEMU guest commands. [Web live contract](docs/M5_WEB_LIVE.md).
 
 - M5-E3-G bad user RSP genuine CPU #GP: `boot/user_fault_policy.{h,c}` strict 48-byte CPU error-code frame + owner proof, `boot/user_probe.{h,c}` verified task-only abort, `boot/exception_idt.c` #GP fallback; `scripts/test_m5_user_bad_gp_stack.py` real QEMU proof, `tests/native/test_user_fault_policy.c` O0/O3 UBSan negatives. [Contract](docs/M5_USER_BAD_GP.md).
+
+- M5 Web-Live B exact source-in-ROMFS: `scripts/build_live_site.py` copies trusted source bytes into a temporary ROMFS `/source.html`, `scripts/test_live_site.py` validates real QEMU UART byte-exact `cat`, `site/live/live.js` validates real browser UART bytes vs independently fetched SHA-256-checked HTML. [Proof](docs/M5_WEB_LIVE.md).
