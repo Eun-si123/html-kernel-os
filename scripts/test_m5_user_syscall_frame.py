@@ -73,6 +73,45 @@ def exercise_guest(work:Path,cache:Path,romfs:Path,*,timer:bool)->None:
               '5 BAD USER FRAMES + 5 HTML USER RERUNS + CLEAN EXIT PASS',flush=True)
 
 
+def prove_combined_text_and_bad_frame(work:Path,cache:Path,romfs:Path)->None:
+    """Merged F2 code-page text pointer copyin survives E3-C task cleanup."""
+    from test_m5_html_user_text import TRACE,TEXT
+    from test_m5_user_timeout import SPIN_TRACE
+    root=work/'text-romfs'
+    # ROMFS is intentionally bounded to 16 files. Rebuild a *minimal*
+    # fixture root rather than copying the five other failure probes;
+    # loader automatically adds 10 built-in app/fault test images.
+    shutil.copytree(ROOT/'examples/romfs',root)
+    shutil.copy2(romfs/'bad-null.hke',root/'bad-null.hke')
+    build_image(ROOT/'examples/user-programs/bad-text-pointer.S',
+                root/'bad-text-pointer.hke')
+    iso=work/'combined-text-user-frame.iso'
+    build_timer(ROOT/'examples/kernel.html',iso,work,cache,
+                '--romfs-root',str(root),'--user-app-html',
+                str(ROOT/'examples/user-programs/html-message.html'))
+    cmds=[
+        (b'run /apps/hello.hke\r',TRACE),
+        (b'run /bad-null.hke\r',b'M5_ERR_USER_SYSCALL'),
+        (b'run /apps/hello.hke\r',TRACE),
+        (b'run /bad-text-pointer.hke\r',b'M5_ERR_USER_SYSCALL'),
+        (b'run /apps/hello.hke\r',TRACE),
+        (b'run /apps/spin.hke\r',SPIN_TRACE),
+        (b'exit\r',b'M5_CONSOLE_EXIT\n'+HTML),
+    ]
+    transcript,uart=exercise(iso,cmds,HTML,cpu=CPU)
+    assert transcript.count(TRACE)==3,transcript
+    assert transcript.count(TEXT)==3,transcript
+    assert uart.count(TEXT)==3,uart
+    assert transcript.count(b'M5_E_USER_BAD_SYSCALL_FRAME\n')==1,transcript
+    assert transcript.count(b'M5_E_BAD_SYSCALL_FRAMES_RECLAIMED\n')==2,transcript
+    assert transcript.count(b'M5_ERR_USER_SYSCALL\n')==2,transcript
+    assert transcript.count(b'M5_E2_TIMEOUT_FRAMES_RECLAIMED\n')==1,transcript
+    assert transcript.count(b'M5_C_USER_FRAMES_RECLAIMED\n')==3,transcript
+    assert b'M4_BAD_RING3_SYSCALL_FRAME' not in transcript
+    assert b'\x1b[' not in uart
+    print('M5-E3-C+F2 REAL QEMU: 3 HTML TEXT USERS + MALFORMED FRAME + BAD USER POINTER + x2APIC TIMEOUT PASS',flush=True)
+
+
 def prove_original_fatal(work:Path,cache:Path,source:Path)->None:
     iso=work/'legacy-fatal.iso'
     build_legacy(ROOT/'examples/kernel.html',iso,work,cache,
@@ -115,6 +154,7 @@ def main()->None:
         sources={case:make_app(work,romfs,case) for case in CASES}
         exercise_guest(work,cache,romfs,timer=False)
         exercise_guest(work,cache,romfs,timer=True)
+        prove_combined_text_and_bad_frame(work,cache,romfs)
         prove_original_fatal(work,cache,sources['null'])
     print('M5-E3-C NATIVE CPU MALFORMED CPL3 INT80 FRAME RECOVERY + LEGACY FAIL-STOP PASS')
 

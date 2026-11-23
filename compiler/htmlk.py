@@ -33,22 +33,25 @@ def compile_html(source: str, *, target: str = "kernel") -> str:
     scan(program)
     if target == "user":
         # One M2 grammar and typed expression checker across all targets.
-        # String output needs a separate kernel-validated user pointer API.
-        def ensure_numeric_only(nodes: list[Node]) -> None:
+        # M5-F2: bounded ASCII literal text is lowered into code-page RO
+        # data; the kernel validates pointer + length before reading it.
+        def ensure_bounded_reports(nodes: list[Node]) -> None:
             for node in nodes:
                 if node.tag == "print" and "value" not in node.attrs:
-                    fail(node, "user target requires <print value=.../>; string syscalls not supported")
-                ensure_numeric_only(node.children)
-        ensure_numeric_only(program)
+                    payload = ("".join(node.text) + "\n").encode("utf-8")
+                    if len(payload) > 96 or any(b < 32 or b > 126 for b in payload[:-1]):
+                        fail(node, "user text output allows only printable ASCII <=95 bytes")
+                ensure_bounded_reports(node.children)
+        ensure_bounded_reports(program)
         prints = [i for i, node in enumerate(program) if node.tag == 'print']
         def contains_nested_print(nodes: list[Node]) -> bool:
             return any(child.tag == 'print' or contains_nested_print(child.children)
                        for node in nodes for child in node.children)
         nested = contains_nested_print(program)
-        # M5-C1 syscall sequence intentionally accepts just one numeric
-        # report; reject unsupported source shapes *before* building an ISO.
+        # M5-C1 syscall sequence intentionally accepts exactly one numeric
+        # or bounded printable-text report. Reject other source shapes.
         if len(prints) != 1 or nested or prints[0] != len(program) - 2:
-            raise CompileError("user target requires exactly one top-level final numeric <print value=.../> before <halt/>")
+            raise CompileError("user target requires exactly one final top-level <print> or <print value=.../> before <halt/>")
     for fn in functions.values():
         scan(fn.body)
 
@@ -92,6 +95,9 @@ def compile_html(source: str, *, target: str = "kernel") -> str:
             "/* x86-64 CPL3 register-only int80 ABI; no raw I/O instructions. */",
             "static inline void htmlk_user_call(uint64_t id, uint64_t arg) {",
             '  __asm__ volatile ("int $0x80" :: "a"(id), "D"(arg) : "memory", "cc");',
+            "}",
+            "static inline void htmlk_user_call_text(const unsigned char *text, uint64_t size) {",
+            '  __asm__ volatile ("int $0x80" :: "a"(UINT64_C(3)), "D"(text), "S"(size) : "memory", "cc");',
             "}",
             "static inline __attribute__((noreturn)) void htmlk_user_abort(void) {",
             "  htmlk_user_call(UINT64_C(99), UINT64_C(0));",
@@ -236,12 +242,20 @@ def compile_html(source: str, *, target: str = "kernel") -> str:
                 else:
                     data = ", ".join(f"0x{b:02x}" for b in
                                      ("".join(node.text) + "\n").encode("utf-8"))
-                    lines.extend([
-                        f"{pad}{{",
-                        f"{pad}  const unsigned char message[] = {{{data}}};",
-                        f"{pad}  for (uint64_t i = 0; i < sizeof(message); ++i) outb(message[i]);",
-                        f"{pad}}}",
-                    ])
+                    if target == "user":
+                        lines.extend([
+                            f"{pad}{{",
+                            f"{pad}  static const unsigned char message[] = {{{data}}};",
+                            f"{pad}  htmlk_user_call_text(message, sizeof(message));",
+                            f"{pad}}}",
+                        ])
+                    else:
+                        lines.extend([
+                            f"{pad}{{",
+                            f"{pad}  const unsigned char message[] = {{{data}}};",
+                            f"{pad}  for (uint64_t i = 0; i < sizeof(message); ++i) outb(message[i]);",
+                            f"{pad}}}",
+                        ])
             elif tag == "let":
                 name = validate_name(node)
                 if name in variables:
