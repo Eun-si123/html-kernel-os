@@ -60,7 +60,8 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
           paging_probe: bool = False, paging_fault_test: bool = False,
           paging_recover_test: bool = False, owned_frame_test: bool = False,
           tss_ist: bool = False, double_fault_test: bool = False,
-          multi_page_test: bool = False, multi_page_fault_test: bool = False) -> None:
+          multi_page_test: bool = False, multi_page_fault_test: bool = False,
+          task_probe: bool = False, task_negative_test: bool = False) -> None:
     dist, header = get_limine(cache)
     work_root.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="htmlk-boot-", dir=work_root) as temp:
@@ -79,6 +80,12 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
                  "-mno-red-zone", "-mcmodel=kernel", "-mgeneral-regs-only",
                  "-fcf-protection=none", "-Wall", "-Wextra", "-Werror"]
         define = ["-DHTMLK_QEMU_TEST_EXIT"] if test_exit else []
+        if task_negative_test and not task_probe:
+            raise ValueError("M4 negative task oracle needs task probe")
+        if task_probe:
+            define.append("-DHTMLK_M4_TASK_PROBE")
+        if task_negative_test:
+            define.append("-DHTMLK_M4_TASK_NEGATIVE_TEST")
         if multi_page_test and not paging_probe:
             raise ValueError("multi-page test requires paging probe")
         if multi_page_fault_test and not (multi_page_test and exception_idt and test_exit):
@@ -140,10 +147,12 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
         run("gcc", *flags, *define, "-I", header.parent, "-c",
             ROOT / "boot/kernel_entry.c", "-o", entry_obj)
         extra_objects: list[Path] = []
-        if memory_probe or video_console or exception_idt or paging_probe or tss_ist:
+        if memory_probe or video_console or exception_idt or paging_probe or tss_ist or task_probe:
             sources = (["page_pool"] if (memory_probe or paging_probe) else [])
             if memory_probe:
                 sources.append("memory_probe")
+            if task_probe:
+                sources.extend(("task_model", "task_runtime"))
             if paging_probe:
                 sources.extend(("frame_owner", "paging_tables", "paging_probe"))
             if exception_idt:
@@ -156,6 +165,11 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
                 obj = build_dir / (source_name + ".o")
                 run("gcc", *flags, *define, "-I", header.parent, "-I", ROOT / "boot",
                     "-c", ROOT / "boot" / (source_name + ".c"), "-o", obj)
+                extra_objects.append(obj)
+            if task_probe:
+                obj = build_dir / "task_switch.o"
+                run("gcc", "-c", "-m64", "-fno-pie", "-fno-pic",
+                    ROOT / "boot/task_switch.S", "-o", obj)
                 extra_objects.append(obj)
         run("gcc", "-nostdlib", "-no-pie", "-Wl,--build-id=none",
             "-Wl,-z,max-page-size=0x1000", "-Wl,-T," + str(ROOT / "boot/linker.ld"),
@@ -221,7 +235,13 @@ def main() -> None:
                         help="Opt-in M3 three extra private 4KiB aliases and reclaimed frames")
     parser.add_argument("--multi-page-fault-test", action="store_true",
                         help="Real #PF after reclaiming additional page; needs IDT and test-exit")
+    parser.add_argument("--task-probe", action="store_true",
+                        help="Opt-in M4-A real ring-0 cooperative task contexts")
+    parser.add_argument("--task-negative-test", action="store_true",
+                        help="Reject unsafe task states in native QEMU; needs task probe")
     a = parser.parse_args()
+    if a.task_negative_test and not a.task_probe:
+        parser.error("--task-negative-test requires --task-probe")
     if a.multi_page_test and not a.paging_probe:
         parser.error("--multi-page-test requires --paging-probe")
     if a.multi_page_fault_test and not (a.multi_page_test and a.exception_idt and a.test_exit):
@@ -254,7 +274,8 @@ def main() -> None:
           a.paging_probe, a.paging_fault_test,
           a.paging_recover_test, a.owned_frame_test,
           a.tss_ist, a.double_fault_test,
-          a.multi_page_test, a.multi_page_fault_test)
+          a.multi_page_test, a.multi_page_fault_test,
+          a.task_probe, a.task_negative_test)
 
 
 if __name__ == "__main__":

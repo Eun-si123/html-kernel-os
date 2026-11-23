@@ -78,6 +78,8 @@ M1 QEMU BIOS boot and one Chromium browser boot are verified; the M2 **core boot
 
 ### M4 — tasks + boundaries
 
+**Implementation slices:** M4-A separate ring-0 kernel task stacks and explicit cooperative context switching; M4-B interrupt/time accounting and deterministic bounded scheduling; M4-C ring-3 CPL transitions, TSS.RSP0 and a minimal syscall boundary; M4-D per-task memory access permission checks, fault cleanup and regression tests. Only M4-D plus the independent-task runtime gate can complete this milestone. M4-A is a separate opt-in QEMU experiment: see [M4 task proof](M4_TASKS.md). A cooperative switch alone is **not** user/kernel isolation or complete M4.
+
 - Define a small task/process model and scheduler; establish calling convention, syscall or message boundary, and ownership rules.
 - Enforce user-space vs kernel-space memory isolation; handle crashes/timeouts without corrupting other tasks.
 - **Gate:** two independent tasks make observable progress and forbidden user-memory access fails safely in QEMU.
