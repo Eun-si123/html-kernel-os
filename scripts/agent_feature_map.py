@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 MAP = ROOT / "agent-evals" / "feature-contracts.json"
 FEATURE_ID = re.compile(r"^[a-z][a-z0-9-]{1,60}$")
 GIT_REF = re.compile(r"^[A-Za-z0-9_./-]{1,100}$")
-PRODUCTION_PATHS = ("compiler/", "site/")
+PRODUCTION_PATHS = ("compiler/", "site/", "boot/")
 
 
 def require(ok: bool, reason: str) -> None:
@@ -90,7 +90,7 @@ def summarize(features: list[dict], changed: list[str]) -> dict:
         "affectedFeatures": affected,
         "unmappedSourceFiles": sorted(p for p in paths if
                                       p.startswith(PRODUCTION_PATHS) and
-                                      p not in mapped and p.endswith((".py", ".js", ".css", ".html"))),
+                                      p not in mapped and p.endswith((".py", ".js", ".css", ".html", ".c", ".h"))),
         "limitation": "Mapping paths recommends reviews only; it does not execute tests or boot an OS.",
     }
 

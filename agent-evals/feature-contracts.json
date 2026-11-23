@@ -58,6 +58,25 @@
       "fieldEvidence": [
         "docs/VALIDATION.md"
       ]
+    },
+    {
+      "id": "m3-memory-bootstrap",
+      "source": [
+        "boot/kernel_entry.c",
+        "boot/page_pool.h",
+        "boot/page_pool.c",
+        "boot/memory_probe.h",
+        "boot/memory_probe.c",
+        "scripts/build_boot.py"
+      ],
+      "regressions": [
+        "tests/test_m3_memory.py"
+      ],
+      "fieldEvidence": [
+        "scripts/test_m3_memory.py",
+        "docs/M3_MEMORY_BOOTSTRAP.md",
+        "tests/native/test_page_pool.c"
+      ]
     }
   ]
 }
