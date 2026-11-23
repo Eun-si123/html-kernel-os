@@ -33,7 +33,9 @@ jobs:
       - name: Compile and actually execute HTML programs in Linux userspace
         run: python scripts/test_linux.py
       - name: Differential test signed/unsigned arithmetic against Python (UBSan -O0/-O3)
-        run: python scripts/test_integer_oracle.py
+        run: |
+          python scripts/test_integer_oracle.py
+          python scripts/test_division_oracle.py
       - name: Install real x86 boot-test tools
         run: |
           sudo apt-get update
