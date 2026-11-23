@@ -25,6 +25,11 @@ bool htmlk_m5_timeout_irq_context_valid(const struct htmlk_m4_d1_irq_frame *fram
 bool htmlk_m5_timeout_irq_origin_owned(const struct htmlk_m4_d1_irq_frame *frame);
 __attribute__((noreturn)) void htmlk_m5_timeout_expire(void);
 #endif
+bool htmlk_m5_accept_bad_user_rsp_trap(unsigned vector,
+                                   uintptr_t frame_address,
+                                   uint64_t rip, uint64_t cs,
+                                   uint64_t flags, uint64_t user_rsp,
+                                   uint64_t ss);
 bool htmlk_m5_accept_bad_user_rsp_noerr(unsigned vector,
                                    uintptr_t frame_address,
                                    uint64_t rip, uint64_t cs,

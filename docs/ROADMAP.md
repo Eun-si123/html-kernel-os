@@ -123,6 +123,8 @@ The marker `— NEXT` is a **planning recommendation**, not an authoritative com
 
 **M5-E3-H poisoned RSP true CPU page-fault IST2 (local feature branch):** independently reproduced fatal #PF5 error5/CR2 on real QEMU prior to patch. Now only trusted actual IST2 six-word CPU frame, active owner/private CR3 and properly scoped PF error5/7 can retire the current task; a real QEMU 3×(5 bad-user PF + 6 healthy HTML + genuine x2APIC timeout) positive suite, no-timer, legacy/error4 fail-stop, host UBSan negatives PASS. Full CI/merge pending. [Detailed proof](M5_USER_BAD_PF.md).
 
+**M5-E3-I actual Ring3 #DB/#BP with poisoned user RSP (local feature branch):** pre-fix real QEMU proved fatal CPU vector1/3 code-end trap RIP, exit45. Owner-only exact 40-byte TSS.RSP0 frame and **trap-specific one-past-code-end RIP** validation now retires the known task, preserving unrelated fault/error-code policies. Real QEMU 3×(5 trap retirements+6 healthy HTML reruns+1 x2APIC timeout), no-timer and legacy fail-stop negatives, GCC UBSan O0/O3 PASS. Exact PR-head CI/merge and physical PC remain pending. [M5-E3-I evidence](M5_USER_BAD_TRAP.md).
+
 - Prioritize an input/output terminal and deterministic RAM-backed or embedded filesystem before broad hardware drivers.
 - Add a simple user program loader, error reporting and minimal command interaction.
 - **Gate:** boot the image, enter a command, read an embedded file, execute a separate program, and report controlled invalid-input behavior.

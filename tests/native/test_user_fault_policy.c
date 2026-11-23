@@ -204,5 +204,46 @@ int main(void) {
     pf.frame.rip=user_base+64U;
     assert(!htmlk_m5_bad_pf_stack_owned(&pf));pf.frame.rip=user_base+3U;
     assert(!htmlk_m5_bad_pf_stack_owned(NULL));
+    /* M5-E3-I: a genuine ICEBP/INT3 saves RIP AFTER the trap opcode.
+     * Only #DB/#BP may accept one-past-code-end with an exactly positioned
+     * 40-byte CPU frame, known active CR3 and *bad* user RSP. */
+    struct htmlk_m5_bad_noerr_owner trap = ud;
+    trap.rip=user_base+64U;
+    trap.code_bytes=64U;
+    assert(htmlk_m5_bad_trap_stack_owned(1U,&trap));
+    assert(htmlk_m5_bad_trap_stack_owned(3U,&trap));
+    assert(!htmlk_m5_bad_noerr_stack_owned(&trap));
+    for (unsigned vec=0;vec<=31U;++vec) {
+        if (vec!=1U && vec!=3U)
+            assert(!htmlk_m5_bad_trap_stack_owned(vec,&trap));
+    }
+    trap.rip=user_base+65U;
+    assert(!htmlk_m5_bad_trap_stack_owned(1U,&trap));
+    trap.rip=user_base;
+    assert(!htmlk_m5_bad_trap_stack_owned(3U,&trap));
+    trap.rip=user_base+1U;
+    assert(htmlk_m5_bad_trap_stack_owned(1U,&trap));
+    trap.frame_address-=8U;
+    assert(!htmlk_m5_bad_trap_stack_owned(1U,&trap));trap.frame_address+=8U;
+    trap.frame_address=trap.tss_rsp0-160U;
+    assert(!htmlk_m5_bad_trap_stack_owned(3U,&trap));trap.frame_address=trap.tss_rsp0-40U;
+    trap.cs=0x08U;assert(!htmlk_m5_bad_trap_stack_owned(1U,&trap));trap.cs=0x2bU;
+    trap.ss=0x10U;assert(!htmlk_m5_bad_trap_stack_owned(3U,&trap));trap.ss=0x33U;
+    trap.user_rsp=HTMLK_M4_USER_STACK-16U;
+    assert(!htmlk_m5_bad_trap_stack_owned(1U,&trap));trap.user_rsp=0U;
+    trap.active_cr3=trap.saved_cr3;
+    assert(!htmlk_m5_bad_trap_stack_owned(3U,&trap));trap.active_cr3=trap.owned_cr3;
+    trap.live_frames=5U;assert(!htmlk_m5_bad_trap_stack_owned(1U,&trap));trap.live_frames=6U;
+    trap.has_active_app=false;
+    assert(!htmlk_m5_bad_trap_stack_owned(3U,&trap));trap.has_active_app=true;
+    trap.already_terminated=true;
+    assert(!htmlk_m5_bad_trap_stack_owned(1U,&trap));trap.already_terminated=false;
+    trap.expected_if=false;
+    assert(!htmlk_m5_bad_trap_stack_owned(3U,&trap));trap.expected_if=true;
+    trap.rflags=0x3002U;
+    assert(!htmlk_m5_bad_trap_stack_owned(1U,&trap));trap.rflags=0x202U;
+    trap.saved_main_rsp=0;
+    assert(!htmlk_m5_bad_trap_stack_owned(3U,&trap));
+    assert(!htmlk_m5_bad_trap_stack_owned(1U,NULL));
     puts("M5-E1 USER EXCEPTION FRAME/CR3/SEL/ERR GUARDS PASS");
 }

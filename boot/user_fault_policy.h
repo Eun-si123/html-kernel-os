@@ -21,6 +21,10 @@ struct htmlk_m5_bad_noerr_owner {
 };
 bool htmlk_m5_bad_noerr_fault_vector(unsigned vector);
 bool htmlk_m5_bad_noerr_stack_owned(const struct htmlk_m5_bad_noerr_owner *ctx);
+/* Only genuine trap-class no-error-code #DB/#BP with the correct
+ * 40-byte TSS.RSP0 frame; CPU-saved RIP may be ONE past code end. */
+bool htmlk_m5_bad_trap_stack_owned(unsigned vector,
+                                   const struct htmlk_m5_bad_noerr_owner *ctx);
 /* x86 #GP pushes an error word at RSP0-48; the five-word IRET frame
  * starts at RSP0-40 (as given to GCC's interrupt function). Never use
  * this separate error-code proof for #PF/IST2 or other exception vectors. */
