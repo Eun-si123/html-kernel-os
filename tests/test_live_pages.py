@@ -27,14 +27,14 @@ class LivePagesTests(unittest.TestCase):
         parser.feed(html)
         self.assertEqual(len(parser.ids), len(set(parser.ids)))
         for name in ('start','stop','fullscreen','terminal','source','source-hash',
-                     'iso-hash','boot-event','romfs-match','screen_container','command',
+                     'iso-hash','boot-event','romfs-match','screen_container','local-iso','local-html','command',
                      'command-form','send','message','state'):
             self.assertIn(name, parser.ids)
         for token in ("import V86 from '../vendor/libv86.mjs'",
                       'serial0-output-byte', 'serial0_send',
                       "cpu_type:'x86_64'", 'cdrom:{buffer:data}',
                       'crypto.subtle.digest', 'M5_PROMPT> ',
-                      'M5_RUN_EXIT_CODE=7', 'M5_C_USER_FRAMES_RECLAIMED',
+                      'M5_RUN_EXIT_CODE=', 'M5_C_USER_FRAMES_RECLAIMED',
                       'SOURCE_BEGIN', 'SOURCE_END', 'expectedSourceBytes'):
             self.assertIn(token, js)
         self.assertNotIn('innerHTML', js)
@@ -43,6 +43,14 @@ class LivePagesTests(unittest.TestCase):
         self.assertIn('(prefers-color-scheme:dark)', css)
         self.assertIn('max-width:520px', css)
         self.assertIn('data-command="cat /source.html"', html)
+        self.assertIn('브라우저 메모리에서만 실행', html)
+        self.assertIn('html-kernel-live.iso', html)
+        self.assertIn('--source 내프로그램.html', html)
+        for token in ('localIsoFile','localHtmlFile','arrayBuffer()',
+                      'MAX_LOCAL_ISO_BYTES','CD001','TextDecoder',
+                      'localIsoInput.disabled', 'chooseLocalHtml',
+                      'chooseLocalIso', 'sourceVerified'):
+            self.assertIn(token, js)
         self.assertIn('읽기 전용', html)
         self.assertIn('정적 사이트', html)
         self.assertIn('x2APIC 타임아웃 없이', html)
@@ -64,6 +72,9 @@ class LivePagesTests(unittest.TestCase):
         self.assertNotIn('"--user-timeout"', builder)
         self.assertIn('source.html', builder)
         self.assertIn('shutil.copytree', builder)
+        self.assertIn('scripts/test_local_live_iso.py', ci)
+        self.assertIn('scripts/test_local_live_iso.py', pages)
+        self.assertIn('--source', builder)
         self.assertIn('test_exit', builder)
         self.assertTrue((ROOT/'examples/user-programs/html-u64-report.html').is_file())
         self.assertIn('href="./live/"', (ROOT/'site/index.html').read_text())
