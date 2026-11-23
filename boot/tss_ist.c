@@ -14,7 +14,8 @@ _Static_assert(offsetof(struct htmlk_tss64, io_bitmap_base) == 102,
 enum { IST_STACK_BYTES = 16384 };
 static uint8_t df_stack[IST_STACK_BYTES] __attribute__((aligned(16)));
 static uint8_t pf_stack[IST_STACK_BYTES] __attribute__((aligned(16)));
-#if defined(HTMLK_M4_USER_PROBE) || defined(HTMLK_M4_USER_ISOLATION)
+#if defined(HTMLK_M4_USER_PROBE) || defined(HTMLK_M4_USER_ISOLATION) || \
+    defined(HTMLK_M4_USER_PREEMPT)
 static uint8_t user_kernel_stack[IST_STACK_BYTES] __attribute__((aligned(16)));
 #endif
 static struct htmlk_tss64 tss __attribute__((aligned(16)));
@@ -25,7 +26,8 @@ static uint64_t gdt[7] __attribute__((aligned(16))) = {
     UINT64_C(0x00af9a000000ffff),
     UINT64_C(0x00cf92000000ffff),
     0, 0,
-#if defined(HTMLK_M4_USER_PROBE) || defined(HTMLK_M4_USER_ISOLATION)
+#if defined(HTMLK_M4_USER_PROBE) || defined(HTMLK_M4_USER_ISOLATION) || \
+    defined(HTMLK_M4_USER_PREEMPT)
     UINT64_C(0x00affa000000ffff), /* selector 0x2b: ring 3 CS */
     UINT64_C(0x00cff2000000ffff)  /* selector 0x33: ring 3 SS */
 #else
@@ -46,6 +48,18 @@ static void report(const char *msg) {
                           "a"(ch), "Nd"((unsigned short)0xe9));
     }
 }
+
+#ifdef HTMLK_M4_USER_PREEMPT
+bool htmlk_tss_user_set_rsp0(uint64_t top) {
+    const uint64_t upper = top >> 48;
+    if (!top || (top & 15U)!=0 ||
+        upper != ((top & (UINT64_C(1)<<47))?0xffffU:0U))
+        return false;
+    tss.rsp[0]=top;
+    return true;
+}
+uint64_t htmlk_tss_user_rsp0(void) {return tss.rsp[0];}
+#endif
 
 bool htmlk_tss_descriptor_make(struct htmlk_tss_descriptor *out,
                                uint64_t tss_base, uint32_t limit) {
@@ -79,7 +93,8 @@ bool htmlk_tss_on_page_fault_stack(uint64_t rsp) {
 __attribute__((noinline))
 void htmlk_tss_ist_install(void) {
     __asm__ volatile ("cli" ::: "memory");
-#if defined(HTMLK_M4_USER_PROBE) || defined(HTMLK_M4_USER_ISOLATION)
+#if defined(HTMLK_M4_USER_PROBE) || defined(HTMLK_M4_USER_ISOLATION) || \
+    defined(HTMLK_M4_USER_PREEMPT)
     tss.rsp[0] = (uint64_t)(uintptr_t)&user_kernel_stack[IST_STACK_BYTES];
 #else
     tss.rsp[0] = (uint64_t)(uintptr_t)&pf_stack[IST_STACK_BYTES];

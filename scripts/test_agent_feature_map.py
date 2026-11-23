@@ -23,7 +23,7 @@ class FeatureContractTests(unittest.TestCase):
                           "m3-bounded-multipage", "m4-cooperative-kernel-tasks",
                           "m4-pit-irq-pacing", "m4-x2apic-preemption",
                           "m4-ring3-user-syscall",
-                          "m4-ring3-fault-containment"})
+                          "m4-ring3-fault-containment", "m4-ring3-preempt-fault"})
 
     def test_changed_m4_scheduler_maps_native_qemu_and_state_oracles(self):
         report = summarize(validate(self.real), ["boot/task_switch.S"])
@@ -65,6 +65,16 @@ class FeatureContractTests(unittest.TestCase):
                       report["affectedFeatures"][0]["fieldEvidence"])
         self.assertEqual(report["affectedFeatures"][0]["automatedEvidence"], "not-run")
 
+    def test_ring3_irq_preemption_maps_native_and_host_frame_oracles(self):
+        report = summarize(validate(self.real), ["boot/preempt_user_irq.S"])
+        self.assertEqual([item["feature"] for item in report["affectedFeatures"]],
+                         ["m4-ring3-preempt-fault"])
+        self.assertIn("tests/test_m4_d_frame.py",
+                      report["affectedFeatures"][0]["existingRegressionTests"])
+        self.assertIn("scripts/test_m4_user_preempt.py",
+                      report["affectedFeatures"][0]["fieldEvidence"])
+        self.assertEqual(report["affectedFeatures"][0]["automatedEvidence"], "not-run")
+
     def test_changed_m3_c_source_maps_native_regressions(self):
         report = summarize(validate(self.real), ["boot/page_pool.c"])
         self.assertEqual(report["affectedFeatures"][0]["feature"], "m3-memory-bootstrap")
@@ -78,7 +88,7 @@ class FeatureContractTests(unittest.TestCase):
             ["m4-pit-irq-pacing", "m3-exception-idt",
              "m3-owned-fault-recovery", "m3-tss-ist",
              "m4-x2apic-preemption", "m4-ring3-user-syscall",
-             "m4-ring3-fault-containment"])
+             "m4-ring3-fault-containment", "m4-ring3-preempt-fault"])
         m3_entry = next(item for item in report["affectedFeatures"]
                         if item["feature"] == "m3-exception-idt")
         self.assertIn("tests/test_exception_idt.py",
@@ -116,7 +126,7 @@ class FeatureContractTests(unittest.TestCase):
         self.assertEqual(
             [item["feature"] for item in report["affectedFeatures"]],
             ["m3-tss-ist", "m4-ring3-user-syscall",
-             "m4-ring3-fault-containment"])
+             "m4-ring3-fault-containment", "m4-ring3-preempt-fault"])
         self.assertIn("tests/test_tss_ist.py",
                       report["affectedFeatures"][0]["existingRegressionTests"])
         self.assertIn("scripts/test_tss_ist.py",

@@ -70,7 +70,11 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
           user_write_code: bool = False, isolation_probe: bool = False,
           isolation_gp: bool = False, isolation_ro: bool = False,
           isolation_forged: bool = False,
-          isolation_survivor_fault: bool = False) -> None:
+          isolation_survivor_fault: bool = False,
+          user_preempt: bool = False, user_preempt_mask: bool = False,
+          user_preempt_gp: bool = False, user_preempt_ro: bool = False,
+          user_preempt_bad_frame: bool = False,
+          user_preempt_unexpected_b: bool = False) -> None:
     dist, header = get_limine(cache)
     work_root.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="htmlk-boot-", dir=work_root) as temp:
@@ -89,6 +93,31 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
                  "-mno-red-zone", "-mcmodel=kernel", "-mgeneral-regs-only",
                  "-fcf-protection=none", "-Wall", "-Wextra", "-Werror"]
         define = ["-DHTMLK_QEMU_TEST_EXIT"] if test_exit else []
+        if user_preempt and (not exception_idt or not tss_ist or
+                             isolation_probe or user_probe or preempt_probe or
+                             memory_probe or paging_probe or video_console or
+                             task_probe or timer_probe or double_fault_test or
+                             fault_test is not None):
+            raise ValueError("M4-D preempt needs only IDT and TSS")
+        d_negatives = (user_preempt_mask, user_preempt_gp,
+                       user_preempt_ro, user_preempt_bad_frame,
+                       user_preempt_unexpected_b)
+        if any(d_negatives) and not (user_preempt and test_exit):
+            raise ValueError("M4-D negatives require probe and test-exit")
+        if sum(bool(x) for x in d_negatives) > 1:
+            raise ValueError("M4-D negative controls exclusive")
+        if user_preempt:
+            define.append("-DHTMLK_M4_USER_PREEMPT")
+        if user_preempt_mask:
+            define.append("-DHTMLK_M4_D_TIMER_MASK")
+        if user_preempt_gp:
+            define.append("-DHTMLK_M4_D_GP_FAULT")
+        if user_preempt_ro:
+            define.append("-DHTMLK_M4_D_RO_FAULT")
+        if user_preempt_bad_frame:
+            define.append("-DHTMLK_M4_D_BAD_FRAME")
+        if user_preempt_unexpected_b:
+            define.append("-DHTMLK_M4_D_UNEXPECTED_B_GP")
         if isolation_probe and (not exception_idt or not tss_ist or user_probe or
                                 memory_probe or paging_probe or video_console or
                                 task_probe or timer_probe or preempt_probe or
@@ -220,8 +249,8 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
         run("gcc", *flags, *define, "-I", header.parent, "-c",
             ROOT / "boot/kernel_entry.c", "-o", entry_obj)
         extra_objects: list[Path] = []
-        if memory_probe or video_console or exception_idt or paging_probe or tss_ist or task_probe or preempt_probe or user_probe or isolation_probe:
-            sources = (["page_pool"] if (memory_probe or paging_probe or user_probe or isolation_probe) else [])
+        if memory_probe or video_console or exception_idt or paging_probe or tss_ist or task_probe or preempt_probe or user_probe or isolation_probe or user_preempt:
+            sources = (["page_pool"] if (memory_probe or paging_probe or user_probe or isolation_probe or user_preempt) else [])
             if memory_probe:
                 sources.append("memory_probe")
             if task_probe:
@@ -237,6 +266,9 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
             if isolation_probe:
                 sources.extend(("frame_owner", "user_pages",
                                 "isolation_policy", "user_isolation"))
+            if user_preempt:
+                sources.extend(("frame_owner", "user_pages",
+                                "preempt_user_frame", "preempt_user"))
             if exception_idt:
                 sources.append("exception_idt")
             if tss_ist:
@@ -263,6 +295,12 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
                 run("gcc", "-c", "-m64", "-fno-pie", "-fno-pic",
                     *define, ROOT / "boot/user_entry.S", "-o", obj)
                 extra_objects.append(obj)
+            if user_preempt:
+                for source_name in ("preempt_user_irq", "preempt_user_payload"):
+                    obj = build_dir / (source_name + ".o")
+                    run("gcc", "-c", "-m64", "-fno-pie", "-fno-pic",
+                        *define, ROOT / "boot" / (source_name + ".S"), "-o", obj)
+                    extra_objects.append(obj)
             if isolation_probe:
                 obj = build_dir / "user_isolation_payload.o"
                 run("gcc", "-c", "-m64", "-fno-pie", "-fno-pic",
@@ -366,7 +404,32 @@ def main() -> None:
                         help="M4-C2: reject forged CPL0 fault context before execution")
     parser.add_argument("--user-isolation-survivor-fault", action="store_true",
                         help="M4-C2: survivor faults must not be incorrectly recovered")
+    parser.add_argument("--user-preempt-probe", action="store_true",
+                        help="M4-D real ring3 task IRQ preemption + survivor fault")
+    parser.add_argument("--user-preempt-mask", action="store_true",
+                        help="M4-D negative: masked x2APIC timer blocks schedule")
+    parser.add_argument("--user-preempt-gp", action="store_true",
+                        help="M4-D negative: A ring3 outb #GP survivor")
+    parser.add_argument("--user-preempt-ro", action="store_true",
+                        help="M4-D negative: A ring3 RO code #PF survivor")
+    parser.add_argument("--user-preempt-bad-frame", action="store_true",
+                        help="M4-D negative: malformed saved user frame rejected")
+    parser.add_argument("--user-preempt-unexpected-b", action="store_true",
+                        help="M4-D negative: unarmed B CPU #GP must fail-stop")
     a = parser.parse_args()
+    if a.user_preempt_probe and (
+        not a.exception_idt or not a.tss_ist or a.user_isolation_probe or
+        a.user_probe or a.preempt_probe or a.memory_probe or
+        a.paging_probe or a.video_console or a.task_probe or
+        a.timer_probe or a.double_fault_test or a.fault_test is not None):
+        parser.error("--user-preempt-probe needs IDT+TSS alone")
+    d_negatives = (a.user_preempt_mask, a.user_preempt_gp,
+                   a.user_preempt_ro, a.user_preempt_bad_frame,
+                   a.user_preempt_unexpected_b)
+    if any(d_negatives) and not (a.user_preempt_probe and a.test_exit):
+        parser.error("M4-D negatives need --user-preempt-probe --test-exit")
+    if sum(bool(x) for x in d_negatives)>1:
+        parser.error("M4-D negative probes are exclusive")
     if a.user_isolation_probe and (
         not a.exception_idt or not a.tss_ist or a.user_probe or
         a.memory_probe or a.paging_probe or a.video_console or
@@ -444,7 +507,10 @@ def main() -> None:
           a.user_read_kernel, a.user_write_code,
           a.user_isolation_probe, a.user_isolation_gp,
           a.user_isolation_ro, a.user_isolation_forged,
-          a.user_isolation_survivor_fault)
+          a.user_isolation_survivor_fault,
+          a.user_preempt_probe, a.user_preempt_mask,
+          a.user_preempt_gp, a.user_preempt_ro,
+          a.user_preempt_bad_frame, a.user_preempt_unexpected_b)
 
 
 if __name__ == "__main__":

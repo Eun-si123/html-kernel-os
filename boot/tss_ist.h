@@ -40,6 +40,12 @@ void htmlk_tss_ist_install(void);
 bool htmlk_tss_on_double_fault_stack(uint64_t current_rsp);
 bool htmlk_tss_on_page_fault_stack(uint64_t current_rsp);
 
+#ifdef HTMLK_M4_USER_PREEMPT
+/* Single-vCPU only. Caller must own a mapped aligned, trusted kernel stack. */
+bool htmlk_tss_user_set_rsp0(uint64_t top);
+uint64_t htmlk_tss_user_rsp0(void);
+#endif
+
 /* Only for a specially built QEMU negative-control image. */
 #ifdef HTMLK_M3_DOUBLE_FAULT_TEST
 __attribute__((noreturn)) void htmlk_tss_inject_double_fault(void);

@@ -3,6 +3,9 @@
  * Does not support recovery, interrupts, SMP, TSS, IST or user mode.
  */
 #include "exception_idt.h"
+#ifdef HTMLK_M4_USER_PREEMPT
+#include "preempt_user.h"
+#endif
 #if defined(HTMLK_M4_USER_PROBE) || defined(HTMLK_M4_USER_ISOLATION)
 #include "user_probe.h"
 #endif
@@ -168,6 +171,11 @@ __attribute__((interrupt)) static void vector_12(struct interrupt_frame *f, unsi
 }
 
 __attribute__((interrupt)) static void vector_13(struct interrupt_frame *f, unsigned long code) {
+#ifdef HTMLK_M4_USER_PREEMPT
+    if (htmlk_m4_d_accept_fault(13U,f->rip,f->cs,f->rsp,f->ss,
+                                (uint64_t)code,0U))
+        __builtin_unreachable();
+#endif
 #ifdef HTMLK_M4_USER_ISOLATION
     if (htmlk_m4_iso_accept_fault(13U, f->rip, f->cs, f->rsp, f->ss,
                                   (uint64_t)code, 0U))
@@ -189,6 +197,13 @@ __attribute__((interrupt)) static void vector_14(struct interrupt_frame *f, unsi
     if (htmlk_paging_recover_page_fault(fault_address, (uint64_t)code)) {
         return; /* architectural iretq retries the original CPU load */
     }
+#endif
+#ifdef HTMLK_M4_USER_PREEMPT
+    uint64_t d_cr2;
+    __asm__ volatile ("mov %%cr2,%0":"=r"(d_cr2));
+    if (htmlk_m4_d_accept_fault(14U,f->rip,f->cs,f->rsp,f->ss,
+                                (uint64_t)code,d_cr2))
+        __builtin_unreachable();
 #endif
 #ifdef HTMLK_M4_USER_ISOLATION
     uint64_t fault_cr2;
@@ -318,6 +333,14 @@ void htmlk_idt_install(void) {
     if (!htmlk_idt_gate_make(&idt[32],
             (uint64_t)(uintptr_t)&htmlk_m4_irq0_entry, cs)) {
         panic(13, 0, 0);
+    }
+#endif
+#ifdef HTMLK_M4_USER_PREEMPT
+    if (!htmlk_idt_gate_make(&idt[HTMLK_M4_D_TIMER_VECTOR],
+            (uint64_t)(uintptr_t)&htmlk_m4_d_timer_entry, cs) ||
+        !htmlk_idt_gate_make(&idt[0xffU],
+            (uint64_t)(uintptr_t)&htmlk_m4_d_spurious_entry, cs)) {
+        panic(13,0,0);
     }
 #endif
 #ifdef HTMLK_M4_X2APIC_PREEMPT

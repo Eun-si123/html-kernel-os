@@ -33,6 +33,10 @@ The QEMU-only M4-C1 probe is deliberately **separate from M4-B2 timer preemption
 
 The kernel allocates two separate six-frame user images with independent PML4/PDPT/PD/PT roots and code/stack backing pages while preserving the original Limine CR3. Both Ring3 payloads use the same virtual entry and stack addresses but have different physical mappings; the survivor is checked to start with a zeroed stack independent of the offender. M3 #PF and #GP handlers use a strict pure predicate from boot/isolation_policy.c to accept only the single intended Ring3 fault with a matching selector, vector, error, RIP/RSP, CR2 and active CR3. The C1 assembly return restores the original supervisor CR3 and trusted main stack before releasing the faulty task frames. B then runs and exits via INT0x80; all frames are reclaimed before generated HTML executes. All other faults fail-stop. This is sequential task containment, not interrupt-driven user preemption or a general-purpose process loader. [M4-C2 proof](M4_FAULT_ISOLATION.md).
 
+## M4-D user preemption, CR3/TSS ownership and fault retirement (opt-in)
+
+Independent one-vCPU x2APIC timer path uses two trusted never-yielding CPL3 task images. Each has its own tagged private 4-level page-tree root, user code/stack, 16KiB ring0 IRQ stack, and a distinct saved full-GPR x86-64 interrupt frame. Switching tasks validates stack bounds, userspace CS/SS/RIP/RSP and register sentinels, loads TSS.RSP0 for the next ring3-to-kernel transfer, then loads next CR3; IRETQ resumes the previously preempted CPL3 task. When A faults, kernel validates expected PF/GP and IRQ progress, restores original root before releasing only A's owned frames, resumes B from its saved CPU interrupt context, then returns to original kernel and generated HTML. No generic process runtime, user syscall under live IRQ preemption, FPU/SIMD context, SMP, UEFI or hardware proof. [M4-D exact validation](M4_RING3_PREEMPT.md).
+
 ## Boundaries
 
 - HTML is being used as **syntax**, not as the web platform. The meaning of each tag is custom.
