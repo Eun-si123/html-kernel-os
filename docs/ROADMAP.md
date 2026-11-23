@@ -69,7 +69,7 @@ M1 QEMU BIOS boot and one Chromium browser boot are verified; the M2 **core boot
 
 ### M3 — memory + interrupts
 
-**Experimental first slice (PR #38):** an opt-in, checksum-pinned Limine memory-map/HHDM handoff and 16 x 4KiB bounded USABLE physical-page pool have passed an initial BIOS QEMU and GCC UBSan run. Source-change and malformed-map negative controls distinguish a real boot from synthetic output; see [M3_MEMORY_BOOTSTRAP.md](M3_MEMORY_BOOTSTRAP.md). Virtual page mapping, interrupt/exception handlers, recovery and resource ownership remain **OPEN**; M3 is not complete.
+**Experimental first slice (PR #38):** an opt-in, checksum-pinned Limine memory-map/HHDM handoff and 16 x 4KiB bounded USABLE physical-page pool have passed an initial BIOS QEMU and GCC UBSan run. Source-change and malformed-map negative controls distinguish a real boot from synthetic output; see [M3_MEMORY_BOOTSTRAP.md](M3_MEMORY_BOOTSTRAP.md). An additional **opt-in native Limine framebuffer console** now passes real QEMU pixel readback and an independently verified VGA screenshot (PR #39, not yet merged); see [M3_FRAMEBUFFER_CONSOLE.md](M3_FRAMEBUFFER_CONSOLE.md). Virtual page mapping, interrupt/exception handlers, recovery and resource ownership remain **OPEN**; M3 is not complete.
 
 - Receive and validate boot memory map; implement bounded allocation and mapping; preserve kernel reserved regions.
 - Define safe default primitives so ordinary user code cannot arbitrarily map physical memory; require explicit privileged operations.
