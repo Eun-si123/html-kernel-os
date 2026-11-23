@@ -70,7 +70,15 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
           user_write_code: bool = False, isolation_probe: bool = False,
           isolation_gp: bool = False, isolation_ro: bool = False,
           isolation_forged: bool = False,
-          isolation_survivor_fault: bool = False) -> None:
+          isolation_survivor_fault: bool = False,
+          romfs_probe: bool = False, romfs_negative: bool = False,
+          romfs_root: Path | None = None) -> None:
+    if romfs_negative and not (romfs_probe and test_exit):
+        raise ValueError("M5-A denial oracle requires ROMFS probe and test-exit")
+    if romfs_probe and any((memory_probe, video_console, exception_idt,
+                            paging_probe, tss_ist, task_probe, timer_probe,
+                            preempt_probe, user_probe, isolation_probe)):
+        raise ValueError("M5-A ROMFS probe is an independent opt-in boot mode")
     dist, header = get_limine(cache)
     work_root.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="htmlk-boot-", dir=work_root) as temp:
@@ -89,6 +97,10 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
                  "-mno-red-zone", "-mcmodel=kernel", "-mgeneral-regs-only",
                  "-fcf-protection=none", "-Wall", "-Wextra", "-Werror"]
         define = ["-DHTMLK_QEMU_TEST_EXIT"] if test_exit else []
+        if romfs_probe:
+            define.append("-DHTMLK_M5_ROMFS_PROBE")
+        if romfs_negative:
+            define.append("-DHTMLK_M5_ROMFS_NEGATIVE")
         if isolation_probe and (not exception_idt or not tss_ist or user_probe or
                                 memory_probe or paging_probe or video_console or
                                 task_probe or timer_probe or preempt_probe or
@@ -220,10 +232,12 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
         run("gcc", *flags, *define, "-I", header.parent, "-c",
             ROOT / "boot/kernel_entry.c", "-o", entry_obj)
         extra_objects: list[Path] = []
-        if memory_probe or video_console or exception_idt or paging_probe or tss_ist or task_probe or preempt_probe or user_probe or isolation_probe:
+        if memory_probe or video_console or exception_idt or paging_probe or tss_ist or task_probe or preempt_probe or user_probe or isolation_probe or romfs_probe:
             sources = (["page_pool"] if (memory_probe or paging_probe or user_probe or isolation_probe) else [])
             if memory_probe:
                 sources.append("memory_probe")
+            if romfs_probe:
+                sources.extend(("romfs", "romfs_probe"))
             if task_probe:
                 sources.extend(("task_model", "task_runtime"))
             if timer_probe:
@@ -248,6 +262,15 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
                 run("gcc", *flags, *define, "-I", header.parent, "-I", ROOT / "boot",
                     "-c", ROOT / "boot" / (source_name + ".c"), "-o", obj)
                 extra_objects.append(obj)
+            if romfs_probe:
+                generated_romfs = build_dir / "romfs_generated.c"
+                run(sys.executable, ROOT / "scripts/gen_romfs.py",
+                    "--root", (romfs_root or ROOT / "examples/romfs").resolve(),
+                    "--out", generated_romfs)
+                generated_romfs_obj = build_dir / "romfs_generated.o"
+                run("gcc", *flags, *define, "-I", ROOT / "boot", "-c",
+                    generated_romfs, "-o", generated_romfs_obj)
+                extra_objects.append(generated_romfs_obj)
             if task_probe:
                 obj = build_dir / "task_switch.o"
                 run("gcc", "-c", "-m64", "-fno-pie", "-fno-pic",
@@ -366,7 +389,20 @@ def main() -> None:
                         help="M4-C2: reject forged CPL0 fault context before execution")
     parser.add_argument("--user-isolation-survivor-fault", action="store_true",
                         help="M4-C2: survivor faults must not be incorrectly recovered")
+    parser.add_argument("--romfs-probe", action="store_true",
+                        help="M5-A opt-in bounded read-only files baked into native kernel")
+    parser.add_argument("--romfs-negative", action="store_true",
+                        help="M5-A QEMU rejection oracle, requires ROMFS probe and test exit")
+    parser.add_argument("--romfs-root", type=Path, default=ROOT / "examples/romfs",
+                        help="Trusted ROMFS input directory (16 files, max 4KiB each)")
     a = parser.parse_args()
+    if a.romfs_negative and not (a.romfs_probe and a.test_exit):
+        parser.error("--romfs-negative requires --romfs-probe --test-exit")
+    if a.romfs_probe and any((a.memory_probe, a.video_console, a.exception_idt,
+                              a.paging_probe, a.tss_ist, a.task_probe,
+                              a.timer_probe, a.preempt_probe, a.user_probe,
+                              a.user_isolation_probe)):
+        parser.error("M5-A ROMFS probe must run alone (separate M4 proof)")
     if a.user_isolation_probe and (
         not a.exception_idt or not a.tss_ist or a.user_probe or
         a.memory_probe or a.paging_probe or a.video_console or
@@ -444,7 +480,8 @@ def main() -> None:
           a.user_read_kernel, a.user_write_code,
           a.user_isolation_probe, a.user_isolation_gp,
           a.user_isolation_ro, a.user_isolation_forged,
-          a.user_isolation_survivor_fault)
+          a.user_isolation_survivor_fault,
+          a.romfs_probe, a.romfs_negative, a.romfs_root)
 
 
 if __name__ == "__main__":
