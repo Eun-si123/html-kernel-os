@@ -74,6 +74,8 @@ jobs:
         run: python scripts/test_paging_probe.py
       - name: Verify frame ownership and real one-shot page fault recovery in BIOS QEMU
         run: python scripts/test_paging_recovery.py
+      - name: Verify genuine TSS/IST1 #DF, IST2 #PF and combined recovery boot in QEMU
+        run: python scripts/test_tss_ist.py
       - name: Assemble standalone, non-test boot images
         run: |
           python scripts/build_boot.py --out build/html-kernel.iso
@@ -91,6 +93,7 @@ jobs:
           python scripts/build_boot.py --exception-idt --out build/html-kernel-m3-exceptions.iso
           python scripts/build_boot.py --exception-idt --paging-probe --out build/html-kernel-m3-paging.iso
           python scripts/build_boot.py --exception-idt --paging-probe --paging-recover-test --owned-frame-test --out build/html-kernel-m3-recovery.iso
+          python scripts/build_boot.py --exception-idt --tss-ist --out build/html-kernel-m3-ist.iso
           python scripts/build_boot.py --source examples/framebuffer-kernel.html --video-console --out build/html-kernel-video.iso
       - uses: actions/upload-artifact@v4
         with:
@@ -126,6 +129,8 @@ jobs:
             build/html-kernel-m3-paging.elf
             build/html-kernel-m3-recovery.iso
             build/html-kernel-m3-recovery.elf
+            build/html-kernel-m3-ist.iso
+            build/html-kernel-m3-ist.elf
             build/html-kernel-video.iso
             build/html-kernel-video.elf
             build/html-kernel-video-visible-screen.png
