@@ -4,7 +4,7 @@
 
 HTML is normally a document language. This repository explores a dedicated compiler that interprets a restricted set of HTML-style elements as *systems-programming instructions*. The long-term goal is a self-booting OS whose kernel logic is written in that language.
 
-> **Current status: VERIFIED BOOTABLE DEMO KERNEL (QEMU BIOS + browser), NOT A USABLE OS.** A restricted HTML dialect compiles to freestanding x86-64 C; Limine starts the generated kernel. Real QEMU source-mutation/negative controls passed locally and on GitHub CI. The same boot ISO was independently booted in Chromium using the v64 WebAssembly x86-64 emulator: [try the browser demo](https://eun-si123.github.io/html-kernel-os/play.html). UEFI, mobile-browser compatibility and physical hardware remain unverified. No general-purpose memory manager, filesystem, production task scheduler or general hardware drivers; opt-in M3 memory and M4 kernel preemption experiments exist. **M4-C1** genuine CPL3 syscalls and **M4-C2** two independent user CR3s with A-fault/B-survivor cleanup pass in QEMU; however C2 paths run sequentially, not under Ring3 timer preemption.
+> **Current status: VERIFIED BOOTABLE DEMO KERNEL (QEMU BIOS + browser), NOT A USABLE OS.** A restricted HTML dialect compiles to freestanding x86-64 C; Limine starts the generated kernel. Real QEMU source-mutation/negative controls passed locally and on GitHub CI. The same boot ISO was independently booted in Chromium using the v64 WebAssembly x86-64 emulator: [try the browser demo](https://eun-si123.github.io/html-kernel-os/play.html). UEFI, mobile-browser compatibility and physical hardware remain unverified. No general-purpose memory manager, writable/disk filesystem, production task scheduler or general hardware drivers; bounded opt-in M3/M4 experiments and M5 immutable ROMFS + real QEMU UART terminal now exist. **M4-C1** genuine CPL3 syscalls and **M4-C2** two independent user CR3s with A-fault/B-survivor cleanup pass in QEMU; however C2 paths run sequentially, not under Ring3 timer preemption.
 
 ## Agent and contributor entry points
 
@@ -14,7 +14,7 @@ Read [actual implementation status](docs/STATUS.md) and [evidence criteria](docs
 
 ## Roadmap for people and agents / 개발 계획
 
-Start with the **[M0–M6 milestone roadmap](docs/ROADMAP.md)**: M1 actual QEMU BIOS boot is **verified by local tests and GitHub CI**; M2 core language programming features have native QEMU/Linux evidence; M3 bounded memory/fault proof is complete; M4 scheduling and privilege separation are NEXT (opt-in ring-0 task preemption exists, not ring-3 isolation). Read the [language design / Python ease comparison](docs/LANGUAGE_DESIGN.md), [C++/Rust-class performance goal and measurement contract](docs/PERFORMANCE.md), and [risk/assumption register](docs/PROJECT_RISKS.md) before proposing syntax or hardware changes. Milestones are *not* dates or release promises; [STATUS](docs/STATUS.md) owns observed progress. Agents can open milestone-scoped Issues with [this shared task template](.github/ISSUE_TEMPLATE/roadmap-task.md).
+Start with the **[M0–M6 milestone roadmap](docs/ROADMAP.md)**: M1 actual QEMU BIOS boot is **verified by local tests and GitHub CI**; M2 core language programming features have native QEMU/Linux evidence; M3 bounded memory/fault proof is complete; M4-D integrated timer-preempted ring-3 multi-task/fault-isolation remains NEXT (independent ring-0 timer and ring-3 isolation proofs already exist); M5-A/B native ROMFS/COM1 experiments are merged ahead of M4 completion. Read the [language design / Python ease comparison](docs/LANGUAGE_DESIGN.md), [C++/Rust-class performance goal and measurement contract](docs/PERFORMANCE.md), and [risk/assumption register](docs/PROJECT_RISKS.md) before proposing syntax or hardware changes. Milestones are *not* dates or release promises; [STATUS](docs/STATUS.md) owns observed progress. Agents can open milestone-scoped Issues with [this shared task template](.github/ISSUE_TEMPLATE/roadmap-task.md).
 
 ## Try the working prototype
 
@@ -40,6 +40,16 @@ Input:
 ~~~
 
 Generated C defines `kernel_main()`, writes to QEMU debugcon `0xE9` and COM1 serial, then halts. The [Limine boot build](scripts/build_boot.py) now links this function into a real **minimal bootable kernel**; it is not a general-purpose OS or proven portable across physical hardware. Python is needed only at build time, not by the running kernel.
+
+## Try the native M5-B command console (actual BIOS QEMU)
+
+On Ubuntu with an interactive terminal, GCC, xorriso and x86-64 QEMU installed (no host disk or network is passed to the guest):
+
+```sh
+python3 scripts/run_m5_console.py
+```
+
+Enter `help`, `ls`, `cat /welcome.txt`, `cat /config/build.txt`, then `exit`. This command builds the native ISO with actual immutable ROMFS source bytes and starts a QEMU COM1 **serial-input** session. It is independent of the browser boot lab, and is **not** a general interactive OS: commands still run in the privileged kernel and no separate user program is loaded. See [M5-B full QEMU acceptance evidence](docs/M5_SERIAL_CONSOLE.md). Automated, noninteractive equivalent: `python3 scripts/test_m5_console.py`.
 
 ## Test real M2 language features
 
