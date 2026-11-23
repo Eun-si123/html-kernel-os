@@ -7,6 +7,7 @@ Start with [AGENTS.md](../AGENTS.md) for AI collaborators and [README.md](../REA
 | What is actually implemented and tested? | [STATUS.md](STATUS.md) |
 | **What to build next, with clear pass/fail gates?** | [ROADMAP.md](ROADMAP.md) |
 | How can an HTML-based language be easy like Python? | [LANGUAGE_DESIGN.md](LANGUAGE_DESIGN.md) |
+| How do people and coding agents inspect HTMLK errors and the real supported grammar? | [LANGUAGE_HUMAN_AGENT.md](LANGUAGE_HUMAN_AGENT.md) |
 | Which M2 language features are actually implemented and what are the limits? | [M2_LANGUAGE_CONTRACT.md](M2_LANGUAGE_CONTRACT.md) |
 | How can we reach C++/Rust-class native speed? | [PERFORMANCE.md](PERFORMANCE.md) |
 | Which assumptions, hazards and unknowns matter? | [PROJECT_RISKS.md](PROJECT_RISKS.md) |
