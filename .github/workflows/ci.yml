@@ -84,6 +84,8 @@ jobs:
         run: python scripts/test_multimap.py
       - name: Verify M4 real cooperative kernel tasks and rejected state transitions in QEMU
         run: python scripts/test_m4_tasks.py
+      - name: Verify real M4 PIT/PIC IRQ0 pacing, APIC rejection and masked IRQ timeout
+        run: python scripts/test_m4_timer.py
       - name: Assemble standalone, non-test boot images
         run: |
           python scripts/build_boot.py --out build/html-kernel.iso

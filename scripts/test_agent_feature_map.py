@@ -20,7 +20,8 @@ class FeatureContractTests(unittest.TestCase):
                          {"html-grammar-codegen", "static-site", "m3-memory-bootstrap",
                           "m3-exception-idt", "m3-private-paging",
                           "m3-owned-fault-recovery", "m3-tss-ist",
-                          "m3-bounded-multipage", "m4-cooperative-kernel-tasks"})
+                          "m3-bounded-multipage", "m4-cooperative-kernel-tasks",
+                          "m4-pit-irq-pacing"})
 
     def test_changed_m4_scheduler_maps_native_qemu_and_state_oracles(self):
         report = summarize(validate(self.real), ["boot/task_switch.S"])
@@ -42,12 +43,15 @@ class FeatureContractTests(unittest.TestCase):
         report = summarize(validate(self.real), ["boot/exception_idt.c"])
         self.assertEqual(
             [item["feature"] for item in report["affectedFeatures"]],
-            ["m3-exception-idt", "m3-owned-fault-recovery", "m3-tss-ist"])
+            ["m4-pit-irq-pacing", "m3-exception-idt",
+             "m3-owned-fault-recovery", "m3-tss-ist"])
+        m3_entry = next(item for item in report["affectedFeatures"]
+                        if item["feature"] == "m3-exception-idt")
         self.assertIn("tests/test_exception_idt.py",
-                      report["affectedFeatures"][0]["existingRegressionTests"])
+                      m3_entry["existingRegressionTests"])
         self.assertIn("scripts/test_exception_idt.py",
-                      report["affectedFeatures"][0]["fieldEvidence"])
-        self.assertEqual(report["affectedFeatures"][0]["automatedEvidence"], "not-run")
+                      m3_entry["fieldEvidence"])
+        self.assertEqual(m3_entry["automatedEvidence"], "not-run")
 
     def test_changed_private_paging_source_maps_real_cr3_and_pf_proof(self):
         report = summarize(validate(self.real), ["boot/paging_probe.c"])
