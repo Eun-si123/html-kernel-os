@@ -4,7 +4,7 @@
 
 HTML is normally a document language. This repository explores a dedicated compiler that interprets a restricted set of HTML-style elements as *systems-programming instructions*. The long-term goal is a self-booting OS whose kernel logic is written in that language.
 
-> **Current status: VERIFIED BOOTABLE DEMO KERNEL (QEMU BIOS + browser), NOT A USABLE OS.** A restricted HTML dialect compiles to freestanding x86-64 C; Limine starts the generated kernel. Real QEMU source-mutation/negative controls passed locally and on GitHub CI. The same boot ISO was independently booted in Chromium using the v64 WebAssembly x86-64 emulator: [try the browser demo](https://eun-si123.github.io/html-kernel-os/play.html). UEFI, mobile-browser compatibility and physical hardware remain unverified. No general-purpose memory manager, filesystem, production task scheduler or general hardware drivers; opt-in M3 bounded memory experiments and M4 ring-0 cooperative/real x2APIC preemption probes now exist, but no user/kernel process isolation.
+> **Current status: VERIFIED BOOTABLE DEMO KERNEL (QEMU BIOS + browser), NOT A USABLE OS.** A restricted HTML dialect compiles to freestanding x86-64 C; Limine starts the generated kernel. Real QEMU source-mutation/negative controls passed locally and on GitHub CI. The same boot ISO was independently booted in Chromium using the v64 WebAssembly x86-64 emulator: [try the browser demo](https://eun-si123.github.io/html-kernel-os/play.html). UEFI, mobile-browser compatibility and physical hardware remain unverified. No general-purpose memory manager, filesystem, production task scheduler or general hardware drivers; opt-in M3 memory and M4 kernel preemption experiments exist. A separate **opt-in M4-C1 genuine CPL3 syscall and supervisor-denial proof** also runs in QEMU, but there is no multi-process isolation or surviving-task fault cleanup.
 
 ## Agent and contributor entry points
 
@@ -119,6 +119,10 @@ Then open http://127.0.0.1:8000 in your browser.
 ## Scope and naming
 
 "HTML kernel" is shorthand for a **new programming language with HTML-like syntax**. This is not standard HTML, not a browser engine, and not an existing production OS. A source language written in angle brackets still needs a compiler and a CPU-executable entry point.
+
+## M4-C1 real user-mode experiment (QEMU, opt-in)
+
+`python3 scripts/test_m4_user.py` builds and boots a native x86-64 ISO with a real CPL3 user task, checked INT 0x80 syscalls, user RO-code/RW-stack pages, and CPU #PF/#GP negative controls. It restores the kernel and executes HTML-generated source on the success path. This is **not** a general process loader or a release-ready security boundary; single static user task only. See [M4-C1 exact evidence and unsupported modes](docs/M4_RING3_C1.md).
 
 ## License
 

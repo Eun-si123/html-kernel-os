@@ -7,6 +7,9 @@
 #ifdef HTMLK_M4_X2APIC_PREEMPT
 #include "preempt_x2apic.h"
 #endif
+#ifdef HTMLK_M4_USER_PROBE
+#include "user_probe.h"
+#endif
 #ifdef HTMLK_M4_TIMER_PROBE
 #include "timer_irq.h"
 #endif
@@ -35,7 +38,8 @@ static volatile uint64_t base_revision[] = LIMINE_BASE_REVISION(6);
 __attribute__((used, section(".limine_requests_end")))
 static volatile uint64_t end_marker[] = LIMINE_REQUESTS_END_MARKER;
 
-#if defined(HTMLK_M3_MEMORY_PROBE) || defined(HTMLK_M3_PAGING_PROBE)
+#if defined(HTMLK_M3_MEMORY_PROBE) || defined(HTMLK_M3_PAGING_PROBE) || \
+    defined(HTMLK_M4_USER_PROBE)
 /* Opt-in requests reside within the pinned Limine request marker section.
  * Production/default boot tests remain untouched unless M3 memory/paging is enabled.
  */
@@ -124,6 +128,9 @@ void kmain(void) {
 #endif
 #ifdef HTMLK_M4_X2APIC_PREEMPT
     htmlk_m4_preempt_probe(); /* Real timer preempts non-yielding ring-0 tasks. */
+#endif
+#ifdef HTMLK_M4_USER_PROBE
+    htmlk_m4_user_probe(m3_memmap_request.response, m3_hhdm_request.response);
 #endif
     kernel_main(); /* Generated from examples/kernel.html. */
     for (;;) __asm__ volatile ("cli; hlt");

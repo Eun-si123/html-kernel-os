@@ -25,6 +25,10 @@ The new compiler/language.py performs strict HTML-shaped parsing into a small ty
 
 The same strict language parser and validated statement tree can generate either a freestanding x86-64 kernel entry or a Linux userspace main function. The Linux backend sends output bytes to standard C putchar and flushes stdout before returning a normal exit status, **never privileged port I/O / cli / hlt**. The kernel backend preserves Limine handoff and COM1/debugcon output. A shared source produces the same arithmetic and branch behavior on both targets. See [STATUS.md](STATUS.md) and [VALIDATION.md](VALIDATION.md).
 
+## M4-C1 native user/kernel boundary (opt-in, single task)
+
+The QEMU-only M4-C1 probe is deliberately **separate from M4-B2 timer preemption**. `boot/user_probe.c` reuses the M3 verified Limine memory map/HHDM and tagged frame-owner pool for six bounded pages, copies only the PML4 (never mutating bootloader CR3), removes U/S from inherited mappings and wires user RO code and RW stack into a reserved private PML4 slot via `boot/user_pages.c`. The existing TSS/IST GDT is extended only under `HTMLK_M4_USER_PROBE` with Ring-3 CS/SS and a dedicated CPL0 RSP0 syscall stack; #DF and #PF emergency stacks remain independent. `boot/user_entry.S` enters Ring 3 with iretq, runs fixed test code, traps to a DPL3 INT 0x80 gate whose C dispatch validates saved user CS/SS/RIP/RSP and numeric syscall ID, returns to user via iretq, then restores original CR3 and main kernel stack for bounded frame reclamation. CPU #GP on privileged port I/O and #PF with precise CR2/error codes on kernel memory read and RO user-code write prove the boundary in real QEMU. Faults remain **fail-stop**, no surviving second process or general loader. See [M4_RING3_C1.md](M4_RING3_C1.md); this does not complete M4.
+
 ## Boundaries
 
 - HTML is being used as **syntax**, not as the web platform. The meaning of each tag is custom.

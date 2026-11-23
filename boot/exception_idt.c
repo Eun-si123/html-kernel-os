@@ -3,6 +3,9 @@
  * Does not support recovery, interrupts, SMP, TSS, IST or user mode.
  */
 #include "exception_idt.h"
+#ifdef HTMLK_M4_USER_PROBE
+#include "user_probe.h"
+#endif
 #ifdef HTMLK_M4_X2APIC_PREEMPT
 #include "preempt_x2apic.h"
 #endif
@@ -309,6 +312,13 @@ void htmlk_idt_install(void) {
             (uint64_t)(uintptr_t)&htmlk_m4_x2apic_spurious_entry, cs)) {
         panic(13, 0, 0);
     }
+#endif
+#ifdef HTMLK_M4_USER_PROBE
+    if (!htmlk_idt_gate_make(&idt[0x80U],
+            (uint64_t)(uintptr_t)&htmlk_m4_syscall_entry, cs)) {
+        panic(13, 0, 0);
+    }
+    idt[0x80U].type_attributes = 0xeeU; /* DPL3 interrupt gate, CPL switch uses TSS.RSP0 */
 #endif
     const struct idtr pointer = { (uint16_t)(sizeof(idt) - 1), (uint64_t)(uintptr_t)idt };
     __asm__ volatile ("lidt %0" : : "m"(pointer) : "memory");
