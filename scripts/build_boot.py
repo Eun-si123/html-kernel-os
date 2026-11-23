@@ -58,7 +58,8 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
           video_console: bool = False, video_test: bool = False,
           exception_idt: bool = False, fault_test: str | None = None,
           paging_probe: bool = False, paging_fault_test: bool = False,
-          paging_recover_test: bool = False, owned_frame_test: bool = False) -> None:
+          paging_recover_test: bool = False, owned_frame_test: bool = False,
+          tss_ist: bool = False, double_fault_test: bool = False) -> None:
     dist, header = get_limine(cache)
     work_root.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="htmlk-boot-", dir=work_root) as temp:
@@ -77,6 +78,16 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
                  "-mno-red-zone", "-mcmodel=kernel", "-mgeneral-regs-only",
                  "-fcf-protection=none", "-Wall", "-Wextra", "-Werror"]
         define = ["-DHTMLK_QEMU_TEST_EXIT"] if test_exit else []
+        if tss_ist and not exception_idt:
+            raise ValueError("TSS/IST needs an installed exception IDT")
+        if double_fault_test and not (tss_ist and exception_idt and test_exit):
+            raise ValueError("real #DF injection requires TSS/IST, IDT and test-exit")
+        if double_fault_test and fault_test is not None:
+            raise ValueError("double-fault and other CPU fault injections are exclusive")
+        if tss_ist:
+            define.append("-DHTMLK_M3_IST_STACK")
+        if double_fault_test:
+            define.append("-DHTMLK_M3_DOUBLE_FAULT_TEST")
         if fault_test is not None and not exception_idt:
             raise ValueError("CPU fault injection requires the opt-in exception IDT")
         if paging_fault_test and not (paging_probe and exception_idt):
@@ -118,7 +129,7 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
         run("gcc", *flags, *define, "-I", header.parent, "-c",
             ROOT / "boot/kernel_entry.c", "-o", entry_obj)
         extra_objects: list[Path] = []
-        if memory_probe or video_console or exception_idt or paging_probe:
+        if memory_probe or video_console or exception_idt or paging_probe or tss_ist:
             sources = (["page_pool"] if (memory_probe or paging_probe) else [])
             if memory_probe:
                 sources.append("memory_probe")
@@ -126,6 +137,8 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
                 sources.extend(("frame_owner", "paging_tables", "paging_probe"))
             if exception_idt:
                 sources.append("exception_idt")
+            if tss_ist:
+                sources.append("tss_ist")
             if video_console:
                 sources.append("console_fb")
             for source_name in sources:
@@ -189,7 +202,17 @@ def main() -> None:
                         help="One-shot lazy #PF recovery; requires paging probe and IDT")
     parser.add_argument("--owned-frame-test", action="store_true",
                         help="QEMU negative frame ownership/reclaim/exhaustion oracle")
+    parser.add_argument("--tss-ist", action="store_true",
+                        help="Opt-in x86-64 GDT/TSS IST1 #DF and IST2 #PF stacks; needs IDT")
+    parser.add_argument("--double-fault-test", action="store_true",
+                        help="Test-only corrupted RSP -> real #DF; requires IDT/TSS/test-exit")
     a = parser.parse_args()
+    if a.tss_ist and not a.exception_idt:
+        parser.error("--tss-ist requires --exception-idt")
+    if a.double_fault_test and not (a.tss_ist and a.exception_idt and a.test_exit):
+        parser.error("--double-fault-test requires --tss-ist, --exception-idt and --test-exit")
+    if a.double_fault_test and a.fault_test is not None:
+        parser.error("--double-fault-test conflicts with --fault-test")
     if a.paging_recover_test and not (a.paging_probe and a.exception_idt):
         parser.error("--paging-recover-test requires --paging-probe and --exception-idt")
     if a.paging_fault_test and a.paging_recover_test:
@@ -208,7 +231,8 @@ def main() -> None:
           a.memory_probe, a.memory_probe_badmap,
           a.video_console, a.video_test, a.exception_idt, a.fault_test,
           a.paging_probe, a.paging_fault_test,
-          a.paging_recover_test, a.owned_frame_test)
+          a.paging_recover_test, a.owned_frame_test,
+          a.tss_ist, a.double_fault_test)
 
 
 if __name__ == "__main__":

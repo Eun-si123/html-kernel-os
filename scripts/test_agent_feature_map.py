@@ -19,7 +19,7 @@ class FeatureContractTests(unittest.TestCase):
         self.assertEqual({entry["id"] for entry in validate(self.real)},
                          {"html-grammar-codegen", "static-site", "m3-memory-bootstrap",
                           "m3-exception-idt", "m3-private-paging",
-                          "m3-owned-fault-recovery"})
+                          "m3-owned-fault-recovery", "m3-tss-ist"})
 
     def test_changed_m3_c_source_maps_native_regressions(self):
         report = summarize(validate(self.real), ["boot/page_pool.c"])
@@ -31,7 +31,7 @@ class FeatureContractTests(unittest.TestCase):
         report = summarize(validate(self.real), ["boot/exception_idt.c"])
         self.assertEqual(
             [item["feature"] for item in report["affectedFeatures"]],
-            ["m3-exception-idt", "m3-owned-fault-recovery"])
+            ["m3-exception-idt", "m3-owned-fault-recovery", "m3-tss-ist"])
         self.assertIn("tests/test_exception_idt.py",
                       report["affectedFeatures"][0]["existingRegressionTests"])
         self.assertIn("scripts/test_exception_idt.py",
@@ -57,6 +57,17 @@ class FeatureContractTests(unittest.TestCase):
         self.assertIn("tests/test_frame_owner.py",
                       report["affectedFeatures"][0]["existingRegressionTests"])
         self.assertIn("scripts/test_paging_recovery.py",
+                      report["affectedFeatures"][0]["fieldEvidence"])
+        self.assertEqual(report["affectedFeatures"][0]["automatedEvidence"], "not-run")
+
+    def test_ist_gdt_tss_sources_map_to_real_double_fault_controls(self):
+        report = summarize(validate(self.real), ["boot/tss_ist.c"])
+        self.assertEqual(
+            [item["feature"] for item in report["affectedFeatures"]],
+            ["m3-tss-ist"])
+        self.assertIn("tests/test_tss_ist.py",
+                      report["affectedFeatures"][0]["existingRegressionTests"])
+        self.assertIn("scripts/test_tss_ist.py",
                       report["affectedFeatures"][0]["fieldEvidence"])
         self.assertEqual(report["affectedFeatures"][0]["automatedEvidence"], "not-run")
 
