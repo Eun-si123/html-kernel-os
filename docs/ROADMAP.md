@@ -86,6 +86,8 @@ M1 QEMU BIOS boot and one Chromium browser boot are verified; the M2 **core boot
 
 ### M5 — minimally useful OS
 
+**Preparatory slice M5-A (opt-in, not milestone completion):** a bounded read-only ROMFS compiled into native kernel `.rodata` with independent actual QEMU file-byte reads, path traversal/missing file rejection, unchanged default boot and original-vs-mutated file source proof. See [M5-ROMFS technical and test contract](M5_ROMFS.md). M5-B console input, M5-C isolated program loader and M5-D full interactive acceptance remain unimplemented; M4-D is still an unmet prerequisite.
+
 - Prioritize an input/output terminal and deterministic RAM-backed or embedded filesystem before broad hardware drivers.
 - Add a simple user program loader, error reporting and minimal command interaction.
 - **Gate:** boot the image, enter a command, read an embedded file, execute a separate program, and report controlled invalid-input behavior.

@@ -203,6 +203,27 @@
       "source": ["boot/user_isolation.c", "boot/user_isolation.h", "boot/user_isolation_payload.S", "boot/isolation_policy.c", "boot/isolation_policy.h", "boot/user_pages.c", "boot/user_entry.S", "boot/frame_owner.c", "boot/exception_idt.c", "boot/tss_ist.c", "boot/kernel_entry.c", "scripts/build_boot.py"],
       "regressions": ["tests/test_isolation_policy.py"],
       "fieldEvidence": ["scripts/test_m4_isolation.py", "tests/native/test_isolation_policy.c", "docs/M4_FAULT_ISOLATION.md"]
+    },
+{
+      "id": "m5-romfs-readonly",
+      "source": [
+        "boot/romfs.h",
+        "boot/romfs.c",
+        "boot/romfs_probe.c",
+        "scripts/gen_romfs.py",
+        "examples/romfs/welcome.txt",
+        "examples/romfs/config/build.txt",
+        "boot/kernel_entry.c",
+        "scripts/build_boot.py"
+      ],
+      "regressions": [
+        "tests/test_romfs_generator.py"
+      ],
+      "fieldEvidence": [
+        "tests/native/test_romfs.c",
+        "scripts/test_m5_romfs.py",
+        "docs/M5_ROMFS.md"
+      ]
     }
   ]
 }
