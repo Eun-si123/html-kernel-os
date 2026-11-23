@@ -52,6 +52,9 @@ int main(void) {
         {0x1000, 0xF000, 0}
     };
     CHECK(!htmlk_page_pool_init(too_small, 1, &pool));
+    CHECK(pool.first_phys == 0 && pool.next_phys == 0 && pool.end_phys == 0);
+    CHECK(!htmlk_page_take(&pool, &sentinel));
+    CHECK(sentinel == UINT64_MAX);
     const struct htmlk_phys_range empty[] = {
         {0x1000, 0, 0}
     };
