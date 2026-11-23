@@ -89,13 +89,21 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
           user_fault_recover: bool = False,
           user_timeout: bool = False,
           user_timeout_mask: bool = False,
-          user_app_html: Path | None = None) -> None:
+          user_app_html: Path | None = None,
+          user_app_html_proof: Path | None = None) -> None:
     if sum(p is not None for p in
            (user_app_html,user_app_source,user_app_image)) > 1:
         raise ValueError("M5 user app HTML, assembly and binary are exclusive")
     if user_app_html is not None and (
         user_app_html.is_symlink() or not user_app_html.is_file()):
         raise ValueError("M5 user HTML source must be a regular non-symlink file")
+    if user_app_html_proof is not None:
+        if user_app_image is None or user_app_html is not None or user_app_source is not None:
+            raise ValueError("HTML proof requires exactly --user-app-image")
+        if user_app_html_proof.is_symlink() or not user_app_html_proof.is_file():
+            raise ValueError("HTML proof must be a real non-symlink regular file")
+        if user_app_image.is_symlink() or not user_app_image.is_file():
+            raise ValueError("HTML proof image must be a real non-symlink regular file")
     if user_app_html is not None and not (user_loader or interactive_run):
         raise ValueError("M5 user HTML source requires a user loader or run console")
     if user_timeout and not (user_fault_recover and interactive_run and
@@ -149,6 +157,24 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
     work_root.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="htmlk-boot-", dir=work_root) as temp:
         build_dir = Path(temp)
+        proved_image: bytes | None = None
+        if user_app_html_proof is not None:
+            # M2-UX2: a precompiled HKEX can opt into HTML-specific checked
+            # syscalls ONLY if the exact source regenerates the exact bytes.
+            # Preserve a snapshot to prevent a source/image TOCTOU mismatch.
+            proof_source = user_app_html_proof.read_bytes()
+            if not proof_source or len(proof_source) > 131072:
+                raise ValueError("HTML proof source must contain 1..131072 bytes")
+            proof_snapshot = build_dir / "proof-source.html"
+            proof_snapshot.write_bytes(proof_source)
+            proved_image = user_app_image.read_bytes()
+            if not 0 < len(proved_image) <= 4096:
+                raise ValueError("HTML proof image must contain 1..4096 bytes")
+            rebuilt_image = build_dir / "proof-recompiled.hke"
+            run(sys.executable, ROOT / "scripts/build_html_user_image.py",
+                "--source", proof_snapshot, "--out", rebuilt_image)
+            if rebuilt_image.read_bytes() != proved_image:
+                raise ValueError("HTML source proof does not match precompiled HKEX bytes")
         generated = build_dir / "kernel.c"
         generated_obj = build_dir / "html_kernel.o"
         entry_obj = build_dir / "entry.o"
@@ -163,7 +189,7 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
                  "-mno-red-zone", "-mcmodel=kernel", "-mgeneral-regs-only",
                  "-fcf-protection=none", "-Wall", "-Wextra", "-Werror"]
         define = ["-DHTMLK_QEMU_TEST_EXIT"] if test_exit else []
-        if user_app_html is not None:
+        if user_app_html is not None or user_app_html_proof is not None:
             define.append("-DHTMLK_M5_USER_TEXT")
             define.append("-DHTMLK_M5_USER_MULTI_REPORT")
             define.append("-DHTMLK_M5_USER_EXIT_STATUS")
@@ -372,7 +398,7 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
                 sources.extend(("user_image", "frame_owner", "user_pages", "user_probe"))
             if user_loader:
                 sources.append("romfs")
-            if user_app_html is not None:
+            if user_app_html is not None or user_app_html_proof is not None:
                 sources.append("user_text_policy")
             if user_fault_recover:
                 sources.extend(("user_fault_policy", "user_syscall_policy"))
@@ -422,8 +448,11 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
                         chosen = user_app_image.resolve()
                         if not chosen.is_file() or chosen.stat().st_size > 4096:
                             raise ValueError("M5-C1 prebuilt image must be <=4096 bytes")
-                        with chosen.open("rb") as handle:
-                            image = handle.read(4097)
+                        if proved_image is not None:
+                            image = proved_image
+                        else:
+                            with chosen.open("rb") as handle:
+                                image = handle.read(4097)
                         if len(image) > 4096:
                             raise ValueError("M5-C1 prebuilt image too large")
                         app_file.write_bytes(image)
@@ -616,6 +645,8 @@ def main() -> None:
                         help="M5-F1 compile shared typed HTML-like language into a separate Ring3 HKEX app")
     parser.add_argument("--user-app-image", type=Path,
                         help="M5-C1 prebuilt HKEX file (guest validates integrity/format)")
+    parser.add_argument("--user-app-html-proof", type=Path,
+                        help="Opt-in HTML ABI only when this source recompiles byte-exactly to --user-app-image")
     parser.add_argument("--user-fault-recover", action="store_true",
                         help="M5-E1 guarded real CPL3 #PF/#GP/#UD recovery to UART prompt")
     parser.add_argument("--user-timeout", action="store_true",
@@ -636,6 +667,10 @@ def main() -> None:
     if sum(x is not None for x in (a.user_app_html, a.user_app_source,
                                     a.user_app_image)) > 1:
         parser.error("--user-app-html, --user-app-source and --user-app-image are exclusive")
+    if a.user_app_html_proof is not None and (
+            a.user_app_image is None or a.user_app_html is not None or
+            a.user_app_source is not None):
+        parser.error("--user-app-html-proof requires --user-app-image only")
     if a.user_app_html is not None and not (a.user_loader_probe or a.romfs_run_console):
         parser.error("--user-app-html requires --user-loader-probe or --romfs-run-console")
     if a.user_timeout and not (a.user_fault_recover and a.romfs_run_console and
@@ -796,7 +831,7 @@ def main() -> None:
           a.user_app_source, a.user_app_image,
           a.romfs_run_console, a.user_fault_recover,
           a.user_timeout, a.user_timeout_mask,
-          a.user_app_html)
+          a.user_app_html, a.user_app_html_proof)
 
 
 if __name__ == "__main__":
