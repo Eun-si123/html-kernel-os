@@ -51,9 +51,15 @@ def compile_html(source: str, *, target: str = "kernel") -> str:
         "  io_outb(0x3f8, 0x03); io_outb(0x3f9, 0x00);",
         "  io_outb(0x3fb, 0x03); io_outb(0x3fa, 0xc7); io_outb(0x3fc, 0x0b);",
         "}",
+        "#ifdef HTMLK_FB_CONSOLE",
+        "extern void htmlk_fb_putchar(uint8_t v);",
+        "#endif",
         "static inline void outb(unsigned char v) {",
         "  io_outb(0xe9, v); /* QEMU debugcon */",
         "  io_outb(0x3f8, v); /* COM1 */",
+        "#ifdef HTMLK_FB_CONSOLE",
+        "  htmlk_fb_putchar(v); /* real mapped Limine RGB framebuffer */",
+        "#endif",
         "}",
         ]
     else:
@@ -268,6 +274,10 @@ def compile_html(source: str, *, target: str = "kernel") -> str:
     statements(program)
     if target == "kernel":
         lines += [
+        "#ifdef HTMLK_FB_TEST",
+        "  extern void htmlk_fb_verify_probe(void);",
+        "  htmlk_fb_verify_probe();",
+        "#endif",
         "#ifdef HTMLK_QEMU_TEST_EXIT",
         "  /* Only test kernels write deterministic QEMU success port. */",
         '  __asm__ volatile ("outb %0, %1" : : "a"((unsigned char)0x10),',
