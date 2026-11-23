@@ -58,6 +58,8 @@ python3 scripts/htmlk_check.py examples/human-agent-hello.html --target user --j
 
 Use this **compiler-derived**, deterministic grammar/diagnostic response instead of inventing supported tags or claiming a successful static check proves a CPU boot. [M2-UX1 contract](docs/LANGUAGE_HUMAN_AGENT.md).
 
+For actual native Linux execution or checked Ring3 packaging, use `python3 scripts/htmlk.py run examples/human-agent-hello.html` or `python3 scripts/htmlk.py build ... --target user --out ...`; the latter requires `--user-app-html-proof` for the HTML-only ABI when embedded as a prebuilt image. Validation is not runtime execution; do not run untrusted code on your host or claim compiler checks prove a QEMU/physical boot. [Native CLI scope](docs/LANGUAGE_HUMAN_AGENT.md).
+
 ## Minimal validation
 
 ```sh
