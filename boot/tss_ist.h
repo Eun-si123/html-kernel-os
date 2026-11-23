@@ -37,6 +37,10 @@ bool htmlk_tss_descriptor_make(struct htmlk_tss_descriptor *out,
 
 /* Privileged real CPU GDT/TSS setup, BEFORE IDT with IST gate flags. */
 void htmlk_tss_ist_install(void);
+#ifdef HTMLK_M4_USER_PREEMPT
+void htmlk_m4_tss_set_rsp0(uint64_t rsp);
+uint64_t htmlk_m4_tss_get_rsp0(void);
+#endif
 bool htmlk_tss_on_double_fault_stack(uint64_t current_rsp);
 bool htmlk_tss_on_page_fault_stack(uint64_t current_rsp);
 

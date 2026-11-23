@@ -14,7 +14,7 @@ _Static_assert(offsetof(struct htmlk_tss64, io_bitmap_base) == 102,
 enum { IST_STACK_BYTES = 16384 };
 static uint8_t df_stack[IST_STACK_BYTES] __attribute__((aligned(16)));
 static uint8_t pf_stack[IST_STACK_BYTES] __attribute__((aligned(16)));
-#if defined(HTMLK_M4_USER_PROBE) || defined(HTMLK_M4_USER_ISOLATION)
+#if defined(HTMLK_M4_USER_PROBE) || defined(HTMLK_M4_USER_ISOLATION) || defined(HTMLK_M4_USER_PREEMPT)
 static uint8_t user_kernel_stack[IST_STACK_BYTES] __attribute__((aligned(16)));
 #endif
 static struct htmlk_tss64 tss __attribute__((aligned(16)));
@@ -25,7 +25,7 @@ static uint64_t gdt[7] __attribute__((aligned(16))) = {
     UINT64_C(0x00af9a000000ffff),
     UINT64_C(0x00cf92000000ffff),
     0, 0,
-#if defined(HTMLK_M4_USER_PROBE) || defined(HTMLK_M4_USER_ISOLATION)
+#if defined(HTMLK_M4_USER_PROBE) || defined(HTMLK_M4_USER_ISOLATION) || defined(HTMLK_M4_USER_PREEMPT)
     UINT64_C(0x00affa000000ffff), /* selector 0x2b: ring 3 CS */
     UINT64_C(0x00cff2000000ffff)  /* selector 0x33: ring 3 SS */
 #else
@@ -79,7 +79,7 @@ bool htmlk_tss_on_page_fault_stack(uint64_t rsp) {
 __attribute__((noinline))
 void htmlk_tss_ist_install(void) {
     __asm__ volatile ("cli" ::: "memory");
-#if defined(HTMLK_M4_USER_PROBE) || defined(HTMLK_M4_USER_ISOLATION)
+#if defined(HTMLK_M4_USER_PROBE) || defined(HTMLK_M4_USER_ISOLATION) || defined(HTMLK_M4_USER_PREEMPT)
     tss.rsp[0] = (uint64_t)(uintptr_t)&user_kernel_stack[IST_STACK_BYTES];
 #else
     tss.rsp[0] = (uint64_t)(uintptr_t)&pf_stack[IST_STACK_BYTES];
@@ -125,6 +125,16 @@ void htmlk_tss_ist_install(void) {
     __asm__ volatile ("ltr %w0" : : "r"(tss_selector) : "memory");
     report("M3_TSS_IST_READY\n");
 }
+
+#ifdef HTMLK_M4_USER_PREEMPT
+void htmlk_m4_tss_set_rsp0(uint64_t rsp) {
+    tss.rsp[0] = rsp;
+    __asm__ volatile ("" : : : "memory");
+}
+uint64_t htmlk_m4_tss_get_rsp0(void) {
+    return tss.rsp[0];
+}
+#endif
 
 #ifdef HTMLK_M3_DOUBLE_FAULT_TEST
 __attribute__((noreturn, noinline))

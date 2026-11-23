@@ -9,6 +9,9 @@
 #ifdef HTMLK_M4_USER_ISOLATION
 #include "user_isolation.h"
 #endif
+#ifdef HTMLK_M4_USER_PREEMPT
+#include "user_preempt.h"
+#endif
 #ifdef HTMLK_M4_X2APIC_PREEMPT
 #include "preempt_x2apic.h"
 #endif
@@ -197,6 +200,14 @@ __attribute__((interrupt)) static void vector_14(struct interrupt_frame *f, unsi
                                   (uint64_t)code, fault_cr2))
         htmlk_m4_user_return(); /* abandon IST frame and private CR3 */
 #endif
+#ifdef HTMLK_M4_USER_PREEMPT
+    uint64_t user_preempt_cr2;
+    __asm__ volatile ("mov %%cr2,%0" : "=r"(user_preempt_cr2));
+    if (htmlk_m4_d_accept_fault(14U, f->rip, f->cs, f->rflags,
+                                f->rsp, f->ss, (uint64_t)code,
+                                user_preempt_cr2))
+        htmlk_m4_d_retire_fault(); /* exits IST2 onto trusted main stack */
+#endif
     panic(14, f->rip, (uint64_t)code);
 }
 
@@ -320,7 +331,7 @@ void htmlk_idt_install(void) {
         panic(13, 0, 0);
     }
 #endif
-#ifdef HTMLK_M4_X2APIC_PREEMPT
+#if defined(HTMLK_M4_X2APIC_PREEMPT) || defined(HTMLK_M4_USER_PREEMPT)
     if (!htmlk_idt_gate_make(&idt[HTMLK_M4_PREEMPT_VECTOR],
             (uint64_t)(uintptr_t)&htmlk_m4_x2apic_irq_entry, cs) ||
         !htmlk_idt_gate_make(&idt[0xffU],
@@ -328,7 +339,13 @@ void htmlk_idt_install(void) {
         panic(13, 0, 0);
     }
 #endif
-#if defined(HTMLK_M4_USER_PROBE) || defined(HTMLK_M4_USER_ISOLATION)
+#ifdef HTMLK_M4_USER_PREEMPT
+    if (!htmlk_idt_gate_make(&idt[0x80U],
+            (uint64_t)(uintptr_t)&htmlk_m4_d_syscall_entry, cs)) {
+        panic(13, 0, 0);
+    }
+    idt[0x80U].type_attributes = 0xeeU; /* real DPL3: CPL3 INT 0x80 */
+#elif defined(HTMLK_M4_USER_PROBE) || defined(HTMLK_M4_USER_ISOLATION)
     if (!htmlk_idt_gate_make(&idt[0x80U],
             (uint64_t)(uintptr_t)&htmlk_m4_syscall_entry, cs)) {
         panic(13, 0, 0);

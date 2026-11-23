@@ -33,6 +33,10 @@ The QEMU-only M4-C1 probe is deliberately **separate from M4-B2 timer preemption
 
 The kernel allocates two separate six-frame user images with independent PML4/PDPT/PD/PT roots and code/stack backing pages while preserving the original Limine CR3. Both Ring3 payloads use the same virtual entry and stack addresses but have different physical mappings; the survivor is checked to start with a zeroed stack independent of the offender. M3 #PF and #GP handlers use a strict pure predicate from boot/isolation_policy.c to accept only the single intended Ring3 fault with a matching selector, vector, error, RIP/RSP, CR2 and active CR3. The C1 assembly return restores the original supervisor CR3 and trusted main stack before releasing the faulty task frames. B then runs and exits via INT0x80; all frames are reclaimed before generated HTML executes. All other faults fail-stop. This is sequential task containment, not interrupt-driven user preemption or a general-purpose process loader. [M4-C2 proof](M4_FAULT_ISOLATION.md).
 
+## M4-D opt-in true CPL3 preemption + peer survival (local QEMU)
+
+The kernel now has a separate opt-in experimental two-user path. Bounded private CR3s with strictly supervisor-only inherited kernel tables and per-user RO code/RW stack physically isolate static ring3 payloads. Reused B2 full-register IRQ0x40 assembly and local x2APIC timing preempt busy-loop users at CPL3. A verified dispatcher saves 15 GPRs and the interrupted IRET frame on the per-task ring0 TSS.RSP0 stack; before resuming another user, it switches both private CR3 and TSS.RSP0, acknowledging EOI. An expected CPU #PF on IST2 from A triggers fail-closed validation and safe kernel-stack/frame reclamation; the interrupted B context is restored and runs to a validated DPL3 INT80 exit. No general scheduling API, user ELF process loader, SMP, FPU/FS/GS state, dynamic user memory allocation or real-hardware support. See [M4_USER_PREEMPT.md](M4_USER_PREEMPT.md). M4 final acceptance is conditional on PR-head CI.
+
 ## Boundaries
 
 - HTML is being used as **syntax**, not as the web platform. The meaning of each tag is custom.
