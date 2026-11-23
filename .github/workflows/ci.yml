@@ -102,6 +102,14 @@ jobs:
           done
       - name: Boot M5-A opt-in immutable filesystem with source mutation and denial oracles
         run: python scripts/test_m5_romfs.py
+      - name: Validate bounded M5-B serial command parser under UBSan O0/O3
+        run: |
+          for opt in 0 3; do
+            gcc -std=c11 -O${opt} -fsanitize=undefined -fno-sanitize-recover=all -Wall -Wextra -Werror -I boot boot/serial_command.c boot/romfs.c tests/native/test_serial_command.c -o build/serial-test-${opt}
+            build/serial-test-${opt}
+          done
+      - name: Verify real M5-B QEMU UART RX, ROMFS commands, rejection and source provenance
+        run: python scripts/test_m5_console.py
       - name: Assemble standalone, non-test boot images
         run: |
           python scripts/build_boot.py --out build/html-kernel.iso
@@ -127,6 +135,7 @@ jobs:
           python scripts/build_boot.py --exception-idt --tss-ist --user-isolation-probe --out build/html-kernel-m4-isolation.iso
           python scripts/build_boot.py --exception-idt --tss-ist --user-preempt-probe --out build/html-kernel-m4-user-preempt.iso
           python scripts/build_boot.py --romfs-probe --out build/html-kernel-m5-romfs.iso
+          python scripts/build_boot.py --romfs-console --out build/html-kernel-m5-console.iso
           python scripts/build_boot.py --source examples/framebuffer-kernel.html --video-console --out build/html-kernel-video.iso
       - uses: actions/upload-artifact@v4
         with:
@@ -178,6 +187,8 @@ jobs:
             build/html-kernel-m4-user-preempt.elf
             build/html-kernel-m5-romfs.iso
             build/html-kernel-m5-romfs.elf
+            build/html-kernel-m5-console.iso
+            build/html-kernel-m5-console.elf
             build/html-kernel-video.iso
             build/html-kernel-video.elf
             build/html-kernel-video-visible-screen.png

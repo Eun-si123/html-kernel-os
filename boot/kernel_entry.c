@@ -1,8 +1,13 @@
 /* Minimal Limine base-revision-6 handoff into code generated from HTML. */
 #include <stdint.h>
-#ifdef HTMLK_M5_ROMFS_PROBE
+#if defined(HTMLK_M5_ROMFS_PROBE) || defined(HTMLK_M5_SERIAL_CONSOLE)
 #include "romfs.h"
+#endif
+#ifdef HTMLK_M5_ROMFS_PROBE
 extern void htmlk_m5_romfs_probe(void);
+#endif
+#ifdef HTMLK_M5_SERIAL_CONSOLE
+extern void htmlk_m5_serial_console(void);
 #endif
 #include "limine.h"
 #ifdef HTMLK_M4_TASK_PROBE
@@ -152,6 +157,9 @@ void kmain(void) {
 #endif
 #ifdef HTMLK_M5_ROMFS_PROBE
     htmlk_m5_romfs_probe(); /* Real immutable ELF .rodata bytes, not UI. */
+#endif
+#ifdef HTMLK_M5_SERIAL_CONSOLE
+    htmlk_m5_serial_console(); /* Real 16550 UART RX, bounded ROMFS commands. */
 #endif
     kernel_main(); /* Generated from examples/kernel.html. */
     for (;;) __asm__ volatile ("cli; hlt");
