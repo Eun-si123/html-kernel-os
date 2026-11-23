@@ -19,7 +19,8 @@ class FeatureContractTests(unittest.TestCase):
         self.assertEqual({entry["id"] for entry in validate(self.real)},
                          {"html-grammar-codegen", "static-site", "m3-memory-bootstrap",
                           "m3-exception-idt", "m3-private-paging",
-                          "m3-owned-fault-recovery", "m3-tss-ist"})
+                          "m3-owned-fault-recovery", "m3-tss-ist",
+                          "m3-bounded-multipage"})
 
     def test_changed_m3_c_source_maps_native_regressions(self):
         report = summarize(validate(self.real), ["boot/page_pool.c"])
@@ -42,7 +43,8 @@ class FeatureContractTests(unittest.TestCase):
         report = summarize(validate(self.real), ["boot/paging_probe.c"])
         self.assertEqual(
             [item["feature"] for item in report["affectedFeatures"]],
-            ["m3-private-paging", "m3-owned-fault-recovery"])
+            ["m3-private-paging", "m3-owned-fault-recovery",
+             "m3-bounded-multipage"])
         self.assertIn("tests/test_paging_tables.py",
                       report["affectedFeatures"][0]["existingRegressionTests"])
         self.assertIn("scripts/test_paging_probe.py",
@@ -53,7 +55,7 @@ class FeatureContractTests(unittest.TestCase):
         report = summarize(validate(self.real), ["boot/frame_owner.c"])
         self.assertEqual(
             [item["feature"] for item in report["affectedFeatures"]],
-            ["m3-owned-fault-recovery"])
+            ["m3-owned-fault-recovery", "m3-bounded-multipage"])
         self.assertIn("tests/test_frame_owner.py",
                       report["affectedFeatures"][0]["existingRegressionTests"])
         self.assertIn("scripts/test_paging_recovery.py",
@@ -70,6 +72,16 @@ class FeatureContractTests(unittest.TestCase):
         self.assertIn("scripts/test_tss_ist.py",
                       report["affectedFeatures"][0]["fieldEvidence"])
         self.assertEqual(report["affectedFeatures"][0]["automatedEvidence"], "not-run")
+
+    def test_bounded_multipage_pte_source_maps_native_and_qemu_proof(self):
+        report = summarize(validate(self.real), ["boot/paging_tables.c"])
+        self.assertEqual(
+            [item["feature"] for item in report["affectedFeatures"]],
+            ["m3-private-paging", "m3-bounded-multipage"])
+        item = report["affectedFeatures"][1]
+        self.assertIn("tests/test_paging_tables.py", item["existingRegressionTests"])
+        self.assertIn("scripts/test_multimap.py", item["fieldEvidence"])
+        self.assertEqual(item["automatedEvidence"], "not-run")
 
     def test_changed_compiler_reports_tests_but_not_pass(self):
         changes = summarize(validate(self.real), ["compiler/htmlk.py"])

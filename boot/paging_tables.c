@@ -36,3 +36,34 @@ bool htmlk_paging_wire(volatile uint64_t *root,
     return true;
 }
 
+
+/* This helper is deliberately limited to a caller-owned 512-entry leaf PT.
+ * It does not alter parent page tables, control TLBs, or confer ownership.
+ * It rejects duplicate physical frames to avoid alias/double-free confusion.
+ */
+static bool valid_phys(uint64_t phys) {
+    return phys != 0 && (phys & ~HTMLK_PAGING_PHYS_MASK) == 0;
+}
+
+bool htmlk_paging_leaf_map(volatile uint64_t *pt,
+                           unsigned index, uint64_t phys) {
+    if (pt == 0 || index >= 512 || !valid_phys(phys) ||
+        pt[index] != 0) return false;
+    for (unsigned i = 0; i < 512; ++i) {
+        if ((pt[i] & UINT64_C(1)) != 0 &&
+            (pt[i] & HTMLK_PAGING_PHYS_MASK) == phys)
+            return false;
+    }
+    pt[index] = phys | HTMLK_PAGING_ENTRY_RW; /* kernel RW, not ring3 */
+    return true;
+}
+
+bool htmlk_paging_leaf_unmap(volatile uint64_t *pt,
+                             unsigned index, uint64_t expected_phys) {
+    if (pt == 0 || index >= 512 || !valid_phys(expected_phys) ||
+        (pt[index] & UINT64_C(1)) == 0 ||
+        (pt[index] & HTMLK_PAGING_PHYS_MASK) != expected_phys)
+        return false;
+    pt[index] = 0;
+    return true;
+}
