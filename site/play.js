@@ -19,6 +19,7 @@ import V86 from './vendor/libv86.mjs';
   const sourcePath = document.getElementById('boot-source-path');
   const sourceNote = document.getElementById('boot-source-note');
   const liveTag = document.getElementById('live-tag');
+  const latestEvent = document.getElementById('boot-latest');
   const demos = Object.freeze({
     video: {
       iso: 'html-kernel-video.iso',
@@ -100,6 +101,7 @@ import V86 from './vendor/libv86.mjs';
     li.append(time, topic, message);
     if (events.children.length >= 60) events.firstElementChild.remove();
     events.append(li);
+    latestEvent.textContent = kind + ' · ' + detail;
     events.scrollTop = events.scrollHeight;
   }
 
@@ -336,6 +338,7 @@ import V86 from './vendor/libv86.mjs';
     clearPaceTimer();
     resetVga();
     events.replaceChildren();
+    latestEvent.textContent = '실제 가상머신 이벤트 기록을 준비 중...';
     bootStartedAt = performance.now();
     serial = '';
     serialVerified = false;
