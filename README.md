@@ -56,6 +56,10 @@ verified; exact PR-head CI/merge are pending. See [user and agent guide](docs/LA
 
 On the [Live Lab](https://eun-si123.github.io/html-kernel-os/live/) you can write HTML Kernel Language code in a simple source editor, see **UTF-8 byte limits**, download `htmlk-program.html`, and copy the genuine native ISO build command. GitHub Pages does **not** compile source by itself. Compile with the repository's local toolchain, choose the new ISO + exact HTML on Live Lab and boot **real native code** in the browser emulator. Local Chromium and independent QEMU proof demonstrate source edits changing actual guest CPU output. **This is locally verified but public deployment and exact-head CI are pending.** [Step-by-step guide](docs/M2_WEB_EDITOR.md).
 
+## Real BIOS-first boot journal (M5 Web-D development)
+
+The [HTML Kernel Live browser lab](https://eun-si123.github.io/html-kernel-os/live/) now has an experimental local-branch **BIOS VGA + CPU COM1 journal**: the virtual CPU starts *after* actual event listeners attach, then captured SeaBIOS/bootloader and kernel UART events can be replayed, paused, stepped or scrubbed at different **recording** speeds. The VGA canvas fills its panel instead of being artificially capped at 545px. **Replay does not slow the real virtual CPU.** Actual Chromium saw early SeaBIOS, DVD/CD boot and kernel ready events; independent Node tests and CI gates accompany the change. Local implementation only; exact PR-head CI, merge and public deployment remain separate gates. [Proof and boundaries](docs/M5_WEB_BOOT_JOURNAL.md).
+
 ## Agent and contributor entry points
 
 AI agents and external contributors: start at **[AGENTS.md](AGENTS.md)**, then follow **[CODEMAP.md](CODEMAP.md)** and the [documentation hub](docs/README.md). The repository uses TeamForge/BetterNet-style instructions for task ownership, public-safe commit attribution, current status, durable memory and advisory [feature-to-regression mapping](agent-evals/README.md). The instructions do not start a background agent or imply automatic deployment.

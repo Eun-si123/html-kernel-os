@@ -26,7 +26,9 @@ class LivePagesTests(unittest.TestCase):
         parser = Ids()
         parser.feed(html)
         self.assertEqual(len(parser.ids), len(set(parser.ids)))
-        for name in ('html-editor','editor-title','editor-bytes','editor-status',
+        for name in ('journal-output','journal-title','journal-position','journal-speed',
+                     'journal-play','journal-pause','journal-step','journal-status',
+                     'html-editor','editor-title','editor-bytes','editor-status',
                      'editor-command','editor-copy','editor-save','editor-reset',
                      'start','stop','fullscreen','terminal','source','source-hash',
                      'iso-hash','boot-event','romfs-match','screen_container','local-iso','local-html','command',
@@ -42,6 +44,18 @@ class LivePagesTests(unittest.TestCase):
         self.assertNotIn('innerHTML', js)
         self.assertNotIn('M5_C_USER_VALUE=4294967296', js,
                          'never insert hardcoded demo output in a live UART log')
+        journal = (SITE/'journal.mjs').read_text()
+        for token in ('createBootJournal', 'BootTrace', 'vgaCell(cell)',
+                      'uartByte(byte)', 'captureFrame()', 'JOURNAL_LIMIT = 240',
+                      'SeaBIOS', 'formatted(', 'textContent'):
+            self.assertIn(token, journal)
+        self.assertNotIn('innerHTML', journal)
+        self.assertIn("import {createBootJournal} from './journal.mjs'", js)
+        self.assertIn('autostart:false', js)
+        self.assertIn('machine.run().catch', js)
+        self.assertIn('bootJournal.vgaCell(cell)', js)
+        self.assertIn('bootJournal.uartByte(byte)', js)
+        self.assertIn('.vga canvas{width:100%;max-width:100%', css)
         self.assertIn('(prefers-color-scheme:dark)', css)
         self.assertIn('max-width:520px', css)
         self.assertIn('data-command="cat /source.html"', html)
@@ -90,6 +104,9 @@ class LivePagesTests(unittest.TestCase):
         self.assertIn('node --test scripts/test_live_editor.mjs', ci)
         self.assertIn('node --test scripts/test_live_editor.mjs', pages)
         self.assertIn('test -s public/live/editor.mjs', pages)
+        self.assertIn('node --test scripts/test_live_boot_journal.mjs', ci)
+        self.assertIn('node --test scripts/test_live_boot_journal.mjs', pages)
+        self.assertIn('test -s public/live/journal.mjs', pages)
         self.assertIn('scripts/test_local_live_iso.py', ci)
         self.assertIn('scripts/test_local_live_iso.py', pages)
         self.assertIn('--source', builder)

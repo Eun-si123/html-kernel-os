@@ -141,6 +141,8 @@ The marker `— NEXT` is a **planning recommendation**, not an authoritative com
 - **Gate:** boot the image, enter a command, read an embedded file, execute a separate program, and report controlled invalid-input behavior.
 - **Defer:** browser, Wi-Fi/GPU/USB stacks, multiplayer, installers, gaming support, production-grade disk write operations.
 
+**M5 Web-D real BIOS-first guest boot journal (local feature branch):** attach actual VGA and UART event handlers before starting virtual CPU (`autostart:false`), record bounded observed SeaBIOS/CD boot and guest COM1 messages with browser reception timestamps, pause/step/replay/scrub recorded events while guest continues at native emulator speed; allow VGA canvas to fill panel width. In local actual Chromium, native CPU boot captured real SeaBIOS, DVD/CD boot, M3_IDT_READY, M5_CONSOLE_READY, then replayed from first event without changing live CPU state; canvas filled full 712px panel. Node negative and static CI/Pages gates included. **Local PASS; PR-head CI/merge, public deployment, real hardware NOT YET VERIFIED.** [Evidence](M5_WEB_BOOT_JOURNAL.md).
+
 ### M6 — carefully scoped physical compatibility
 
 - Build a supported-device list and safe rollback/restore procedure; prefer a spare computer or removable media.

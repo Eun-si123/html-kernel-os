@@ -185,6 +185,11 @@ jobs:
         run: python scripts/test_m5_user_bad_pf_stack.py
       - name: M5-E3-I genuine CPL3 debug and breakpoint traps with poisoned user RSP and survivor
         run: python scripts/test_m5_user_bad_trap_stack.py
+      - name: M5-Web-D actual early BIOS VGA and live COM1 journal, bounded replay
+        run: |
+          node --check site/live/journal.mjs
+          node --check site/live/live.js
+          node --test scripts/test_live_boot_journal.mjs
       - name: M2-UX4 browser local HTML editor UTF-8 limit and native CPU execution parity
         run: |
           node --check site/live/editor.mjs

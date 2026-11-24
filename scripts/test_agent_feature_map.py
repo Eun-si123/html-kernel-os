@@ -32,7 +32,7 @@ class FeatureContractTests(unittest.TestCase):
                           "m5-bounded-html-user-multi-report",
                           "m5-html-user-exit-status", "m5-html-user-u64-output", "m5-github-pages-live",
                           "m2-human-agent-diagnostics", "m2-native-cli-source-attested-hkex",
-                          "m2-program-main-nonkernel-syntax", "m2-browser-local-source-editor"})
+                          "m2-program-main-nonkernel-syntax", "m2-browser-local-source-editor", "m5-live-bios-boot-journal"})
 
     def test_changed_m4_scheduler_maps_native_qemu_and_state_oracles(self):
         report = summarize(validate(self.real), ["boot/task_switch.S"])

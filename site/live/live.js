@@ -1,4 +1,5 @@
 import V86 from '../vendor/libv86.mjs';
+import {createBootJournal} from './journal.mjs';
 
 // Every visible COM1 byte must originate from the actual emulated UART.
 // Never display example output as if the guest generated it.
@@ -8,6 +9,7 @@ const ui = Object.fromEntries(
    'command-form','source','source-hash','iso-hash','boot-event','romfs-match','screen_container']
     .map(id => [id, $(id)]));
 const buttons = [...document.querySelectorAll('button[data-command]')];
+const bootJournal = createBootJournal(document);
 const localIsoInput = $('local-iso');
 const localHtmlInput = $('local-html');
 const localImportState = $('local-import-state');
@@ -87,6 +89,7 @@ const vga = Array.from({length:50}, () => Array(120).fill(' '));
 let vgaReported = new Set();
 let vgaFlush = null;
 function recordVga(cell) {
+  bootJournal.vgaCell(cell);
   if (!Array.isArray(cell) || cell.length < 3) return;
   const [row, col, char] = cell;
   if (!Number.isInteger(row) || !Number.isInteger(col) ||
@@ -96,6 +99,7 @@ function recordVga(cell) {
   if (vgaFlush !== null) return;
   vgaFlush = setTimeout(() => {
     vgaFlush = null;
+    bootJournal.captureFrame();
     for (const line of vga.map(r => r.join('').trim()).filter(Boolean)) {
       if ((line.startsWith('SeaBIOS') || line.startsWith('Booting from')) &&
           !vgaReported.has(line)) {
@@ -117,6 +121,7 @@ function reportPrompt() {
 
 function onSerial(byte) {
   if (!Number.isInteger(byte) || byte < 0 || byte > 255) return;
+  bootJournal.uartByte(byte);
   if (serial.length >= 60000) {
     allowCommands(false);
     status('OVERFLOW', 'COM1 로그 상한 초과. 더 이상 결과를 검증하지 않아.');
@@ -183,6 +188,7 @@ async function start() {
       }
       ui['iso-hash'].textContent = 'ISO SHA-256: ' + metadata.image_sha256;
     }
+    bootJournal.reset();
     serial = '';
     ui.terminal.textContent = '';
     promptReady = false;
@@ -199,19 +205,28 @@ async function start() {
       cdrom:{buffer:data},
       screen_container:ui.screen_container, memory_size:128*1024*1024,
       vram_size:4*1024*1024, acpi:true,
-      net_device:{type:'none'}, audio_device:'none', autostart:true
+      net_device:{type:'none'}, audio_device:'none', autostart:false
     });
     machine.add_listener('screen-put-char', recordVga);
     machine.add_listener('serial0-output-byte', onSerial);
     machine.add_listener('emulator-ready', () => {
-      if (!stopped) status('BIOS READY', '실제 SeaBIOS·Limine 부팅 단계. COM1 출력을 기다리는 중…');
+      if (stopped) return;
+      bootJournal.host('emulator-ready · BIOS execution can start');
+      status('BIOS READY', '실제 SeaBIOS·Limine 부팅 단계. COM1 출력을 기다리는 중…');
+      // Attach real VGA and UART listeners BEFORE the first virtual CPU
+      // instruction. Autostart=false prevents losing the earliest BIOS events.
+      void machine.run().catch(error =>
+        status('CPU ERROR', String(error?.message || error)));
     });
     machine.add_listener('emulator-started', () => {
+      bootJournal.host('emulator-started · actual CPU execution');
       running = true;
       ui.stop.disabled = false;
       if (!promptReady) status('CPU RUNNING', '실제 x86-64 가상 CPU가 실행 중. BIOS→커널 부팅을 기다리는 중…');
     });
     machine.add_listener('emulator-stopped', () => {
+      bootJournal.captureFrame();
+      bootJournal.host('emulator-stopped · CPU execution stopped');
       running = false;
       allowCommands(false);
       if (!stopped) status('CPU STOPPED', '가상 CPU가 멈췄어. 현재 COM1 기록은 실제 수신한 내용이야.');
