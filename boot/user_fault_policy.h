@@ -41,4 +41,6 @@ struct htmlk_m5_bad_pf_owner {
     uint64_t ist2_top, error_word_address, error_code, cr2;
 };
 bool htmlk_m5_bad_pf_stack_owned(const struct htmlk_m5_bad_pf_owner *ctx);
+/* Caller must prove NX is active for this owned private stack page. */
+bool htmlk_m5_nx_stack_fault_owned(const struct htmlk_m5_bad_pf_owner *ctx);
 #endif

@@ -222,6 +222,8 @@ jobs:
         run: python scripts/test_m5_user_bad_trap_stack.py
       - name: M5-E3-M fresh FS and GS selectors and bases
         run: python scripts/test_m5_user_segment_context.py
+      - name: M5-E3-N actual NX stack execution denial and unsupported CPU control
+        run: python scripts/test_m5_user_nx_stack.py
       - name: M5-Web-D actual early BIOS VGA and live COM1 journal, bounded replay
         run: |
           node --check site/live/journal.mjs

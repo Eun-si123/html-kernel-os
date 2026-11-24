@@ -32,6 +32,33 @@ static volatile bool syscall_seen;
 static volatile bool user_exited;
 #ifdef HTMLK_M5_USER_LOADER
 static volatile bool user_reported;
+/* NX is only applied when the CPU advertises it. Keep unsupported
+ * emulators compatible, without claiming their stack is non-executable. */
+static bool user_stack_nx;
+static uint64_t user_saved_efer;
+static bool user_enable_nx(void) {
+    uint32_t a,b,c,d;
+    __asm__ volatile("cpuid" : "=a"(a),"=b"(b),"=c"(c),"=d"(d)
+                     : "a"(0x80000000U),"c"(0U));
+    if (a < 0x80000001U) return false;
+    __asm__ volatile("cpuid" : "=a"(a),"=b"(b),"=c"(c),"=d"(d)
+                     : "a"(0x80000001U),"c"(0U));
+    if ((d & (1U << 20)) == 0) return false;
+    __asm__ volatile("rdmsr" : "=a"(a),"=d"(d) : "c"(0xc0000080U));
+    user_saved_efer = ((uint64_t)d << 32) | a;
+    if ((a & (1U << 11)) == 0)
+        __asm__ volatile("wrmsr" :: "a"(a | (1U << 11)), "d"(d),
+                         "c"(0xc0000080U) : "memory");
+    return true;
+}
+static void user_restore_nx(void) {
+    if (user_stack_nx && (user_saved_efer & (UINT64_C(1) << 11)) == 0)
+        __asm__ volatile("wrmsr" :: "a"((uint32_t)user_saved_efer),
+                         "d"((uint32_t)(user_saved_efer >> 32)),
+                         "c"(0xc0000080U) : "memory");
+    user_stack_nx = false;
+}
+
 /* One active app; kernel and handlers use -mgeneral-regs-only.
  * FXSAVE64 preserves full-width x87 pointers plus legacy XMM/MXCSR.
  * The older x87 path remains for CPUs not advertising FXSR and SSE.
@@ -462,6 +489,10 @@ void htmlk_m4_user_probe(const struct limine_memmap_response *map,
     if ((root[HTMLK_M4_USER_SLOT] & 7U) != 7U ||
         (pt[0] & 7U) != 5U || (pt[1] & 7U) != 7U)
         reject("M4_USER_PTE_PERMISSIONS_WRONG\n");
+#ifdef HTMLK_M5_USER_LOADER
+    user_stack_nx = user_enable_nx();
+    if (user_stack_nx) pt[1] |= HTMLK_M4_USER_NX;
+#endif
     syscall_seen = user_exited = false;
 #ifdef HTMLK_M5_USER_LOADER
     user_reported = false;
@@ -496,6 +527,7 @@ void htmlk_m4_user_probe(const struct limine_memmap_response *map,
     __asm__ volatile ("cli" ::: "memory");
 #ifdef HTMLK_M5_USER_LOADER
     user_x87_end();
+    user_restore_nx();
 #endif
 #ifdef HTMLK_M5_USER_TIMEOUT
     htmlk_m5_timeout_stop();
@@ -751,6 +783,11 @@ bool htmlk_m5_accept_bad_user_rsp_pf(uintptr_t cpu_frame,
         .error_code=error,
         .cr2=cr2,
     };
+    if (user_stack_nx && htmlk_m5_nx_stack_fault_owned(&proof)) {
+        user_faulted=true;
+        log_text("M5_E3_USER_NX_STACK_RETIRED\n");
+        return true;
+    }
     if (!htmlk_m5_bad_pf_stack_owned(&proof)) return false;
     switch (error) {
         case 4U: log_text("M5_E3_USER_PF4_GUARD_BAD_RSP_RETIRED\n"); break;

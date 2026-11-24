@@ -46,7 +46,7 @@ bool htmlk_m5_bad_noerr_fault_vector(unsigned vector) {
 
 /* Shared strict provenance. Frame size/layout is checked separately by each
  * vector-specific wrapper; never turn this helper into a generic fault pass. */
-static bool bad_rsp_owner_valid(const struct htmlk_m5_bad_noerr_owner *c) {
+static bool cpu_owner_valid(const struct htmlk_m5_bad_noerr_owner *c) {
     if (!c || !c->has_active_app || c->already_terminated ||
         c->live_frames != 6U ||
         c->tss_rsp0 < UINT64_C(48) ||
@@ -59,8 +59,6 @@ static bool bad_rsp_owner_valid(const struct htmlk_m5_bad_noerr_owner *c) {
         (c->rflags & (UINT64_C(3) << 12 | UINT64_C(1) << 14 |
                       UINT64_C(1) << 17)) != 0 ||
         c->code_bytes == 0 || c->code_bytes > HTMLK_HKE_MAX_CODE_BYTES ||
-        c->rip < HTMLK_M4_USER_BASE ||
-        c->rip - HTMLK_M4_USER_BASE >= c->code_bytes ||
         c->owned_cr3 == 0 || (c->owned_cr3 & UINT64_C(4095)) != 0 ||
         c->active_cr3 != c->owned_cr3 ||
         c->saved_cr3 == 0 || c->saved_cr3 == c->owned_cr3 ||
@@ -68,6 +66,12 @@ static bool bad_rsp_owner_valid(const struct htmlk_m5_bad_noerr_owner *c) {
         (c->saved_main_rsp >> 48U) != UINT64_C(0xffff) ||
         (c->saved_main_rsp & (UINT64_C(1) << 47)) == 0)
         return false;
+    return true;
+}
+
+static bool bad_rsp_owner_valid(const struct htmlk_m5_bad_noerr_owner *c) {
+    if (!cpu_owner_valid(c) || c->rip < HTMLK_M4_USER_BASE ||
+        c->rip - HTMLK_M4_USER_BASE >= c->code_bytes) return false;
     /* Only an actually bad user stack can use this exception-specific
      * fallback. Valid-stack CPU exceptions still use the strict policy. */
     return c->user_rsp <= HTMLK_M4_USER_BASE + UINT64_C(4096) ||
@@ -116,7 +120,7 @@ bool htmlk_m5_bad_gp_stack_owned(const struct htmlk_m5_bad_gp_owner *ctx) {
 /* Only scoped user-origin #PF: present-page 5/7 or nonpresent guard 4/6.
  * A kernel fault or a fault delivered to some other stack can never use
  * this emergency user-process retirement. */
-bool htmlk_m5_bad_pf_stack_owned(const struct htmlk_m5_bad_pf_owner *ctx) {
+static bool pf_frame_owned(const struct htmlk_m5_bad_pf_owner *ctx) {
     if (!ctx || ctx->ist2_top == 0 ||
         ctx->frame.tss_rsp0 != ctx->ist2_top ||
         ctx->frame.tss_rsp0 < UINT64_C(48) ||
@@ -124,6 +128,11 @@ bool htmlk_m5_bad_pf_stack_owned(const struct htmlk_m5_bad_pf_owner *ctx) {
         ctx->frame.frame_address != ctx->ist2_top - UINT64_C(40) ||
         ctx->error_word_address != ctx->frame.frame_address - UINT64_C(8))
         return false;
+    return cpu_owner_valid(&ctx->frame);
+}
+
+bool htmlk_m5_bad_pf_stack_owned(const struct htmlk_m5_bad_pf_owner *ctx) {
+    if (!pf_frame_owned(ctx)) return false;
     if (ctx->error_code == 5U) {
         /* Read access from CPL3 to a privileged canonical high address. */
         if (ctx->cr2 < UINT64_C(0xffff800000000000)) return false;
@@ -141,4 +150,14 @@ bool htmlk_m5_bad_pf_stack_owned(const struct htmlk_m5_bad_pf_owner *ctx) {
         return false;
     }
     return bad_rsp_owner_valid(&ctx->frame);
+}
+
+/* Exact present/user/instruction-fetch protection error (P|U|I).
+ * Unlike data faults, saved RIP is the attempted stack instruction;
+ * never pretend it is a valid executable RIP or retry it. */
+bool htmlk_m5_nx_stack_fault_owned(const struct htmlk_m5_bad_pf_owner *ctx) {
+    return pf_frame_owned(ctx) && ctx->error_code == 21U &&
+           ctx->frame.rip == ctx->cr2 &&
+           ctx->cr2 >= HTMLK_M4_USER_BASE + UINT64_C(4096) &&
+           ctx->cr2 < HTMLK_M4_USER_STACK;
 }

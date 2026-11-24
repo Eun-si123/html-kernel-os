@@ -453,6 +453,8 @@
         "docs/M5_USER_X87_CONTEXT.md",
         "scripts/test_m5_user_bad_trap_stack.py",
         "scripts/test_m5_user_segment_context.py",
+        "scripts/test_m5_user_nx_stack.py",
+        "docs/M5_USER_NX_STACK.md",
         "docs/M5_USER_SEGMENT_CONTEXT.md",
         "docs/M5_USER_BAD_TRAP.md"
       ]

@@ -224,6 +224,40 @@ int main(void) {
     pf.frame.rip=user_base+64U;
     assert(!htmlk_m5_bad_pf_stack_owned(&pf));pf.frame.rip=user_base+3U;
     assert(!htmlk_m5_bad_pf_stack_owned(NULL));
+    /* NX stack instruction fetch must prove exact IST2 provenance and
+     * matching stack RIP/CR2, never a generic out-of-code RIP recovery. */
+    struct htmlk_m5_bad_pf_owner nx = pf;
+    nx.error_code=21U;
+    nx.cr2=user_base+4096U;
+    nx.frame.rip=nx.cr2;
+    nx.frame.user_rsp=HTMLK_M4_USER_STACK-16U;
+    assert(htmlk_m5_nx_stack_fault_owned(&nx));
+    nx.frame.user_rsp=0U;
+    assert(htmlk_m5_nx_stack_fault_owned(&nx));
+    for (unsigned e=0;e<128U;++e) {
+        nx.error_code=e;
+        assert(htmlk_m5_nx_stack_fault_owned(&nx)==(e==21U));
+    }
+    nx.error_code=21U;
+    nx.cr2=HTMLK_M4_USER_STACK-1U;nx.frame.rip=nx.cr2;
+    assert(htmlk_m5_nx_stack_fault_owned(&nx));
+    nx.cr2=HTMLK_M4_USER_STACK;nx.frame.rip=nx.cr2;
+    assert(!htmlk_m5_nx_stack_fault_owned(&nx));
+    nx.cr2=user_base+4095U;nx.frame.rip=nx.cr2;
+    assert(!htmlk_m5_nx_stack_fault_owned(&nx));
+    nx.cr2=user_base+4096U;nx.frame.rip=nx.cr2+1U;
+    assert(!htmlk_m5_nx_stack_fault_owned(&nx));nx.frame.rip=nx.cr2;
+    nx.frame.cs=8U;assert(!htmlk_m5_nx_stack_fault_owned(&nx));nx.frame.cs=0x2bU;
+    nx.frame.active_cr3=nx.frame.saved_cr3;
+    assert(!htmlk_m5_nx_stack_fault_owned(&nx));nx.frame.active_cr3=nx.frame.owned_cr3;
+    nx.frame.has_active_app=false;
+    assert(!htmlk_m5_nx_stack_fault_owned(&nx));nx.frame.has_active_app=true;
+    nx.frame.already_terminated=true;
+    assert(!htmlk_m5_nx_stack_fault_owned(&nx));nx.frame.already_terminated=false;
+    nx.error_word_address-=8U;
+    assert(!htmlk_m5_nx_stack_fault_owned(&nx));nx.error_word_address+=8U;
+    assert(!htmlk_m5_bad_pf_stack_owned(&nx));
+    assert(!htmlk_m5_nx_stack_fault_owned(NULL));
     /* M5-E3-I: a genuine ICEBP/INT3 saves RIP AFTER the trap opcode.
      * Only #DB/#BP may accept one-past-code-end with an exactly positioned
      * 40-byte CPU frame, known active CR3 and *bad* user RSP. */
