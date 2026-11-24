@@ -443,6 +443,8 @@
         "docs/M5_USER_BAD_GP.md",
         "scripts/test_m5_user_bad_pf_stack.py",
         "scripts/test_m5_user_guard_page.py",
+        "scripts/test_m5_user_entry_context.py",
+        "docs/M5_USER_ENTRY_CONTEXT.md",
         "docs/M5_USER_GUARD_PAGE.md",
         "docs/M5_USER_BAD_PF.md",
         "scripts/test_m5_user_bad_trap_stack.py",
