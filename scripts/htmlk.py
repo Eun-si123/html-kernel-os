@@ -24,6 +24,7 @@ from compiler.htmlk import compile_html  # noqa: E402
 from compiler.diagnostics import diagnostic_from  # noqa: E402
 from htmlk_check import read_source  # noqa: E402
 from build_html_user_image import build as build_user_image  # noqa: E402
+from htmlk_bundle import MAX_LIBRARIES, bundle  # noqa: E402
 
 MAX_RUN_OUTPUT = 16384
 BUILD_TIMEOUT = 30
@@ -118,6 +119,12 @@ def main() -> int:
         if cmd == "build":
             p.add_argument("--out", required=True, type=Path, help="Output file")
             p.add_argument("--force", action="store_true", help="Overwrite existing output")
+    bundler = sub.add_parser("bundle", help="Combine explicitly selected function libraries into one checked HTMLK source")
+    bundler.add_argument("source", help="UTF-8 HTMLK application or kernel source")
+    bundler.add_argument("--library", action="append", required=True, help="Explicit HTMLK function-fragment file; repeat up to eight times")
+    bundler.add_argument("--target", choices=("kernel", "linux", "user"), default="linux")
+    bundler.add_argument("--out", required=True, type=Path, help="New self-contained HTMLK source file (no overwrite)")
+    bundler.add_argument("--json", action="store_true")
     desc = sub.add_parser("describe", help="Discover actual accepted grammar and limits")
     desc.add_argument("--json", action="store_true")
     args = ap.parse_args()
@@ -130,6 +137,30 @@ def main() -> int:
         if args.json:
             command.append("--json")
         return subprocess.run(command, check=False).returncode
+
+    if args.command == "bundle":
+        try:
+            if len(args.library) > MAX_LIBRARIES:
+                raise ValueError(f"bundle requires 1..{MAX_LIBRARIES} explicit libraries")
+            if "-" in [args.source, *args.library]:
+                raise ValueError("bundle requires explicit regular source files, not stdin")
+            if args.out.exists() or args.out.is_symlink():
+                raise FileExistsError("refusing to overwrite existing bundle destination")
+            source = read_source(args.source)
+            libraries = [read_source(path) for path in args.library]
+            combined = bundle(source, libraries, target=args.target)
+            with tempfile.TemporaryDirectory(prefix="htmlk-bundle-") as temp:
+                artifact = Path(temp) / "bundle.html"
+                artifact.write_bytes(combined.encode("utf-8"))
+                atomic_copy(artifact, args.out, overwrite=False)
+            report = {"schema_version": 1, "ok": True, "target": args.target,
+                      "artifact": str(args.out), "library_count": len(libraries),
+                      "sha256": hashlib.sha256(combined.encode("utf-8")).hexdigest()}
+            print(json.dumps(report, sort_keys=True) if args.json else
+                  f"Bundled {args.out} ({len(libraries)} libraries, {args.target})")
+            return 0
+        except (OSError, UnicodeError, ValueError) as error:
+            return result_error(error, target=args.target, json_mode=args.json)
 
     target = "linux" if args.command == "run" else args.target
     if target == "kernel":

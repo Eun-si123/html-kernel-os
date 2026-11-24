@@ -169,6 +169,8 @@ jobs:
         run: python scripts/test_htmlk_human_agent_boot.py
       - name: M2-UX2 one-command native Linux build/run, exact-source HKEX proof and genuine QEMU CPL3 execution
         run: python scripts/test_htmlk_cli_qemu.py
+      - name: Explicit library bundles execute in native kernel and Ring3 QEMU
+        run: python scripts/test_htmlk_bundle_qemu.py
       - name: M2-UX3 app-friendly program/main aliases execute in genuine Ring3 QEMU and source mutation alters CPU output
         run: python scripts/test_htmlk_program_main_qemu.py
       - name: Inferred local types execute on native kernel and Ring3 with source mutation

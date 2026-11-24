@@ -625,15 +625,19 @@
       "id": "m2-native-cli-source-attested-hkex",
       "source": [
         "scripts/htmlk.py",
+        "scripts/htmlk_bundle.py",
         "scripts/build_boot.py"
       ],
       "regressions": [
         "tests/test_htmlk_developer_cli.py",
+        "tests/test_htmlk_bundle.py",
         "tests/test_htmlk_check_cli.py",
         "tests/test_html_user_u64_output.py"
       ],
       "fieldEvidence": [
         "scripts/test_htmlk_cli_qemu.py",
+        "scripts/test_htmlk_bundle_qemu.py",
+        "docs/M2_LIBRARY_BUNDLE.md",
         "docs/LANGUAGE_HUMAN_AGENT.md"
       ]
     },

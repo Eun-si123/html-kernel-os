@@ -29,6 +29,8 @@ python3 scripts/htmlk.py build examples/human-agent-hello.html --target linux --
 python3 scripts/htmlk.py build examples/human-agent-hello.html --target user --out build/my-program.hke
 ```
 
+Development: explicit reusable [source libraries](docs/M2_LIBRARY_BUNDLE.md) can be bundled into one checked HTMLK program; direct machine-code compilation without C is tracked in [Issue #118](https://github.com/Eun-si123/html-kernel-os/issues/118).
+
 `run` launches a generated **Linux userspace binary**, never a kernel or an imported executable; native QEMU boot requires the separate ISO builder. For full-u64 native Ring3 HKEX, ISO construction must use the **byte-exact checked source** `--user-app-image build/my-program.hke --user-app-html-proof examples/human-agent-hello.html`; otherwise the original legacy syscall ABI remains unchanged. See [commands, real QEMU proof, and security/overwrite boundaries](docs/LANGUAGE_HUMAN_AGENT.md). This CLI and checked Ring3 source proof passed exact PR-head CI and merged as PR #106.
 
 ## App-friendly HTML programming syntax (M2-UX3 merged PR #107)

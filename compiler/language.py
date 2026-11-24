@@ -259,8 +259,8 @@ class KernelParser(HTMLParser):
     def handle_comment(self, data: str) -> None:
         # HTMLParser calls handle_comment for malformed <!bogus> too.
         line, col = self.getpos()
-        offset = sum(len(part) for part in self.source_lines[:line - 1]) + col
-        tail = "".join(self.source_lines)[offset:]
+        offset = sum(len(part) + 1 for part in self.source_lines[:line - 1]) + col
+        tail = "\n".join(self.source_lines)[offset:]
         if not tail.startswith("<!--") or "-->" not in tail:
             raise CompileError("only complete <!-- ... --> comments are supported")
         if self.stack and self.stack[-1].tag == "print":
@@ -349,7 +349,7 @@ def parse(source: str) -> Program:
     if len(source.encode("utf-8")) > MAX_SOURCE_BYTES:
         raise CompileError(f"source exceeds {MAX_SOURCE_BYTES} bytes")
     parser = KernelParser()
-    parser.source_lines = source.splitlines(keepends=True)
+    parser.source_lines = source.split("\n")
     parser.feed(source)
     parser.close()
     return parser.finish()
