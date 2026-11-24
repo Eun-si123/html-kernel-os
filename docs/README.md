@@ -9,6 +9,7 @@ Start with [AGENTS.md](../AGENTS.md) for AI collaborators and [README.md](../REA
 | How can an HTML-based language be easy like Python? | [LANGUAGE_DESIGN.md](LANGUAGE_DESIGN.md) |
 | How can people and coding agents check, build and run native HTMLK programs, with verified ABI? | [LANGUAGE_HUMAN_AGENT.md](LANGUAGE_HUMAN_AGENT.md) |
 | How do IDEs obtain genuine compiler diagnostics and completion via LSP? | [M2_LANGUAGE_LSP.md](M2_LANGUAGE_LSP.md) |
+| Where can people and agents inspect the public canonical supported tags/attributes? | [M2_PUBLIC_LANGUAGE_GRAMMAR.md](M2_PUBLIC_LANGUAGE_GRAMMAR.md) |
 | How to write an app using `<program><main>` instead of `<kernel><onboot>`? | [LANGUAGE_HUMAN_AGENT.md](LANGUAGE_HUMAN_AGENT.md) |
 | How can I write HTML in the browser, download, compile, and boot a real ISO? | [M2_WEB_EDITOR.md](M2_WEB_EDITOR.md) |
 | Which M2 language features are actually implemented and what are the limits? | [M2_LANGUAGE_CONTRACT.md](M2_LANGUAGE_CONTRACT.md) |

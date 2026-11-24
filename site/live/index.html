@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="./live.css">
 <script type="module" src="./live.js"></script>
 <script type="module" src="./editor.mjs"></script>
+<script type="module" src="./grammar.mjs"></script>
 </head>
 <body>
 <a class="skip" href="#machine">가상 PC로 이동</a>
@@ -40,6 +41,14 @@
 <code id="editor-command" class="editor-command">빌드 명령 불러오는 중…</code>
 <button id="editor-copy" type="button">빌드 명령 복사</button>
 <p id="editor-status" role="status" aria-live="polite">소스 편집 준비 중…</p></div></div>
+<details id="grammar-guide" class="grammar-panel">
+<summary>지원되는 HTML Kernel 언어 태그·속성 보기 <span>실제 컴파일러 정의 기반</span></summary>
+<div class="grammar-content"><p>이 목록은 기존 Python 컴파일러에서 빌드 시 생성한 문법 메타데이터야. 웹에서 HTML 코드를 실행하거나 구문 검사를 흉내 내지 않아. 표현식·타깃별 제약은 실제 컴파일러로 검사해야 해.</p>
+<label for="grammar-search">태그·속성·허용 위치 검색 <input id="grammar-search" type="search" placeholder="예: print, value, main" autocomplete="off"></label>
+<p id="grammar-status" role="status" aria-live="polite">문법 데이터 준비 중…</p>
+<ul id="grammar-list" class="grammar-list" aria-label="HTML Kernel 문법 참조"></ul>
+<p><a href="../htmlk-language.json">에이전트용 원본 JSON 열기</a> · <a href="https://github.com/Eun-si123/html-kernel-os/blob/main/docs/M2_LANGUAGE_CONTRACT.md">완전한 언어 규칙 및 제약</a></p></div>
+</details>
 </section>
 <section id="machine" aria-label="실제 가상 PC" class="machine">
 <div class="section-head"><div><span class="tag">01 / LIVE HARDWARE</span><h2>Emulated x86-64 PC</h2></div><span class="state" id="state" role="status" aria-live="polite">NOT STARTED</span></div>

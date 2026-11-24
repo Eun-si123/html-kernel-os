@@ -67,6 +67,10 @@ python3 -m unittest tests.test_htmlk_lsp -v
 
 An LSP client must be configured separately; no self-installing VS Code extension or browser compiler is implied. [LSP setup, limits and tests](docs/M2_LANGUAGE_LSP.md). Local evidence only; CI/merge pending.
 
+## Actual supported grammar in the web editor (M2-UX6 development)
+
+The Live editor can expose **compiler-generated metadata**, not a guessed JavaScript syntax clone: open **지원되는 HTML Kernel 언어 태그·속성 보기** to search real tags, required attributes and legal parents. The Pages build publishes `htmlk-language.json` directly from the existing Python compiler, so AI agents can read the same versioned JSON. Native program validity and execution are still decided by the original compiler/CPU, not this reference widget. Local regression evidence exists; PR CI/merge/public deployment are separate gates. [Human/agent grammar guide](docs/M2_PUBLIC_LANGUAGE_GRAMMAR.md).
+
 ## Agent and contributor entry points
 
 AI agents and external contributors: start at **[AGENTS.md](AGENTS.md)**, then follow **[CODEMAP.md](CODEMAP.md)** and the [documentation hub](docs/README.md). The repository uses TeamForge/BetterNet-style instructions for task ownership, public-safe commit attribution, current status, durable memory and advisory [feature-to-regression mapping](agent-evals/README.md). The instructions do not start a background agent or imply automatic deployment.

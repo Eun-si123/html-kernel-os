@@ -86,3 +86,5 @@ Do not introduce a long-running agent service, database, or synthetic feature co
 
 
 - M2-UX5 IDE and agent support: `scripts/htmlk_lsp.py` is a bounded stdio LSP adapter using the one canonical compiler and grammar for diagnostics/completion/hover; `tests/test_htmlk_lsp.py` sends real JSON-RPC frames to a separate subprocess, validates source positions and error handling. [Protocol limits](docs/M2_LANGUAGE_LSP.md).
+
+- M2-UX6 public human/agent grammar: `compiler/diagnostics.py` reflects canonical `<main>` entrypoint alias; `scripts/build_public_language_grammar.py` emits read-only compiler-source-hashed metadata to Pages; `site/live/grammar.mjs` displays/searches it without new parser and `tests/test_public_language_grammar.py` + `scripts/test_live_grammar.mjs` verify deterministic true grammar, alias parity and fail-closed schema/outputs. [Shared grammar proof](docs/M2_PUBLIC_LANGUAGE_GRAMMAR.md).

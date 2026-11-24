@@ -28,3 +28,12 @@
 .editor-command-caption{font:11px/1.7 ui-monospace,Consolas,monospace;color:var(--muted);margin:15px 0 5px}.editor-command{display:block;padding:12px;white-space:pre-wrap;overflow-wrap:anywhere;background:var(--bg);border:1px solid var(--line);font:12px/1.75 ui-monospace,Consolas,monospace}
 .editor-guide button{margin-top:10px}.editor-guide #editor-status{font:12px/1.75 ui-monospace,Consolas,monospace;color:var(--muted);margin:14px 0 0}
 @media(max-width:780px){.editor-grid{grid-template-columns:minmax(0,1fr)}#html-editor{min-height:220px}}
+
+/* M2-UX6: compiler-derived tag reference, no new JavaScript parser. */
+.grammar-panel{margin:14px 0 0;border:1px solid var(--line);background:var(--paper)}
+.grammar-panel summary{cursor:pointer;padding:14px 16px;font-weight:700;font-size:13px}.grammar-panel summary span{font-weight:400;color:var(--muted);font-size:11px;margin-left:8px}
+.grammar-content{padding:8px 16px 16px;border-top:1px solid var(--line)}.grammar-content p{font-size:12px;color:var(--muted);line-height:1.8}.grammar-content label{font-size:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+#grammar-search{min-width:0;flex:1;border:1px solid var(--line);background:var(--bg);color:var(--text);padding:9px;font-size:12px}
+.grammar-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));gap:9px;margin:12px 0;padding:0;list-style:none}
+.grammar-list li{display:flex;flex-direction:column;gap:5px;border:1px solid var(--line);background:var(--bg);padding:11px;min-width:0;overflow-wrap:anywhere;font:11px/1.65 ui-monospace,Consolas,monospace}
+.grammar-list li strong{color:var(--accent);font-size:13px}.grammar-list li span{color:var(--muted)}

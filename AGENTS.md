@@ -65,6 +65,8 @@ The [browser source editor](docs/M2_WEB_EDITOR.md) downloads raw HTML only; it d
 
 The [bounded editor LSP](docs/M2_LANGUAGE_LSP.md) uses the single canonical compiler, giving IDE and agent clients actual UTF-16 source locations and tag metadata. `htmlk.describe` returns schema, not shell execution. A one-shot agent can still call `scripts/htmlk_check.py --json`; LSP diagnostics alone do not prove a native boot.
 
+The [public grammar JSON and browser reference](docs/M2_PUBLIC_LANGUAGE_GRAMMAR.md) are generated from canonical compiler tables, not a JavaScript parser. Agents can read the hosted `htmlk-language.json` or the original `htmlk_check.py --describe --json`; do not treat allowed tags/attrs alone as proof of valid types, kernel privilege boundaries, or actual CPU execution.
+
 ## Minimal validation
 
 ```sh
