@@ -1,0 +1,4 @@
+name: HTML Kernel OS first-party CodeQL scope
+paths-ignore:
+  - site/vendor/**
+  - build/**
