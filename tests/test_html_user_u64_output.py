@@ -24,7 +24,7 @@ class HtmlUserU64OutputTests(unittest.TestCase):
                 changed=SOURCE.replace('18446744073709551615',value)
                 self.assertIn(f'UINT64_C({value})',compile_html(changed,target='user'))
 
-    def test_source_denies_above_u64_and_signed_reports(self):
+    def test_source_denies_above_u64_and_separates_signed_reports(self):
         for bad in ('18446744073709551616','340282366920938463463374607431768211455'):
             with self.subTest(bad=bad):
                 with self.assertRaises(CompileError):
@@ -32,8 +32,7 @@ class HtmlUserU64OutputTests(unittest.TestCase):
         signed=SOURCE.replace('<print value="18446744073709551615"/>',
                               '<let name="negative" type="i64" value="-1"/>'
                               '<print value="negative"/>')
-        with self.assertRaisesRegex(CompileError,'unsigned'):
-            compile_html(signed,target='user')
+        self.assertIn('htmlk_user_call(UINT64_C(4), (uint64_t)(int64_t)',compile_html(signed,target='user'))
 
     def test_kernel_and_linux_targets_keep_existing_numeric_compilation(self):
         for target in ('kernel','linux'):

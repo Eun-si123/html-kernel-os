@@ -209,6 +209,7 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
             define.append("-DHTMLK_M5_USER_MULTI_REPORT")
             define.append("-DHTMLK_M5_USER_EXIT_STATUS")
             define.append("-DHTMLK_M5_USER_U64_OUTPUT")
+            define.append("-DHTMLK_M5_USER_I64_OUTPUT")
         if user_loader or interactive_run:
             define.append("-DHTMLK_M5_USER_LOADER")
         if interactive_run:

@@ -36,7 +36,7 @@ class HtmlUserTargetTests(unittest.TestCase):
           EXAMPLE.replace('<print value="triple(score) - 1046"/>',
                           '<repeat times="2"><print value="2"/></repeat>'),
           EXAMPLE.replace('<print value="triple(score) - 1046"/>',
-                          '<let name="neg" type="i64" value="-5"/><print value="neg"/>'),
+                          '<let name="neg" type="i64" value="-9223372036854775809"/><print value="neg"/>'),
           EXAMPLE.replace('<print value="triple(score) - 1046"/>',
                           '<print value="triple(score) - 1046"/><let name="last" type="u64" value="0"/>'),
           EXAMPLE.replace('<let name="score" type="u64" value="1000"/>',

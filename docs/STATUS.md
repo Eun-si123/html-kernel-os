@@ -247,3 +247,7 @@ Local proof: 267 Python tests, four Node grammar tests, native Linux 6/0, two na
 ## M2-UX9 entrypoint lexical scopes and identifier hygiene (development branch)
 
 Native Linux reproduced an old incorrect loop-variable output 10 vs expected 12; fixed output 12. New source with nested inferred locals, arrays and formerly colliding names produces 26/9/12, edited source 30/15/12 in Linux GCC O0/O2 UBSan and real QEMU kernel and Ring3 (two boots each, four app runs with reclaim). Existing static bounds remain. CI, public browser parity and hardware not yet verified. Generated C hashes intentionally change, requiring source-attested artifacts to be rebuilt with the matching compiler.
+
+## M5-F6 signed native HTMLK user numeric reports (development branch)
+
+Shared typed compiler accepts signed i32/i64 on Ring3 using opt-in register-only syscall ID4; unsigned ID2 remains unchanged. Real native Linux and QEMU signed extrema, mixed eight-call cap/ninth rejection, source mutation, timeout/reclaim and legacy denial evidence: [M5-F6](M5_HTML_I64_OUTPUT.md). Public browser and hardware not verified; exact CI pending.
