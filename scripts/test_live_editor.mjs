@@ -16,6 +16,7 @@ test('browser source editor uses the actual static ROMFS byte budget', () => {
 
 test('native editor fixture is valid bounded HTMLK user source', () => {
   assert.equal(sourceState(TEMPLATE).valid, true);
+  assert.ok(TEMPLATE.includes('<program>') && TEMPLATE.includes('<main>'));
   assert.ok(TEMPLATE.includes('<print value="value"/>'));
   assert.ok(TEMPLATE.includes('<halt/>'));
   assert.equal(Buffer.from(sourceBytes(TEMPLATE)).toString('utf8'), TEMPLATE);

@@ -40,6 +40,7 @@ def build_image(source: Path, out: Path) -> tuple[Path, dict]:
     assert manifest['embedded_source_bytes'] == len(source.read_bytes())
     assert manifest['embedded_source_sha256'] == hashlib.sha256(source.read_bytes()).hexdigest()
     assert manifest['image_sha256'] == hashlib.sha256(iso.read_bytes()).hexdigest()
+    assert 'expected_marker' not in manifest, 'custom source cannot inherit default exit7'
     return iso, manifest
 
 

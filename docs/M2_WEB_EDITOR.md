@@ -32,7 +32,8 @@ CI, merge and public Pages deployment remain separate evidence gates.
    existing browser x86-64 emulator. The page does not claim that editing
    the HTML without rebuilding the ISO changes CPU instructions.
 6. Run `cat /source.html` on the real COM1 console and compare the CPU's
-   actual ROMFS bytes against your selected source; then run
+   actual ROMFS bytes against your selected source. Custom build manifests
+   intentionally omit the default example's expected exit code `7`; then run
    `run /apps/hello.hke` to observe real Ring3 execution and frame reclaim.
 
 ## Positive and negative evidence

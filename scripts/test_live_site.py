@@ -24,6 +24,7 @@ def verify(iso: Path, manifest: Path) -> None:
     assert data['user_source'] == 'examples/user-programs/html-u64-report.html'
     assert data['user_timer'] is False
     assert data['test_exit'] is True
+    assert data['expected_marker'] == 'M5_RUN_EXIT_CODE=7'  # only known default source
     assert data['image_sha256'] == sha(iso)
     assert data['image_bytes'] == iso.stat().st_size
     assert data['user_source_sha256'] == sha(APP)

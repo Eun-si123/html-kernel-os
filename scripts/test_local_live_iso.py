@@ -43,6 +43,7 @@ def main()->None:
         assert manifest['image_sha256']==hash_file(iso)
         assert manifest['image_bytes']==iso.stat().st_size
         assert manifest['user_source']=='local/my-edited.html'
+        assert 'expected_marker' not in manifest, 'custom source cannot inherit default exit7'
         assert manifest['embedded_source_sha256']==hash_file(edited)
         assert manifest['embedded_source_bytes']==len(edited.read_bytes())
         assert iso.read_bytes()[32769:32774]==b'CD001'
