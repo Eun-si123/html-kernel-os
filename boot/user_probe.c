@@ -694,9 +694,14 @@ bool htmlk_m5_accept_bad_user_rsp_pf(uintptr_t cpu_frame,
         .cr2=cr2,
     };
     if (!htmlk_m5_bad_pf_stack_owned(&proof)) return false;
+    switch (error) {
+        case 4U: log_text("M5_E3_USER_PF4_GUARD_BAD_RSP_RETIRED\n"); break;
+        case 6U: log_text("M5_E3_USER_PF6_GUARD_BAD_RSP_RETIRED\n"); break;
+        case 5U: log_text("M5_E3_USER_PF5_BAD_RSP_RETIRED\n"); break;
+        case 7U: log_text("M5_E3_USER_PF7_BAD_RSP_RETIRED\n"); break;
+        default: return false; /* policy above admits exactly these codes */
+    }
     user_faulted=true;
-    log_text(error == 5U ? "M5_E3_USER_PF5_BAD_RSP_RETIRED\n" :
-                           "M5_E3_USER_PF7_BAD_RSP_RETIRED\n");
     return true;
 }
 

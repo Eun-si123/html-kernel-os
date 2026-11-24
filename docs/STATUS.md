@@ -248,6 +248,10 @@ Local proof: 267 Python tests, four Node grammar tests, native Linux 6/0, two na
 
 Native Linux reproduced an old incorrect loop-variable output 10 vs expected 12; fixed output 12. New source with nested inferred locals, arrays and formerly colliding names produces 26/9/12, edited source 30/15/12 in Linux GCC O0/O2 UBSan and real QEMU kernel and Ring3 (two boots each, four app runs with reclaim). Existing static bounds remain. CI, public browser parity and hardware not yet verified. Generated C hashes intentionally change, requiring source-attested artifacts to be rebuilt with the matching compiler.
 
+## M5-E3-J owned nonpresent guard-page fault retirement (merged PR #120)
+
+Pre-fix QEMU exits 45 on real user #PF4 with bad RSP at the adjacent unmapped stack guard. Extend the existing exact IST2 and owner checks only to that page for data read/write errors 4/6; no mapping, dereference or instruction retry. Local GCC UBSan O0/O3, actual no-timer and x2APIC QEMU evidence in [M5-E3-J](M5_USER_GUARD_PAGE.md). Exact PR-head CI and Gitleaks passed; merged as 467d013. General M5 security and M6 hardware remain open.
+
 ## M5-F6 signed native HTMLK user numeric reports (development branch)
 
 Shared typed compiler accepts signed i32/i64 on Ring3 using opt-in register-only syscall ID4; unsigned ID2 remains unchanged. Real native Linux and QEMU signed extrema, mixed eight-call cap/ninth rejection, source mutation, timeout/reclaim and legacy denial evidence: [M5-F6](M5_HTML_I64_OUTPUT.md). Public browser and hardware not verified; exact CI pending.
