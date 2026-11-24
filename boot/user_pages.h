@@ -8,6 +8,7 @@
 #define HTMLK_M4_USER_PRESENT UINT64_C(1)
 #define HTMLK_M4_USER_WRITE UINT64_C(2)
 #define HTMLK_M4_USER_BIT UINT64_C(4)
+#define HTMLK_M4_USER_NX (UINT64_C(1) << 63)
 #define HTMLK_M4_USER_PHYS_MASK UINT64_C(0x000ffffffffff000)
 
 bool htmlk_m4_user_wire(volatile uint64_t *root, volatile uint64_t *pdpt,
