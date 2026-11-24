@@ -43,7 +43,6 @@ class InferredLetTests(unittest.TestCase):
             for target in ("kernel", "linux", "user"):
                 with self.subTest(body=body, target=target), self.assertRaises(CompileError):
                     compile_html(wrap(body),target=target)
-    def test_public_metadata_and_ring3_unsigned_boundary(self):
+    def test_public_metadata_and_ring3_signed_inference(self):
         self.assertEqual(describe()["tags"]["let"]["required_attributes"],["name","value"])
-        with self.assertRaisesRegex(CompileError,"unsigned"):
-            compile_html('<program><main><let name="v" value="-1"/><print value="v"/><halt/></main></program>',target="user")
+        self.assertIn("htmlk_user_call(UINT64_C(4)", compile_html('<program><main><let name="v" value="-1"/><print value="v"/><halt/></main></program>',target="user"))

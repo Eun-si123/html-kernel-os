@@ -242,7 +242,11 @@ void htmlk_m4_syscall_dispatch(void *raw_frame) {
         return; /* assembly iretq resumes same ring3 task */
     }
 #ifdef HTMLK_M5_USER_LOADER
-    if (id == 2U && syscall_seen && !user_exited &&
+    if ((id == 2U
+#ifdef HTMLK_M5_USER_I64_OUTPUT
+         || id == 4U
+#endif
+         ) && syscall_seen && !user_exited &&
 #ifndef HTMLK_M5_USER_U64_OUTPUT
         f->rdi <= 9999U &&
 #endif
@@ -257,7 +261,13 @@ void htmlk_m4_syscall_dispatch(void *raw_frame) {
         ++user_report_count;
 #endif
         log_text("M5_C_USER_VALUE=");
-        log_decimal(f->rdi);
+#ifdef HTMLK_M5_USER_I64_OUTPUT
+        if (id == 4U && (f->rdi & (UINT64_C(1) << 63))) {
+            log_text("-");
+            log_decimal(UINT64_C(0) - f->rdi);
+        } else
+#endif
+            log_decimal(f->rdi);
         log_text("\n");
         return;
     }

@@ -106,7 +106,7 @@ type or an explicit conversion when signedness or width matters.
 The inferred type remains fixed for later assignments. Function parameters,
 return types and array element types stay explicit. Boolean locals, string
 locals, mixed-width coercion, new scoping rules and dynamic attribute names
-are NOT added. Ring3 numeric reports remain unsigned. This is initializer
+are NOT added. Ring3 signed numeric reports are added by M5-F6 (see [proof](M5_HTML_I64_OUTPUT.md)). This is initializer
 inference, not whole-program type inference or dynamic typing.
 
 The design is informed by [Rust let inference](https://doc.rust-lang.org/reference/statements.html#let-statements)
