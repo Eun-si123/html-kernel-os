@@ -12,12 +12,33 @@ htmlk_m4_user_enter:
     movq %rsp, htmlk_m4_saved_main_rsp(%rip)
     pushq %rcx      /* user SS */
     pushq %rsi      /* user RSP */
-    pushfq          /* inherit IF=0 by default; opt-in E2 enables real IRQ */
+    /* Fresh user flags: architectural bit 1, and IF only for E2.
+     * Do not expose supervisor arithmetic flags or inherit DF/TF/IOPL. */
 #ifdef HTMLK_M5_USER_TIMEOUT
-    orq $0x200, (%rsp) /* enable IF only in CPL3 user task IRET frame */
+    pushq $0x202
+#else
+    pushq $0x2
 #endif
     pushq %rdx      /* user CS */
     pushq %rdi      /* user RIP */
+    /* Entry arguments and caller/callee registers may contain supervisor
+     * values. The IRET frame and saved kernel context are complete now.
+     * RSP is restored from that frame; clear every other integer register. */
+    xorq %rax,%rax
+    xorq %rbx,%rbx
+    xorq %rcx,%rcx
+    xorq %rdx,%rdx
+    xorq %rsi,%rsi
+    xorq %rdi,%rdi
+    xorq %rbp,%rbp
+    xorq %r8,%r8
+    xorq %r9,%r9
+    xorq %r10,%r10
+    xorq %r11,%r11
+    xorq %r12,%r12
+    xorq %r13,%r13
+    xorq %r14,%r14
+    xorq %r15,%r15
     iretq
 .size htmlk_m4_user_enter, .-htmlk_m4_user_enter
 
