@@ -64,7 +64,11 @@ jobs:
       - name: Install real x86 boot-test tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends qemu-system-x86 xorriso
+          sudo apt-get install -y --no-install-recommends qemu-system-x86 xorriso tcc
+      - name: M2-UX7-B strict native TinyCC HTML proof and multiple real Ring3 QEMU applications
+        run: |
+          python -m unittest tests.test_tcc_user_backend -v
+          python scripts/test_tcc_user_proof.py
       - name: Verify actual Limine RGB framebuffer writes and source-derived pixels in QEMU
         run: python scripts/test_video_console.py
       - name: Verify actual QEMU VGA screenshot shows kernel glyph pixels

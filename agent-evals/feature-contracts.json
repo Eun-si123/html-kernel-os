@@ -729,6 +729,21 @@
         "scripts/test_browser_compiler.mjs",
         "docs/M2_BROWSER_COMPILER_C.md"
       ]
+    },
+    {
+      "id": "m2-tcc-native-guarded-html-proof",
+      "source": [
+        "scripts/build_tcc_html_user_image.py",
+        "scripts/tcc-freestanding/stdint.h",
+        "scripts/build_boot.py"
+      ],
+      "regressions": [
+        "tests/test_tcc_user_backend.py"
+      ],
+      "fieldEvidence": [
+        "scripts/test_tcc_user_proof.py",
+        "docs/M2_TCC_NATIVE_PROOF.md"
+      ]
     }
   ]
 }

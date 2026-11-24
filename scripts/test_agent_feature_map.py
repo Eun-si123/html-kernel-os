@@ -34,7 +34,7 @@ class FeatureContractTests(unittest.TestCase):
                           "m2-human-agent-diagnostics", "m2-native-cli-source-attested-hkex",
                           "m2-program-main-nonkernel-syntax", "m2-browser-local-source-editor",
                           "m2-editor-lsp-shared-compiler", "m5-live-bios-boot-journal",
-                          "m2-public-shared-language-grammar", "m2-browser-canonical-python-c"})
+                          "m2-public-shared-language-grammar", "m2-browser-canonical-python-c", "m2-tcc-native-guarded-html-proof"})
 
     def test_changed_m4_scheduler_maps_native_qemu_and_state_oracles(self):
         report = summarize(validate(self.real), ["boot/task_switch.S"])
