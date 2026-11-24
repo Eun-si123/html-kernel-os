@@ -2,6 +2,20 @@ name: Publish HTML Kernel OS browser boot lab
 on:
   push:
     branches: [main]
+    # The public ISO/browser artifact is built from site/, compiler/, boot/,
+    # examples/, scripts/ and tests/, not from the documentation below.
+    # This Pages workflow is NOT a required pull-request check. Preserve
+    # workflow_dispatch for explicit redeploys.
+    paths-ignore:
+      - 'README.md'
+      - 'AGENTS.md'
+      - 'CLAUDE.md'
+      - 'CODEMAP.md'
+      - 'docs/**'
+      - '.github/workflows/ci.yml'
+      - '.github/workflows/codeql-advanced.yml'
+      - '.github/workflows/dependency-review.yml'
+      - '.github/workflows/gitleaks.yml'
   workflow_dispatch:
 permissions:
   contents: read
