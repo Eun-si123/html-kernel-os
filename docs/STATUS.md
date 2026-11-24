@@ -247,3 +247,7 @@ Local proof: 267 Python tests, four Node grammar tests, native Linux 6/0, two na
 ## M2-UX9 entrypoint lexical scopes and identifier hygiene (development branch)
 
 Native Linux reproduced an old incorrect loop-variable output 10 vs expected 12; fixed output 12. New source with nested inferred locals, arrays and formerly colliding names produces 26/9/12, edited source 30/15/12 in Linux GCC O0/O2 UBSan and real QEMU kernel and Ring3 (two boots each, four app runs with reclaim). Existing static bounds remain. CI, public browser parity and hardware not yet verified. Generated C hashes intentionally change, requiring source-attested artifacts to be rebuilt with the matching compiler.
+
+## M5-E3-J owned nonpresent guard-page fault retirement (development branch)
+
+Pre-fix QEMU exits 45 on real user #PF4 with bad RSP at the adjacent unmapped stack guard. Extend the existing exact IST2 and owner checks only to that page for data read/write errors 4/6; no mapping, dereference or instruction retry. Local GCC UBSan O0/O3, actual no-timer and x2APIC QEMU evidence in [M5-E3-J](M5_USER_GUARD_PAGE.md). CI, general M5 security and M6 hardware remain open.
