@@ -63,6 +63,11 @@ jobs:
           node --check site/live/editor.mjs
           node --test scripts/test_live_editor.mjs
           python scripts/test_live_editor_native.py
+      - name: Verify real BIOS and guest UART journal before Pages deployment
+        run: |
+          node --check site/live/journal.mjs
+          node --check site/live/live.js
+          node --test scripts/test_live_boot_journal.mjs
       - name: Assemble static Pages bundle with pinned x86-64 WebAssembly emulator
         run: |
           mkdir -p public/vendor
@@ -106,6 +111,7 @@ jobs:
           test -s public/live/index.html
           test -s public/live/live.js
           test -s public/live/editor.mjs
+          test -s public/live/journal.mjs
           test -s public/live/live.css
           test -s public/examples/user-programs/html-u64-report.html
           test -s public/examples/kernel.html

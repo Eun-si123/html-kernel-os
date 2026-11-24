@@ -67,6 +67,10 @@ python3 -m unittest tests.test_htmlk_lsp -v
 
 An LSP client must be configured separately; no self-installing VS Code extension or browser compiler is implied. [LSP setup, limits and tests](docs/M2_LANGUAGE_LSP.md). Local evidence only; CI/merge pending.
 
+## Real BIOS-first boot journal (M5 Web-D development)
+
+The [HTML Kernel Live browser lab](https://eun-si123.github.io/html-kernel-os/live/) now has an experimental local-branch **BIOS VGA + CPU COM1 journal**: the virtual CPU starts *after* actual event listeners attach, then captured SeaBIOS/bootloader and kernel UART events can be replayed, paused, stepped or scrubbed at different **recording** speeds. The VGA canvas fills its panel instead of being artificially capped at 545px. **Replay does not slow the real virtual CPU.** Actual Chromium saw early SeaBIOS, DVD/CD boot and kernel ready events; independent Node tests and CI gates accompany the change. Local implementation only; exact PR-head CI, merge and public deployment remain separate gates. [Proof and boundaries](docs/M5_WEB_BOOT_JOURNAL.md).
+
 ## Agent and contributor entry points
 
 AI agents and external contributors: start at **[AGENTS.md](AGENTS.md)**, then follow **[CODEMAP.md](CODEMAP.md)** and the [documentation hub](docs/README.md). The repository uses TeamForge/BetterNet-style instructions for task ownership, public-safe commit attribution, current status, durable memory and advisory [feature-to-regression mapping](agent-evals/README.md). The instructions do not start a background agent or imply automatic deployment.

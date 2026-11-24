@@ -52,6 +52,14 @@
 <details><summary>직접 만든 HTML을 실행하려면?</summary>
 <p>저장소를 받은 PC에서 <code>python3 scripts/build_live_site.py --source 내프로그램.html --out-dir build/custom-live</code>로 빌드하고 생성된 <code>html-kernel-live.iso</code>와 원본 HTML을 이곳에서 골라 줘. GCC·xorriso·Limine 빌드 도구가 필요해. <strong>파일 선택은 컴파일이 아니야.</strong> ISO의 내부 HTML 일치는 <code>cat /source.html</code>로 직접 검증해.</p></details>
 </section>
+<section class="journal-panel" aria-labelledby="journal-title">
+<div class="journal-header"><div><span class="tag">LIVE / BOOT TRACE</span><h3 id="journal-title">BIOS부터 실제 부팅 기록</h3></div><span id="journal-status" role="status">기록 대기 중</span></div>
+<pre id="journal-output" class="journal-output" role="log" aria-live="off">CPU 부팅 전</pre>
+<div class="journal-controls"><button type="button" id="journal-play">처음부터 다시 보기</button><button type="button" id="journal-pause" disabled>일시 정지</button><button type="button" id="journal-step" disabled>한 단계</button>
+<label for="journal-speed">재생 속도 <select id="journal-speed"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select></label>
+<label for="journal-position">기록 위치 <input id="journal-position" type="range" min="0" max="0" value="0" aria-label="기록 재생 위치"></label></div>
+<p class="journal-note">실제 <strong>VGA BIOS 화면 이벤트와 CPU COM1 UART 바이트</strong>를 브라우저에서 받은 순서로 기록해. 재생은 <strong>기록 화면만</strong> 느리게 보여주며 실제 VM CPU 속도를 변경하지 않아. SeaBIOS·Limine은 네이티브 부트 구성요소이며 HTML 자체가 아니야.</p>
+</section>
 <p class="message" id="message" role="status" aria-live="polite">부팅하면 ISO·HTML SHA-256 확인 후 실제 가상머신을 시작해.</p>
 <div class="columns">
 <section class="panel"><h3><span>01.A</span> VGA / BIOS <small>실제 화면 출력</small></h3>
