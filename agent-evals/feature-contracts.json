@@ -696,6 +696,22 @@
         "scripts/test_live_boot_journal.mjs",
         "docs/M5_WEB_BOOT_JOURNAL.md"
       ]
+    },
+    {
+      "id": "m2-public-shared-language-grammar",
+      "source": [
+        "compiler/diagnostics.py",
+        "scripts/build_public_language_grammar.py",
+        "site/live/grammar.mjs"
+      ],
+      "regressions": [
+        "tests/test_public_language_grammar.py",
+        "tests/test_live_pages.py"
+      ],
+      "fieldEvidence": [
+        "scripts/test_live_grammar.mjs",
+        "docs/M2_PUBLIC_LANGUAGE_GRAMMAR.md"
+      ]
     }
   ]
 }

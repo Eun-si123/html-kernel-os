@@ -68,10 +68,17 @@ jobs:
           node --check site/live/journal.mjs
           node --check site/live/live.js
           node --test scripts/test_live_boot_journal.mjs
+      - name: Generate public grammar from authoritative native compiler, never JS reimplementation
+        run: |
+          mkdir -p build
+          python scripts/build_public_language_grammar.py --out build/htmlk-language.json
+          node --check site/live/grammar.mjs
+          node --test scripts/test_live_grammar.mjs
       - name: Assemble static Pages bundle with pinned x86-64 WebAssembly emulator
         run: |
           mkdir -p public/vendor
           cp -a site/. public/
+          cp build/htmlk-language.json public/htmlk-language.json
           python scripts/fetch_browser_assets.py --cache-dir site/vendor --dest public/vendor
           cp build/html-kernel.iso public/html-kernel.iso
           cp build/html-kernel-video.iso public/html-kernel-video.iso
@@ -112,6 +119,8 @@ jobs:
           test -s public/live/live.js
           test -s public/live/editor.mjs
           test -s public/live/journal.mjs
+          test -s public/live/grammar.mjs
+          test -s public/htmlk-language.json
           test -s public/live/live.css
           test -s public/examples/user-programs/html-u64-report.html
           test -s public/examples/kernel.html

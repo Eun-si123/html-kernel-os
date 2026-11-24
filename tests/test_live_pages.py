@@ -28,6 +28,7 @@ class LivePagesTests(unittest.TestCase):
         self.assertEqual(len(parser.ids), len(set(parser.ids)))
         for name in ('journal-output','journal-title','journal-position','journal-speed',
                      'journal-play','journal-pause','journal-step','journal-status',
+                     'grammar-guide','grammar-list','grammar-search','grammar-status',
                      'html-editor','editor-title','editor-bytes','editor-status',
                      'editor-command','editor-copy','editor-save','editor-reset',
                      'start','stop','fullscreen','terminal','source','source-hash',
@@ -70,6 +71,15 @@ class LivePagesTests(unittest.TestCase):
         self.assertNotIn('eval(', editor)
         self.assertNotIn('innerHTML', editor)
         self.assertIn('max-width:780px', css)
+        guide = (SITE/'grammar.mjs').read_text()
+        self.assertIn('<script type="module" src="./grammar.mjs"></script>',html)
+        self.assertIn('실제 컴파일러 정의 기반',html)
+        self.assertIn('에이전트용 원본 JSON 열기',html)
+        for marker in ('verifyGrammar','matchingTags','loadGrammar',
+                       'schema_version',"credentials:'omit'",'textContent'):
+            self.assertIn(marker,guide)
+        self.assertNotIn('innerHTML',guide)
+        self.assertNotIn('eval(',guide)
         self.assertIn('브라우저 메모리에서만 실행', html)
         self.assertIn('html-kernel-live.iso', html)
         self.assertIn('--source 내프로그램.html', html)
@@ -104,6 +114,12 @@ class LivePagesTests(unittest.TestCase):
         self.assertIn('node --test scripts/test_live_editor.mjs', ci)
         self.assertIn('node --test scripts/test_live_editor.mjs', pages)
         self.assertIn('test -s public/live/editor.mjs', pages)
+        self.assertIn('scripts/build_public_language_grammar.py',ci)
+        self.assertIn('scripts/build_public_language_grammar.py',pages)
+        self.assertIn('node --test scripts/test_live_grammar.mjs',ci)
+        self.assertIn('node --test scripts/test_live_grammar.mjs',pages)
+        self.assertIn('test -s public/htmlk-language.json',pages)
+        self.assertIn('test -s public/live/grammar.mjs',pages)
         self.assertIn('node --test scripts/test_live_boot_journal.mjs', ci)
         self.assertIn('node --test scripts/test_live_boot_journal.mjs', pages)
         self.assertIn('test -s public/live/journal.mjs', pages)

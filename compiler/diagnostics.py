@@ -117,8 +117,10 @@ def describe() -> dict[str, Any]:
         "entrypoint": '<kernel arch="x86_64"><onboot>...</onboot></kernel>',
         "tags": {
             tag: {
-                "parents": sorted("(document)" if parent is None else parent
-                                  for parent in parents),
+                "parents": sorted(
+                    {"(document)" if parent is None else parent for parent in parents}
+                    | ({"main"} if "onboot" in parents else set())
+                ),  # actual validated <main> alias uses the same onboot AST
                 "attributes": sorted(ALLOWED[tag]),
                 "required_attributes": sorted(REQUIRED.get(tag, set())),
             }
