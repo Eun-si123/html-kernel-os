@@ -1,6 +1,6 @@
 # M2-UX7-A — real Python HTML Kernel compiler in browser WebAssembly
 
-**Status:** locally implemented and tested. GitHub PR-head CI, merge and production Pages deployment are separate gates. This is **HTMLK → real x86-target C**, not a complete in-browser ELF/HKEX/ISO compiler.
+**Status:** PR #114 exact-head native QEMU CI/Gitleaks PASS, merged and independently confirmed on public GitHub Pages in real Chromium. This is **HTMLK → real x86-target C**, not a complete in-browser ELF/HKEX/ISO compiler.
 
 ## Why this is a real compiler rather than a demonstration
 
@@ -49,3 +49,5 @@ CI and Pages run these checks, export exact compiler files and manifest to `/htm
 4. Verify changed browser source yields **changed native executable bytes and changed real guest CPU UART**, with invalid/oversized/stuck and offline/low-RAM negatives. Avoid fake JavaScript output and preserve the original local-build fallback.
 
 This is a meaningful initial browser compiler phase, **not completion of M2-UX7 or M5/M6**.
+
+**Follow-on:** The [M2-UX7-B1 native TinyCC proof](M2_TCC_NATIVE_PROOF.md) builds canonical HTMLK user C to actual x86-64 HKEX *on Linux* and proves binary/source identity before native QEMU execution. It does **not** provide a browser-native TinyCC, ELF/HKEX maker or ISO packer. See [Issue #112](https://github.com/Eun-si123/html-kernel-os/issues/112).

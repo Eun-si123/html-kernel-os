@@ -11,6 +11,7 @@ Start with [AGENTS.md](../AGENTS.md) for AI collaborators and [README.md](../REA
 | How do IDEs obtain genuine compiler diagnostics and completion via LSP? | [M2_LANGUAGE_LSP.md](M2_LANGUAGE_LSP.md) |
 | Where can people and agents inspect the public canonical supported tags/attributes? | [M2_PUBLIC_LANGUAGE_GRAMMAR.md](M2_PUBLIC_LANGUAGE_GRAMMAR.md) |
 | Can the *real* Python HTMLK compiler generate x86 C inside the browser? | [M2_BROWSER_COMPILER_C.md](M2_BROWSER_COMPILER_C.md) |
+| Can a second native TinyCC backend produce source-proven RX-only HKEX and run it in QEMU? | [M2_TCC_NATIVE_PROOF.md](M2_TCC_NATIVE_PROOF.md) |
 | How to write an app using `<program><main>` instead of `<kernel><onboot>`? | [LANGUAGE_HUMAN_AGENT.md](LANGUAGE_HUMAN_AGENT.md) |
 | How can I write HTML in the browser, download, compile, and boot a real ISO? | [M2_WEB_EDITOR.md](M2_WEB_EDITOR.md) |
 | How can I view the real BIOS-first boot timeline and replay captured VGA/UART? | [M5_WEB_BOOT_JOURNAL.md](M5_WEB_BOOT_JOURNAL.md) |

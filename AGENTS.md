@@ -70,6 +70,8 @@ The [public grammar JSON and browser reference](docs/M2_PUBLIC_LANGUAGE_GRAMMAR.
 
 The [M2-UX7-A browser Pyodide compiler](docs/M2_BROWSER_COMPILER_C.md) uses the exact typed Python compiler to generate **C only**. The UI must never label C output as a native executable, treat JS demos as real CPU output, upload source covertly or claim third-party CDN runtime code is private/audited. M2-UX7's real x86-64 HKEX/ISO/guest output remains **OPEN (Issue #112)**; the local native build/import remains verified.
 
+The [experimental M2-UX7-B1 native TinyCC user backend](docs/M2_TCC_NATIVE_PROOF.md) must never bypass the canonical source→byte-identical HKEX proof, silently drop writable `.data`/`.bss`, allow absolute relocations, or run without real x2APIC user timeout. It does NOT create native executable files inside the browser; the original GCC proof path remains unchanged. CI/PR and physical hardware safety gates are independent.
+
 ## Minimal validation
 
 ```sh

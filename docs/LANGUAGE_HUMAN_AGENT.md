@@ -249,6 +249,12 @@ linker produces a NEW HKEX/ISO and real guest CPU output independently changes
 with the edited source. JavaScript-computed demo output does not count.
 [WebAssembly compiler's actual first-stage evidence](M2_BROWSER_COMPILER_C.md).
 
+**Second native compiler backend — experimental:** M2-UX7-B1 now proves canonical
+HTMLK source can generate source-matched TinyCC x86-64 HKEX images and execute
+as guarded Ring3 in QEMU, including text, repeated values and full u64. It is
+an optional Linux toolchain, **not** TCC running inside the browser. See
+[exact provenance and limitations](M2_TCC_NATIVE_PROOF.md).
+
 **Reusable libraries and safe APIs:** versioned modules, small standard
 library and explicit permissions/unsafe boundaries remain OPEN, with positive
 and negative conformance tests required before shipping.

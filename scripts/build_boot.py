@@ -90,13 +90,20 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
           user_timeout: bool = False,
           user_timeout_mask: bool = False,
           user_app_html: Path | None = None,
-          user_app_html_proof: Path | None = None) -> None:
+          user_app_html_proof: Path | None = None,
+          user_app_tcc_proof: bool = False,
+          user_app_tcc_path: str = 'tcc') -> None:
     if sum(p is not None for p in
            (user_app_html,user_app_source,user_app_image)) > 1:
         raise ValueError("M5 user app HTML, assembly and binary are exclusive")
     if user_app_html is not None and (
         user_app_html.is_symlink() or not user_app_html.is_file()):
         raise ValueError("M5 user HTML source must be a regular non-symlink file")
+    if user_app_tcc_proof and user_app_html_proof is None:
+        raise ValueError('TinyCC proof requires an explicit HTML source and prebuilt HKEX')
+    if user_app_tcc_proof and not (interactive_run and user_fault_recover and
+                                   user_timeout and exception_idt and tss_ist):
+        raise ValueError('TinyCC user ABI requires guarded interactive x2APIC timeout mode')
     if user_app_html_proof is not None:
         if user_app_image is None or user_app_html is not None or user_app_source is not None:
             raise ValueError("HTML proof requires exactly --user-app-image")
@@ -171,8 +178,16 @@ def build(source: Path, out: Path, cache: Path, work_root: Path, test_exit: bool
             if not 0 < len(proved_image) <= 4096:
                 raise ValueError("HTML proof image must contain 1..4096 bytes")
             rebuilt_image = build_dir / "proof-recompiled.hke"
-            run(sys.executable, ROOT / "scripts/build_html_user_image.py",
-                "--source", proof_snapshot, "--out", rebuilt_image)
+            # Never use TCC's ABI privileges merely because the image has
+            # an HKEX header. Rebuild from a snapshot of canonical HTMLK with
+            # the SELECTED backend and compare the ENTIRE generated image.
+            backend_script = ('build_tcc_html_user_image.py' if user_app_tcc_proof
+                              else 'build_html_user_image.py')
+            proof_args = [sys.executable, ROOT / 'scripts' / backend_script,
+                          '--source', proof_snapshot, '--out', rebuilt_image]
+            if user_app_tcc_proof:
+                proof_args.extend(('--tcc', user_app_tcc_path))
+            run(*proof_args)
             if rebuilt_image.read_bytes() != proved_image:
                 raise ValueError("HTML source proof does not match precompiled HKEX bytes")
         generated = build_dir / "kernel.c"
@@ -647,6 +662,10 @@ def main() -> None:
                         help="M5-C1 prebuilt HKEX file (guest validates integrity/format)")
     parser.add_argument("--user-app-html-proof", type=Path,
                         help="Opt-in HTML ABI only when this source recompiles byte-exactly to --user-app-image")
+    parser.add_argument('--user-app-tcc-proof', action='store_true',
+                        help='EXPERIMENTAL: rebuild HTML with strict TinyCC backend for byte-exact HTML ABI proof')
+    parser.add_argument('--user-app-tcc-path', default='tcc',
+                        help='Trusted host TinyCC x86-64 executable (only for --user-app-tcc-proof)')
     parser.add_argument("--user-fault-recover", action="store_true",
                         help="M5-E1 guarded real CPL3 #PF/#GP/#UD recovery to UART prompt")
     parser.add_argument("--user-timeout", action="store_true",
@@ -671,6 +690,13 @@ def main() -> None:
             a.user_app_image is None or a.user_app_html is not None or
             a.user_app_source is not None):
         parser.error("--user-app-html-proof requires --user-app-image only")
+    if a.user_app_tcc_proof and a.user_app_html_proof is None:
+        parser.error('--user-app-tcc-proof requires --user-app-html-proof and --user-app-image')
+    if a.user_app_tcc_proof and not (a.romfs_run_console and a.user_fault_recover
+                                     and a.user_timeout and a.exception_idt and a.tss_ist):
+        parser.error('--user-app-tcc-proof requires guarded interactive x2APIC timeout mode')
+    if a.user_app_tcc_path != 'tcc' and not a.user_app_tcc_proof:
+        parser.error('--user-app-tcc-path is only valid with --user-app-tcc-proof')
     if a.user_app_html is not None and not (a.user_loader_probe or a.romfs_run_console):
         parser.error("--user-app-html requires --user-loader-probe or --romfs-run-console")
     if a.user_timeout and not (a.user_fault_recover and a.romfs_run_console and
@@ -831,7 +857,8 @@ def main() -> None:
           a.user_app_source, a.user_app_image,
           a.romfs_run_console, a.user_fault_recover,
           a.user_timeout, a.user_timeout_mask,
-          a.user_app_html, a.user_app_html_proof)
+          a.user_app_html, a.user_app_html_proof,
+          a.user_app_tcc_proof, a.user_app_tcc_path)
 
 
 if __name__ == "__main__":
