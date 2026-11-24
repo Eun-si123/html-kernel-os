@@ -52,7 +52,7 @@ class M2ReleaseStatusTests(unittest.TestCase):
                 self.assertIn(pr, text)
                 self.assertRegex(text.lower(), r'pass|passed')
                 self.assertNotIn('exact PR-head CI, merge and public Pages deployment remain separate evidence gates', text)
-        self.assertIn('GitHub Pages does **not** compile source', readme)
+        self.assertIn('GitHub Pages does **not** compile a new native ISO', readme)
         self.assertIn('physical', (ROOT/'docs/STATUS.md').read_text().lower())
 
     def test_future_ux_proposals_do_not_reuse_already_delivered_phase_ids(self):

@@ -74,11 +74,19 @@ jobs:
           python scripts/build_public_language_grammar.py --out build/htmlk-language.json
           node --check site/live/grammar.mjs
           node --test scripts/test_live_grammar.mjs
+      - name: Verify and export the real compiler sources for optional browser Pyodide
+        run: |
+          python -m unittest tests.test_public_browser_compiler -v
+          node --check site/live/compiler-worker.mjs
+          node --check site/live/compile.mjs
+          node --test scripts/test_browser_compiler.mjs
+          python scripts/build_public_browser_compiler.py --out-dir build/browser-compiler
       - name: Assemble static Pages bundle with pinned x86-64 WebAssembly emulator
         run: |
           mkdir -p public/vendor
           cp -a site/. public/
           cp build/htmlk-language.json public/htmlk-language.json
+          cp -a build/browser-compiler public/compiler
           python scripts/fetch_browser_assets.py --cache-dir site/vendor --dest public/vendor
           cp build/html-kernel.iso public/html-kernel.iso
           cp build/html-kernel-video.iso public/html-kernel-video.iso
@@ -120,6 +128,14 @@ jobs:
           test -s public/live/editor.mjs
           test -s public/live/journal.mjs
           test -s public/live/grammar.mjs
+          test -s public/live/compile.mjs
+          test -s public/live/compiler-worker.mjs
+          test -s public/compiler/manifest.json
+          test -s public/compiler/htmlk.py
+          test -s public/compiler/language.py
+          test -s public/compiler/numeric_types.py
+          test -s public/compiler/function_codegen.py
+          test -s public/compiler/diagnostics.py
           test -s public/htmlk-language.json
           test -s public/live/live.css
           test -s public/examples/user-programs/html-u64-report.html

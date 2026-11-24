@@ -46,7 +46,8 @@ export function setupEditor(doc = document) {
   reset.addEventListener('click', () => {
     if (editor.value !== TEMPLATE && !window.confirm('현재 편집 내용을 버리고 예제를 다시 불러올까?')) return;
     editor.value = TEMPLATE;
-    refresh();
+    // Programmatic reset must invalidate any previously compiled C snapshot.
+    editor.dispatchEvent(new Event('input', {bubbles:true}));
   });
   save.addEventListener('click', () => {
     if (!sourceState(editor.value).valid) return;

@@ -240,12 +240,14 @@ navigation, workspace indexing and self-installing client extensions are still
 not implemented. These should reuse the existing typed compiler rather than
 introducing a permissive duplicate language parser.
 
-**True browser-native compilation (tracked in Issue #112):** M2-UX4 writes
-and downloads HTML source, and existing local tools produce actual native
-ISOs. The site must NOT claim direct source execution until a browser-side
-compiler produces a NEW x86-64 HKEX/ISO, and real guest CPU output changes
-independently with edited source. JavaScript-computed demo output does not
-satisfy that gate.
+**True browser-native executable compilation (tracked in Issue #112):** M2-UX7-A
+locally implements an actual original-Python-compiler-to-C step inside a
+Pyodide Web Worker, with byte-for-byte native CPython C SHA parity, while
+M2-UX4's existing verified tools produce the executable ISO **locally**.
+The site must NOT claim direct source execution until a browser-side x86
+linker produces a NEW HKEX/ISO and real guest CPU output independently changes
+with the edited source. JavaScript-computed demo output does not count.
+[WebAssembly compiler's actual first-stage evidence](M2_BROWSER_COMPILER_C.md).
 
 **Reusable libraries and safe APIs:** versioned modules, small standard
 library and explicit permissions/unsafe boundaries remain OPEN, with positive

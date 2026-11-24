@@ -1,7 +1,9 @@
 # M2-UX4 — real local HTML source authoring in the GitHub Pages Live Lab
 
 **Scope:** locally author, download, compile with the existing native toolchain,
-then import and boot a genuine BIOS ISO. This is **not an in-browser compiler**.
+then import and boot a genuine BIOS ISO. The separately developed M2-UX7-A
+Pyodide Worker can now compile the *same source to C inside the browser*, but
+**cannot create a bootable ISO or native HKEX in the browser**.
 PR #108 passed exact-head native QEMU CI/Gitleaks and merged. The editor was
 independently verified on the publicly deployed GitHub Pages site in Chromium.
 
@@ -62,10 +64,12 @@ independently verified on the publicly deployed GitHub Pages site in Chromium.
 
 ## Limitations / security boundaries
 
-- A static GitHub Pages site **cannot execute Python/GCC, compile a new ISO,
-  or prove typed semantics** merely from a textarea. No source checker is
-  reimplemented in JavaScript; the **existing compiler** remains the single
-  source of truth. Use the local CLI for accurate errors and real builds.
+- A static GitHub Pages site alone does not run a native GCC/x86 linker or
+  build an ISO. M2-UX7-A adds **real Python WebAssembly compilation to C**
+  in a separate explicitly enabled Worker, using the **same Python compiler**
+  byte-for-byte with no JavaScript grammar implementation. For a real bootable
+  ISO, use the original local GCC/binutils toolchain and the unchanged verified
+  guest ISO import workflow. [Browser C stage](M2_BROWSER_COMPILER_C.md).
 - The web code alone does not prove an arbitrary ISO is trustworthy.
   SHA-256/source matching is a consistency test, not signing or isolation.
 - Browsers may ask download and clipboard permissions. Use the visible

@@ -54,7 +54,7 @@ verified; exact PR-head CI/Gitleaks PASS, merged as PR #107. See [user and agent
 
 ## Draft HTML code in the browser (M2-UX4 merged in PR #108)
 
-On the [Live Lab](https://eun-si123.github.io/html-kernel-os/live/) you can write HTML Kernel Language code in a simple source editor, see **UTF-8 byte limits**, download `htmlk-program.html`, and copy the genuine native ISO build command. GitHub Pages does **not** compile source by itself. Compile with the repository's local toolchain, choose the new ISO + exact HTML on Live Lab and boot **real native code** in the browser emulator. Local Chromium and independent QEMU proof demonstrate source edits changing actual guest CPU output. **PR #108 exact-head CI/Gitleaks PASS, merged and live editor verified on the public GitHub Pages site with actual Chromium.** [Step-by-step guide](docs/M2_WEB_EDITOR.md).
+On the [Live Lab](https://eun-si123.github.io/html-kernel-os/live/) you can write HTML Kernel Language code in a simple source editor, see **UTF-8 byte limits**, download `htmlk-program.html`, and copy the genuine native ISO build command. GitHub Pages does **not** compile a new native ISO by itself. A separate opt-in WebAssembly Python step can generate real C from HTMLK, but x86-64 linking and ISO building still require the local native toolchain. Compile with the repository's local toolchain, choose the new ISO + exact HTML on Live Lab and boot **real native code** in the browser emulator. Local Chromium and independent QEMU proof demonstrate source edits changing actual guest CPU output. **PR #108 exact-head CI/Gitleaks PASS, merged and live editor verified on the public GitHub Pages site with actual Chromium.** [Step-by-step guide](docs/M2_WEB_EDITOR.md).
 
 ## Compiler-backed editor integration (M2-UX5 merged PR #109)
 
@@ -65,7 +65,7 @@ python3 scripts/htmlk_lsp.py  # connect through a configured stdio LSP client
 python3 -m unittest tests.test_htmlk_lsp -v
 ```
 
-An LSP client must be configured separately; no self-installing VS Code extension or browser compiler is implied. [LSP setup, limits and tests](docs/M2_LANGUAGE_LSP.md). Local + exact PR-head GitHub CI/Gitleaks PASS, merged in PR #109. A packaged IDE extension and external human usability tests are still not implemented.
+An LSP client must be configured separately; no self-installing VS Code extension or complete browser-native ISO compiler is implied. [LSP setup, limits and tests](docs/M2_LANGUAGE_LSP.md). Local + exact PR-head GitHub CI/Gitleaks PASS, merged in PR #109. A packaged IDE extension and external human usability tests are still not implemented.
 
 ## Real BIOS-first boot journal (M5 Web-D merged in PR #110)
 
@@ -73,6 +73,10 @@ The [HTML Kernel Live browser lab](https://eun-si123.github.io/html-kernel-os/li
 ## Actual supported grammar in the web editor (M2-UX6 merged PR #111)
 
 The Live editor can expose **compiler-generated metadata**, not a guessed JavaScript syntax clone: open **지원되는 HTML Kernel 언어 태그·속성 보기** to search real tags, required attributes and legal parents. The Pages build publishes `htmlk-language.json` directly from the existing Python compiler, so AI agents can read the same versioned JSON. Native program validity and execution are still decided by the original compiler/CPU, not this reference widget. PR #111 exact-head CI/Gitleaks PASS and merged. Public Pages deployment verified using Chromium: versioned schema v1 returned HTTP 200 with 18 tags, searchable reference, and native guest boot remained functional. [Human/agent grammar guide](docs/M2_PUBLIC_LANGUAGE_GRAMMAR.md).
+
+## Real Python compiler in browser WebAssembly (M2-UX7-A local development)
+
+The Live editor now has an **opt-in true HTMLK → x86-target C compiler**. A fresh Web Worker loads Pyodide 0.29.5 from a versioned CDN, byte-verifies six **unaltered canonical Python compiler modules** served by GitHub Pages, and runs the real typed compiler in WebAssembly. You can inspect real compiler diagnostics and download the generated C. Actual Chromium compared source `2026` and `2031` plus a real invalid-tag error against local CPython and produced exact matching generated C SHA-256. This is **not yet browser-side GCC, HKEX, native ISO generation or directly executable guest code**; use the existing verified local build/ISO import for CPU execution. External CDN trust, 90s Worker limit and low-memory-device profiling are open constraints. Local implementation/testing only, GitHub PR/CI/Pages deployment pending. [Full proof, setup and remaining native gates](docs/M2_BROWSER_COMPILER_C.md).
 
 ## Agent and contributor entry points
 

@@ -68,6 +68,8 @@ The [bounded editor LSP](docs/M2_LANGUAGE_LSP.md) uses the single canonical comp
 The [M5 real early-boot journal](docs/M5_WEB_BOOT_JOURNAL.md) records actual VGA cell and CPU COM1 event data and replays *the received log* after the guest boot. Never replace genuine BIOS/guest evidence with hardcoded text, nor mislabel a replay speed as CPU throttling. A firmware screen event is not an HTML source file.
 The [public grammar JSON and browser reference](docs/M2_PUBLIC_LANGUAGE_GRAMMAR.md) are generated from canonical compiler tables, not a JavaScript parser. Agents can read the hosted `htmlk-language.json` or the original `htmlk_check.py --describe --json`; do not treat allowed tags/attrs alone as proof of valid types, kernel privilege boundaries, or actual CPU execution.
 
+The [M2-UX7-A browser Pyodide compiler](docs/M2_BROWSER_COMPILER_C.md) uses the exact typed Python compiler to generate **C only**. The UI must never label C output as a native executable, treat JS demos as real CPU output, upload source covertly or claim third-party CDN runtime code is private/audited. M2-UX7's real x86-64 HKEX/ISO/guest output remains **OPEN (Issue #112)**; the local native build/import remains verified.
+
 ## Minimal validation
 
 ```sh
