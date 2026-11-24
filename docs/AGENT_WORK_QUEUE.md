@@ -10,6 +10,10 @@ This small repository uses GitHub Issues and PRs as its **live** work queue. Thi
 4. If an Issue has an active PR or another agent's visible claim, coordinate rather than duplicating it.
 5. Prefer a dedicated task branch. If several agents work at once, separate source/test ownership and confirm overlapping changed paths again before PR submission.
 
+## Continue without a new task description
+
+For an authorized “continue” request, resume the nearest unmet actionable roadmap gate, first reconciling existing implementation, open PRs and exact-head CI. Complete successive related acceptance steps in the available session; a patch or PR is a checkpoint, not automatically the end of the requested milestone. Update the existing status/roadmap only when the evidence changes. If an external dependency or field test blocks a gate, record the exact unblock condition, keep its status pending, and select independent work that does not assume it passed. Stop on achieved scope, actual limits or lack of justified safe work, not a quota of commits. Existing publication/merge and concurrency boundaries remain in force.
+
 ## Evidence and claim convention
 
 - A descriptive claim comment may record `agent name`, `branch`, `issue number`, `intended files` and bounded expiry, with no private data. It is **advisory**, not an atomic lease.
