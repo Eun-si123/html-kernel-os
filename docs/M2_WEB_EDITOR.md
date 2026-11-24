@@ -2,8 +2,8 @@
 
 **Scope:** locally author, download, compile with the existing native toolchain,
 then import and boot a genuine BIOS ISO. This is **not an in-browser compiler**.
-This document describes locally verified feature-branch behavior; exact PR-head
-CI, merge and public Pages deployment remain separate evidence gates.
+PR #108 passed exact-head native QEMU CI/Gitleaks and merged. The editor was
+independently verified on the publicly deployed GitHub Pages site in Chromium.
 
 ## User workflow
 

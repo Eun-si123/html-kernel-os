@@ -31,7 +31,7 @@ python3 scripts/htmlk.py build examples/human-agent-hello.html --target user --o
 
 `run` launches a generated **Linux userspace binary**, never a kernel or an imported executable; native QEMU boot requires the separate ISO builder. For full-u64 native Ring3 HKEX, ISO construction must use the **byte-exact checked source** `--user-app-image build/my-program.hke --user-app-html-proof examples/human-agent-hello.html`; otherwise the original legacy syscall ABI remains unchanged. See [commands, real QEMU proof, and security/overwrite boundaries](docs/LANGUAGE_HUMAN_AGENT.md). This CLI and checked Ring3 source proof passed exact PR-head CI and merged as PR #106.
 
-## App-friendly HTML programming syntax (M2-UX3 development)
+## App-friendly HTML programming syntax (M2-UX3 merged PR #107)
 
 Ordinary native Linux and Ring3 applications can now use `<program><main>`
 instead of the historical `<kernel><onboot>` source naming:
@@ -50,13 +50,13 @@ functions, variables, loops and full-width numeric output; the same existing
 compiler emits identical machine-directed C as its legacy-tag equivalent.
 The kernel backend **rejects** the aliases, rather than silently running
 a user app in ring 0. Actual Linux and QEMU Ring3 execution are locally
-verified; exact PR-head CI/merge are pending. See [user and agent guide](docs/LANGUAGE_HUMAN_AGENT.md).
+verified; exact PR-head CI/Gitleaks PASS, merged as PR #107. See [user and agent guide](docs/LANGUAGE_HUMAN_AGENT.md).
 
 ## Draft HTML code in the browser (M2-UX4 merged in PR #108)
 
-On the [Live Lab](https://eun-si123.github.io/html-kernel-os/live/) you can write HTML Kernel Language code in a simple source editor, see **UTF-8 byte limits**, download `htmlk-program.html`, and copy the genuine native ISO build command. GitHub Pages does **not** compile source by itself. Compile with the repository's local toolchain, choose the new ISO + exact HTML on Live Lab and boot **real native code** in the browser emulator. Local Chromium and independent QEMU proof demonstrate source edits changing actual guest CPU output. **PR #108 has passed exact-head CI and merged; public deployment verification is a separate gate.** [Step-by-step guide](docs/M2_WEB_EDITOR.md).
+On the [Live Lab](https://eun-si123.github.io/html-kernel-os/live/) you can write HTML Kernel Language code in a simple source editor, see **UTF-8 byte limits**, download `htmlk-program.html`, and copy the genuine native ISO build command. GitHub Pages does **not** compile source by itself. Compile with the repository's local toolchain, choose the new ISO + exact HTML on Live Lab and boot **real native code** in the browser emulator. Local Chromium and independent QEMU proof demonstrate source edits changing actual guest CPU output. **PR #108 exact-head CI/Gitleaks PASS, merged and live editor verified on the public GitHub Pages site with actual Chromium.** [Step-by-step guide](docs/M2_WEB_EDITOR.md).
 
-## Compiler-backed editor integration (M2-UX5 development)
+## Compiler-backed editor integration (M2-UX5 merged PR #109)
 
 The bounded HTML Kernel Language LSP server connects IDEs and coding agents to the **same native typed compiler**. It publishes real source diagnostics, Unicode-safe editor locations, supported tag/attribute completions and metadata; it never runs or builds a program:
 
@@ -65,14 +65,14 @@ python3 scripts/htmlk_lsp.py  # connect through a configured stdio LSP client
 python3 -m unittest tests.test_htmlk_lsp -v
 ```
 
-An LSP client must be configured separately; no self-installing VS Code extension or browser compiler is implied. [LSP setup, limits and tests](docs/M2_LANGUAGE_LSP.md). Local evidence only; CI/merge pending.
+An LSP client must be configured separately; no self-installing VS Code extension or browser compiler is implied. [LSP setup, limits and tests](docs/M2_LANGUAGE_LSP.md). Local + exact PR-head GitHub CI/Gitleaks PASS, merged in PR #109. A packaged IDE extension and external human usability tests are still not implemented.
 
 ## Real BIOS-first boot journal (M5 Web-D merged in PR #110)
 
-The [HTML Kernel Live browser lab](https://eun-si123.github.io/html-kernel-os/live/) now has an experimental local-branch **BIOS VGA + CPU COM1 journal**: the virtual CPU starts *after* actual event listeners attach, then captured SeaBIOS/bootloader and kernel UART events can be replayed, paused, stepped or scrubbed at different **recording** speeds. The VGA canvas fills its panel instead of being artificially capped at 545px. **Replay does not slow the real virtual CPU.** Actual Chromium saw early SeaBIOS, DVD/CD boot and kernel ready events; independent Node tests and CI gates accompany the change. PR #110 exact-head CI and merge PASS; verify public deployment separately. [Proof and boundaries](docs/M5_WEB_BOOT_JOURNAL.md).
-## Actual supported grammar in the web editor (M2-UX6 development)
+The [HTML Kernel Live browser lab](https://eun-si123.github.io/html-kernel-os/live/) now has an merged and publicly tested **BIOS VGA + CPU COM1 journal**: the virtual CPU starts *after* actual event listeners attach, then captured SeaBIOS/bootloader and kernel UART events can be replayed, paused, stepped or scrubbed at different **recording** speeds. The VGA canvas fills its panel instead of being artificially capped at 545px. **Replay does not slow the real virtual CPU.** Actual Chromium saw early SeaBIOS, DVD/CD boot and kernel ready events; independent Node tests and CI gates accompany the change. PR #110 exact-head CI and merge PASS; public GitHub Pages confirmed real SeaBIOS/DVD boot, guest COM1, replay, native Ring3 CPU output and memory reclamation. [Proof and boundaries](docs/M5_WEB_BOOT_JOURNAL.md).
+## Actual supported grammar in the web editor (M2-UX6 merged PR #111)
 
-The Live editor can expose **compiler-generated metadata**, not a guessed JavaScript syntax clone: open **지원되는 HTML Kernel 언어 태그·속성 보기** to search real tags, required attributes and legal parents. The Pages build publishes `htmlk-language.json` directly from the existing Python compiler, so AI agents can read the same versioned JSON. Native program validity and execution are still decided by the original compiler/CPU, not this reference widget. Local regression evidence exists; PR CI/merge/public deployment are separate gates. [Human/agent grammar guide](docs/M2_PUBLIC_LANGUAGE_GRAMMAR.md).
+The Live editor can expose **compiler-generated metadata**, not a guessed JavaScript syntax clone: open **지원되는 HTML Kernel 언어 태그·속성 보기** to search real tags, required attributes and legal parents. The Pages build publishes `htmlk-language.json` directly from the existing Python compiler, so AI agents can read the same versioned JSON. Native program validity and execution are still decided by the original compiler/CPU, not this reference widget. PR #111 exact-head CI/Gitleaks PASS and merged. Public Pages deployment verified using Chromium: versioned schema v1 returned HTTP 200 with 18 tags, searchable reference, and native guest boot remained functional. [Human/agent grammar guide](docs/M2_PUBLIC_LANGUAGE_GRAMMAR.md).
 
 ## Agent and contributor entry points
 

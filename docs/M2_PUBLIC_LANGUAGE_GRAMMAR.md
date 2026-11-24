@@ -29,4 +29,6 @@ python3 -m unittest tests.test_live_pages -v
 
 Tests require deterministic compiler-derived JSON with exact canonical tags/attributes/required fields and SHA-256, demonstrate real equivalent `<program><main>` native output, reject symlink/missing-directory builds, and verify client search, tampered or oversized static metadata, safe display data and no browser-side interpretation of untrusted code. CI and Pages independently generate metadata from the same Python compiler; the site artifact checks both the JSON and read-only JS module are present.
 
-**Boundaries:** this is language discoverability, **not** a browser-resident compiler, LSP IDE extension, semantic auto-fix, arbitrary-code security sandbox or M6 physical hardware test. It is usable with the M2-UX5 LSP, but does not require that service to run on the public site. Exact PR-head CI, merge and public deployment remain separate acceptance gates.
+**Boundaries:** this is language discoverability, **not** a browser-resident compiler, LSP IDE extension, semantic auto-fix, arbitrary-code security sandbox or M6 physical hardware test. It is usable with the M2-UX5 LSP, but does not require that service to run on the public site. PR #111 exact-head CI/Gitleaks PASS, merged. Actual public Pages JSON HTTP 200,
+18 tags, searchable guide and native guest boot were independently verified.
+Browser-resident compilation and M6 hardware remain NOT IMPLEMENTED/NOT RUN.

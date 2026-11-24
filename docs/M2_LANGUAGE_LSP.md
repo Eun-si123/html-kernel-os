@@ -1,6 +1,7 @@
 # M2-UX5 — HTML Kernel Language Server Protocol
 
-**Status:** local development implementation; GitHub PR-head CI and merge are separate gates.
+**Status:** PR #109 exact-head CI/Gitleaks PASS and merged. Generic editor
+clients still require user setup; a prepackaged VS Code extension is not shipped.
 
 HTML Kernel Language can now expose its **existing typed compiler** to editors and AI coding agents via a bounded LSP stdio server. This is the same compiler that produces native Linux, kernel and Ring3 code. The language server never compiles an executable or runs an HTML program.
 

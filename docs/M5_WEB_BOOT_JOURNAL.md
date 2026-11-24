@@ -1,6 +1,7 @@
 # M5 Web-D — actual BIOS/VGA and CPU COM1 boot journal
 
-**Scope:** a bounded, user-readable record of what the **real browser x86-64 emulator** displayed and emitted, including the first BIOS text. It can replay that evidence after the native guest already finished booting. This is a local feature-branch implementation until PR-head CI, merge and Pages deployment are verified separately.
+**Scope:** a bounded, user-readable record of what the **real browser x86-64 emulator** displayed and emitted, including the first BIOS text. It can replay that evidence after the native guest already finished booting. PR #110 passed exact-head CI/Gitleaks, merged and was independently validated
+on the public GitHub Pages site in actual Chromium. Physical hardware is untested.
 
 ## What it does
 
