@@ -1,0 +1,14 @@
+<program>
+ <function name="half" params="x:u64" returns="u64"><return value="x / 2"/></function>
+ <main>
+  <array name="arr" type="u64" length="3"/>
+  <store name="arr" index="0" value="5"/>
+  <store name="arr" index="1" value="9"/>
+  <print value="arr[0] + arr[1]"/>
+  <print value="half(9223372036854775808)"/>
+  <let name="n" type="u64" value="0"/>
+  <while test="n &lt; 3" max="5"><set name="n" value="n + 1"/></while>
+  <print value="n"/>
+  <halt/>
+ </main>
+</program>

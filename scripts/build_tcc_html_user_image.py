@@ -78,6 +78,17 @@ def allocated_sections(readelf: str) -> list[tuple[str,int,str]]:
     return found
 
 
+def undefined_symbols(readelf_symbols: str) -> set[str]:
+    """Only named, line-local UND symbols; never capture a following row."""
+    undefined=set()
+    for line in readelf_symbols.splitlines():
+        fields=line.split()
+        if len(fields)>=8 and fields[0].endswith(':') and \
+                fields[0][:-1].isdigit() and fields[-2]=='UND':
+            undefined.add(fields[-1])
+    return undefined
+
+
 def require_tcc_sections(object_table: str, linked_table: str) -> None:
     parts=allocated_sections(object_table)
     if not any(name=='.text' and length>0 and 'X' in flags
@@ -124,13 +135,31 @@ def build(source: Path, output: Path, *, tcc: str = 'tcc') -> bytes:
             raise ValueError('TinyCC did not produce a relocatable x86_64 ELF object')
         assert_safe_relocations(run('readelf','-W','-r',obj))
         obj_sections=run('readelf','-W','-S',obj)
+        # TCC emits a real external memset call for automatic local-array
+        # zeroing. Allow exactly that one known freestanding runtime symbol;
+        # fail closed on unknown host libc/compiler helper dependencies.
+        symbols=run('readelf','-W','-s',obj)
+        undefined=undefined_symbols(symbols)
+        if undefined - {'memset'}:
+            raise ValueError('TinyCC emitted unsupported external symbols: '+str(sorted(undefined)))
         run('gcc','-m64','-c','-fno-pic','-fno-pie',ROOT/'scripts/user_program_entry.S','-o',entry)
+        extra=[]
+        runtime_obj=folder/'tcc-memory-runtime.o'
+        if 'memset' in undefined:
+            run(tcc,'-std=c11','-Werror','-fno-common','-nostdinc',
+                '-I',ROOT/'scripts/tcc-freestanding','-c',
+                ROOT/'scripts/tcc-freestanding/runtime.c','-o',runtime_obj)
+            assert_safe_relocations(run('readelf','-W','-r',runtime_obj))
+            extra.append(runtime_obj)
         run('ld','-m','elf_x86_64','-nostdlib','--gc-sections','-T',
-            ROOT/'scripts/user_program.ld','-o',elf,entry,obj)
+            ROOT/'scripts/user_program.ld','-o',elf,entry,obj,*extra)
         result=run('readelf','-W','-r',elf)
         if 'There are no relocations in this file.' not in result:
             raise ValueError('TinyCC final ELF retained relocations')
-        require_tcc_sections(obj_sections,run('readelf','-W','-S',elf))
+        linked_sections=run('readelf','-W','-S',elf)
+        require_tcc_sections(obj_sections,linked_sections)
+        if extra:
+            require_tcc_sections(run('readelf','-W','-S',runtime_obj),linked_sections)
         run('objcopy','--only-section=.text','-O','binary',elf,raw)
         payload=raw.read_bytes()
         if not 0<len(payload)<=MAX_CODE_BYTES:

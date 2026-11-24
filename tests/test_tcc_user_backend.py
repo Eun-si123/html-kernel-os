@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from compiler.htmlk import compile_html
 from scripts.build_tcc_html_user_image import (
-    adapt_generated_c, allocated_sections, require_tcc_sections, build,
+    adapt_generated_c, allocated_sections, require_tcc_sections, undefined_symbols, build,
 )
 from scripts.build_html_user_image import assert_safe_relocations
 
@@ -54,6 +54,16 @@ class TinyCCNativeContractTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'unsupported allocated ELF section type'):
             require_tcc_sections(example.replace('PROGBITS        0000000000000000 000140',
                                                  'INIT_ARRAY      0000000000000000 000140'),final)
+
+    def test_only_tcc_memset_undefined_symbol_is_allowed(self):
+        table='''Symbol table '.symtab' contains 3 entries:
+     0: 0000000000000000 0 NOTYPE LOCAL DEFAULT UND
+     1: 0000000000000000 0 FUNC GLOBAL DEFAULT UND memset
+     2: 0000000000000000 0 FUNC GLOBAL DEFAULT UND memcpy
+'''
+        self.assertEqual(undefined_symbols(table),{'memset','memcpy'})
+        self.assertEqual(undefined_symbols(table.replace('memcpy','')),{'memset'})
+        self.assertEqual(undefined_symbols('     0: 0000000000000000 0 NOTYPE LOCAL DEFAULT UND\n'),set())
 
     def test_source_and_output_bounds_and_symlink_denial_before_compiler(self):
         with tempfile.TemporaryDirectory() as folder:

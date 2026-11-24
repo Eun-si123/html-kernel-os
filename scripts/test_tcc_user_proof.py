@@ -30,6 +30,12 @@ MODES={
     ((b'M5_C_USER_VALUE=4294967296\n',2),
      (b'M5_C_USER_VALUE=18446744073709551615\n',1)),
     b'M5_RUN_EXIT_CODE=7\n'),
+ 'array-while-division':(
+    ROOT/'examples/user-programs/html-tcc-stress.html',
+    ((b'M5_C_USER_VALUE=14\n',1),
+     (b'M5_C_USER_VALUE=4611686018427387904\n',1),
+     (b'M5_C_USER_VALUE=3\n',1)),
+    b'M5_RUN_DONE\n'),
  'functions':(
     ROOT/'examples/human-agent-program.html',
     ((b'M5_C_USER_VALUE=6\n',3),(b'M5_C_USER_VALUE=4294967296\n',1)),

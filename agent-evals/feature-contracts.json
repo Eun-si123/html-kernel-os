@@ -735,6 +735,7 @@
       "source": [
         "scripts/build_tcc_html_user_image.py",
         "scripts/tcc-freestanding/stdint.h",
+        "scripts/tcc-freestanding/runtime.c",
         "scripts/build_boot.py"
       ],
       "regressions": [
