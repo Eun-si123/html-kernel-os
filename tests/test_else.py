@@ -100,7 +100,7 @@ class ElseTests(unittest.TestCase):
                          '<return value="x"/>'))
         self.reject('<if test="1 == 2"><print>ok</print><else>'
                     '<let name="no" type="u64" value="2"/>'
-                    '</else></if>', 'only supported inside functions')
+                    '</else></if><print value="no"/>', 'undefined variable')
 
     def test_unreachable_after_return_inside_else_rejected(self):
         self.reject('<print value="choose(4)"/>', 'unreachable',

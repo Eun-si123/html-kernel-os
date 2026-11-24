@@ -24,8 +24,8 @@ class ArrayTests(unittest.TestCase):
         for target in ("kernel", "linux"):
             with self.subTest(target=target):
                 c = compile_html(wrap(text), target=target)
-                self.assertIn("uint32_t htmlk_a[3] = {0};", c)
-                self.assertIn("htmlk_a[htmlk_checked_index(", c)
+                self.assertIn("uint32_t htmlk_v_a[3] = {0};", c)
+                self.assertIn("htmlk_v_a[htmlk_checked_index(", c)
                 self.assertIn("if (index >= length) htmlk_array_bounds_fault();", c)
                 self.assertIn("UINT64_C(3)", c)
                 self.assertIn("HTMLK_ARRAY_BOUNDS", c)

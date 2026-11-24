@@ -1,0 +1,37 @@
+<program>
+  <function name="adjust" params="repeat_adjust_0:u64" returns="u64">
+    <let name="local_adjust_0" value="repeat_adjust_0"/>
+    <repeat times="2">
+      <set name="local_adjust_0" value="local_adjust_0 + repeat_adjust_0"/>
+    </repeat>
+    <return value="local_adjust_0"/>
+  </function>
+  <main>
+    <let name="loop_0" value="3"/>
+    <let name="print_u64" value="0"/>
+    <let name="fn_adjust" value="1"/>
+    <let name="x" value="10"/>
+    <repeat times="2">
+      <let name="x" value="x + loop_0"/>
+      <array name="data" type="u64" length="2"/>
+      <store name="data" index="0" value="data[0] + x"/>
+      <set name="print_u64" value="print_u64 + data[0]"/>
+      <if test="x == 13">
+        <let name="x" value="u32(1)"/>
+        <set name="fn_adjust" value="fn_adjust + u64(x)"/>
+        <else>
+          <let name="x" value="u32(2)"/>
+          <set name="fn_adjust" value="fn_adjust + u64(x)"/>
+        </else>
+      </if>
+    </repeat>
+    <while test="x &lt; 12" max="2">
+      <let name="delta" value="1"/>
+      <set name="x" value="x + delta"/>
+    </while>
+    <print value="print_u64"/>
+    <print value="adjust(fn_adjust)"/>
+    <print value="x"/>
+    <halt/>
+  </main>
+</program>

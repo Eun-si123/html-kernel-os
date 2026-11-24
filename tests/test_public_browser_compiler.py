@@ -67,9 +67,9 @@ class BrowserCompilerTests(unittest.TestCase):
             codes.append(code)
         self.assertNotEqual(codes[0],codes[1])
         self.assertEqual(hashlib.sha256(codes[0].encode()).hexdigest(),
-                         '9c27437b87983e3d243946ed9200ed1b8e5c338f56f0990f9e0ac325429732d7')
+                         'c776330a638300731a1a23eeef9a1b68b6b511915d0db5e28e22ff8534c23bfc')
         self.assertEqual(hashlib.sha256(codes[1].encode()).hexdigest(),
-                         '8a28a5d33fdb499a531b0fed58558ae8773df534ba4527167cd55a85e64207e6')
+                         '74f31f1b58eec45a9420534a255e286280fb8d5347d08fd2566aed1572750f9c')
         invalid=template.replace('<print value="value"/>','<prnit value="value"/>')
         result=check(invalid,target='user',file='editor://htmlk-program.html')
         self.assertFalse(result['ok'])
