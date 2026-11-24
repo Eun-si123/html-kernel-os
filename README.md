@@ -67,6 +67,9 @@ python3 -m unittest tests.test_htmlk_lsp -v
 
 An LSP client must be configured separately; no self-installing VS Code extension or browser compiler is implied. [LSP setup, limits and tests](docs/M2_LANGUAGE_LSP.md). Local evidence only; CI/merge pending.
 
+## Real BIOS-first boot journal (M5 Web-D merged in PR #110)
+
+The [HTML Kernel Live browser lab](https://eun-si123.github.io/html-kernel-os/live/) now has an experimental local-branch **BIOS VGA + CPU COM1 journal**: the virtual CPU starts *after* actual event listeners attach, then captured SeaBIOS/bootloader and kernel UART events can be replayed, paused, stepped or scrubbed at different **recording** speeds. The VGA canvas fills its panel instead of being artificially capped at 545px. **Replay does not slow the real virtual CPU.** Actual Chromium saw early SeaBIOS, DVD/CD boot and kernel ready events; independent Node tests and CI gates accompany the change. PR #110 exact-head CI and merge PASS; verify public deployment separately. [Proof and boundaries](docs/M5_WEB_BOOT_JOURNAL.md).
 ## Actual supported grammar in the web editor (M2-UX6 development)
 
 The Live editor can expose **compiler-generated metadata**, not a guessed JavaScript syntax clone: open **지원되는 HTML Kernel 언어 태그·속성 보기** to search real tags, required attributes and legal parents. The Pages build publishes `htmlk-language.json` directly from the existing Python compiler, so AI agents can read the same versioned JSON. Native program validity and execution are still decided by the original compiler/CPU, not this reference widget. Local regression evidence exists; PR CI/merge/public deployment are separate gates. [Human/agent grammar guide](docs/M2_PUBLIC_LANGUAGE_GRAMMAR.md).

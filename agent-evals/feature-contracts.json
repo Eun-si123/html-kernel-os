@@ -682,6 +682,22 @@
       ]
     },
     {
+      "id": "m5-live-bios-boot-journal",
+      "source": [
+        "site/live/live.js",
+        "site/live/journal.mjs",
+        "site/live/index.html",
+        "site/live/live.css"
+      ],
+      "regressions": [
+        "tests/test_live_pages.py"
+      ],
+      "fieldEvidence": [
+        "scripts/test_live_boot_journal.mjs",
+        "docs/M5_WEB_BOOT_JOURNAL.md"
+      ]
+    },
+    {
       "id": "m2-public-shared-language-grammar",
       "source": [
         "compiler/diagnostics.py",

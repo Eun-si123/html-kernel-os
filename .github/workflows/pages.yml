@@ -63,6 +63,11 @@ jobs:
           node --check site/live/editor.mjs
           node --test scripts/test_live_editor.mjs
           python scripts/test_live_editor_native.py
+      - name: Verify real BIOS and guest UART journal before Pages deployment
+        run: |
+          node --check site/live/journal.mjs
+          node --check site/live/live.js
+          node --test scripts/test_live_boot_journal.mjs
       - name: Generate public grammar from authoritative native compiler, never JS reimplementation
         run: |
           mkdir -p build
@@ -113,6 +118,7 @@ jobs:
           test -s public/live/index.html
           test -s public/live/live.js
           test -s public/live/editor.mjs
+          test -s public/live/journal.mjs
           test -s public/live/grammar.mjs
           test -s public/htmlk-language.json
           test -s public/live/live.css
