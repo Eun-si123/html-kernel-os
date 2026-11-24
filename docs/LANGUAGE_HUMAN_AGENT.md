@@ -1,6 +1,6 @@
 # HTML Kernel Language — one syntax for humans and AI agents
 
-**M2-UX1 merged in PR #103; M2-UX2 one-command CLI and reproducible Ring3 ABI merged in PR #106. M2-UX3 app-friendly root aliases have local test evidence and PR-head CI/merge pending.**
+**M2-UX1 merged in PR #103; M2-UX2 one-command CLI and reproducible Ring3 ABI merged in PR #106. M2-UX3 app-friendly root aliases passed actual native QEMU and PR #107 exact-head CI/Gitleaks and merged.**
 A useful programming language should be understandable from its source,
 provide actionable feedback to a beginner, and give an agent a **stable
 machine-readable contract**. A browser-looking demo or a larger list of tags
@@ -35,7 +35,7 @@ for grammar reuse; human-readable aliases and simpler entrypoints are a
 separate, not-yet-implemented design question. Nor do tags alone remove
 systems-programming complexity.
 
-## M2-UX3: write a program, not a kernel (local development)
+## M2-UX3: write a program, not a kernel (merged PR #107)
 
 Newcomers should not need `<kernel><onboot>` to write a normal Linux
 program or an unprivileged Ring3 user app. The same parser now accepts
@@ -232,27 +232,34 @@ fail-closed tests reject wrong source, corrupt image, symlink proof and
 mutually incompatible build options. Existing M2/M5 native regressions
 remain mandatory; a successful Linux run is not a QEMU boot.
 
-## Next M2 language usability phases — proposed, NOT shipped
+## Future M2 language usability work — proposed, NOT shipped
 
-**M2-UX2:** editor integration with syntax highlighting, matching tags,
-source mapped errors and completion. Browser source editing only counts as
-"real HTML execution" when user edits yield a *new native artifact* and a
-different verified CPU result; presenting JS-calculated output is not enough.
+**Packaged IDE extensions and richer diagnostics:** M2-UX5 already supplies
+real compiler-backed LSP completion/hints, but syntax highlighting, tag-pair
+navigation, workspace indexing and self-installing client extensions are still
+not implemented. These should reuse the existing typed compiler rather than
+introducing a permissive duplicate language parser.
 
-**M2-UX3:** tagged standard library/modules, clearer reusable I/O functions,
-explicit permissions and safe APIs, a stable versioned grammar plus an
-automated positive/negative conformance corpus. Avoid adding unrelated
-parsers or a new runtime without evidence of improved usability.
+**True browser-native compilation (tracked in Issue #112):** M2-UX4 writes
+and downloads HTML source, and existing local tools produce actual native
+ISOs. The site must NOT claim direct source execution until a browser-side
+compiler produces a NEW x86-64 HKEX/ISO, and real guest CPU output changes
+independently with edited source. JavaScript-computed demo output does not
+satisfy that gate.
 
-**M2-UX4:** measured beginner/agent evaluations (time to correct program,
-edits per task, error recovery, generated native execution) versus
-equivalent Python and existing HTMLK syntax. Real user studies are
-**NOT RUN**. Do not assert this language is already easier than Python.
+**Reusable libraries and safe APIs:** versioned modules, small standard
+library and explicit permissions/unsafe boundaries remain OPEN, with positive
+and negative conformance tests required before shipping.
+
+**Measured human/agent usability:** matched beginner and coding-agent tasks
+versus a Python baseline should record time, correction cycles, correctness,
+code size and native execution. Real user studies are **NOT RUN**. Do not
+claim Python-level ease or C++/Rust performance parity without measurements.
 
 Canonical language semantics: [M2 language contract](M2_LANGUAGE_CONTRACT.md);
 design trade-offs: [LANGUAGE_DESIGN.md](LANGUAGE_DESIGN.md);
 observable milestone gates: [ROADMAP.md](ROADMAP.md).
 
-## M2-UX5 editor LSP integration (local feature branch; PR CI/merge pending)
+## M2-UX5 editor LSP integration (merged PR #109; actual subprocess protocol + CI PASS)
 
 `scripts/htmlk_lsp.py` exposes bounded standard stdio LSP diagnostics using the existing typed compiler and real grammar tables. Editors receive UTF-16-safe positions, typo hints, attribute/tag completion, hover and the `htmlk.describe` schema for agents. It never builds or runs executable code and does not include a packaged IDE plugin. [Protocol/setup/evidence](M2_LANGUAGE_LSP.md).
