@@ -32,6 +32,33 @@ static volatile bool syscall_seen;
 static volatile bool user_exited;
 #ifdef HTMLK_M5_USER_LOADER
 static volatile bool user_reported;
+/* Single active M5 app. The kernel and all its interrupt handlers are
+ * compiled -mgeneral-regs-only. Preserve the supervisor's legacy x87
+ * context and give each fresh task a clean one when x87 is available.
+ * No CR0/CR4 feature enable, SSE/XSAVE state or concurrent task claim. */
+static struct { uint8_t bytes[108]; } saved_x87 __attribute__((aligned(16)));
+static bool x87_saved;
+static void user_x87_begin(void) {
+    uint64_t cr0;
+    __asm__ volatile("mov %%cr0,%0" : "=r"(cr0));
+    x87_saved = (cr0 & (UINT64_C(1)<<2 | UINT64_C(1)<<3)) == 0;
+    if (!x87_saved) return; /* EM/TS: do not execute disabled x87 */
+    __asm__ volatile(
+        "fnsave %0\n\t"
+        /* FNSAVE initializes tags, not physical register contents.
+         * Fill all eight physical registers, then mark all empty again. */
+        "fldz; fldz; fldz; fldz; fldz; fldz; fldz; fldz; fninit"
+        : "=m"(saved_x87) : : "memory");
+}
+static void user_x87_end(void) {
+    if (!x87_saved) return;
+    /* FRSTOR replaces the entire legacy state, including control word,
+     * status, tags and physical register contents. Clear pending user
+     * exceptions with the non-waiting FNCLEX before FRSTOR. */
+    __asm__ volatile("fnclex; frstor %0" : : "m"(saved_x87) : "memory");
+    x87_saved = false;
+}
+
 #ifdef HTMLK_M5_USER_EXIT_STATUS
 /* Only HTML-derived opt-in apps may submit a bounded 8-bit exit status. */
 static volatile uint8_t user_exit_code;
@@ -423,12 +450,18 @@ void htmlk_m4_user_probe(const struct limine_memmap_response *map,
 #ifdef HTMLK_M5_USER_TIMEOUT
     htmlk_m5_timeout_start();
 #endif
+#ifdef HTMLK_M5_USER_LOADER
+    user_x87_begin();
+#endif
     const uint64_t user_root = frames[0];
     __asm__ volatile ("mov %0, %%cr3" : : "r"(user_root) : "memory");
     htmlk_m4_user_enter(HTMLK_M4_USER_BASE,
                          HTMLK_M4_USER_STACK - 16U, user_cs, user_ss);
-    /* Reached only via the explicit syscall-1 return path. */
+    /* All exit/fault/timeout paths restore the trusted kernel stack. */
     __asm__ volatile ("cli" ::: "memory");
+#ifdef HTMLK_M5_USER_LOADER
+    user_x87_end();
+#endif
 #ifdef HTMLK_M5_USER_TIMEOUT
     htmlk_m5_timeout_stop();
 #endif
