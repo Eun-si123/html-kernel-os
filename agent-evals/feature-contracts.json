@@ -668,6 +668,20 @@
       ]
     },
     {
+      "id": "m2-editor-lsp-shared-compiler",
+      "source": [
+        "scripts/htmlk_lsp.py",
+        "compiler/diagnostics.py"
+      ],
+      "regressions": [
+        "tests/test_htmlk_lsp.py",
+        "tests/test_htmlk_check_cli.py"
+      ],
+      "fieldEvidence": [
+        "docs/M2_LANGUAGE_LSP.md"
+      ]
+    },
+    {
       "id": "m5-live-bios-boot-journal",
       "source": [
         "site/live/live.js",

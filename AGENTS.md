@@ -63,6 +63,8 @@ For actual native Linux execution or checked Ring3 packaging, use `python3 scrip
 
 The [browser source editor](docs/M2_WEB_EDITOR.md) downloads raw HTML only; it does NOT compile. Agents should continue to use `scripts/htmlk_check.py` + `scripts/htmlk.py` or native `scripts/build_live_site.py` to obtain genuinely compiled output. Never substitute JavaScript-calculated text for actual QEMU CPU UART evidence.
 
+The [bounded editor LSP](docs/M2_LANGUAGE_LSP.md) uses the single canonical compiler, giving IDE and agent clients actual UTF-16 source locations and tag metadata. `htmlk.describe` returns schema, not shell execution. A one-shot agent can still call `scripts/htmlk_check.py --json`; LSP diagnostics alone do not prove a native boot.
+
 The [M5 real early-boot journal](docs/M5_WEB_BOOT_JOURNAL.md) records actual VGA cell and CPU COM1 event data and replays *the received log* after the guest boot. Never replace genuine BIOS/guest evidence with hardcoded text, nor mislabel a replay speed as CPU throttling. A firmware screen event is not an HTML source file.
 
 ## Minimal validation

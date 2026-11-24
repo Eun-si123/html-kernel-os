@@ -252,3 +252,7 @@ equivalent Python and existing HTMLK syntax. Real user studies are
 Canonical language semantics: [M2 language contract](M2_LANGUAGE_CONTRACT.md);
 design trade-offs: [LANGUAGE_DESIGN.md](LANGUAGE_DESIGN.md);
 observable milestone gates: [ROADMAP.md](ROADMAP.md).
+
+## M2-UX5 editor LSP integration (local feature branch; PR CI/merge pending)
+
+`scripts/htmlk_lsp.py` exposes bounded standard stdio LSP diagnostics using the existing typed compiler and real grammar tables. Editors receive UTF-16-safe positions, typo hints, attribute/tag completion, hover and the `htmlk.describe` schema for agents. It never builds or runs executable code and does not include a packaged IDE plugin. [Protocol/setup/evidence](M2_LANGUAGE_LSP.md).
