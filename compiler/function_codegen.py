@@ -78,12 +78,13 @@ def compile_functions(functions: dict[str, FunctionDef]) -> tuple[list[str], dic
 
                 def checked(expr: str, *, boolean: bool = False,
                             expected_type: str | None = None,
+                            type_out: list[str] | None = None,
                             evaluations: int = 1) -> str:
                     called: list[str] = []
                     value = expression(expr, node, resolve(), boolean=boolean,
                                        functions=functions, calls=called,
                                        variable_types=resolve_types(),
-                                       expected_type=expected_type)
+                                       expected_type=expected_type, type_out=type_out)
                     for callee in called:
                         counts[callee] += weight * evaluations
                         referenced.add(callee)
@@ -93,8 +94,10 @@ def compile_functions(functions: dict[str, FunctionDef]) -> tuple[list[str], dic
                     name = validate_name(node)
                     if name in scopes[-1]:
                         fail(node, f"variable {name!r} already declared in this scope")
-                    typ = node.attrs["type"]
-                    value = checked(node.attrs["value"], expected_type=typ)  # before binding
+                    detected: list[str] = []
+                    value = checked(node.attrs["value"], expected_type=node.attrs.get("type"),
+                                    type_out=detected)  # before binding
+                    typ = detected[0]
                     symbol = f"htmlk_local_{fn.name}_{bindings}"
                     bindings += 1
                     scopes[-1][name] = symbol

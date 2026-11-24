@@ -82,6 +82,54 @@ execution happened. The `<program>` and `<main>` tags do **not** mean a
 browser interprets ordinary HTML as executable machine code; they are
 source-language forms compiled through the same native toolchain.
 
+## M2-UX8: optional local integer type annotations (development branch)
+
+```html
+<program>
+  <main>
+    <let name="count" value="3"/>
+    <let name="small" value="u32(count)"/>
+    <print value="small + 2"/>
+    <halt/>
+  </main>
+</program>
+```
+
+Omit only the `type` attribute of `let`. The existing expression type checker
+determines the initializer type: a variable, indexed array element, explicit
+conversion or typed function result carries its existing integer type.
+Literal-only expressions use the existing expression default (u64, or i64
+when the expression contains a negative literal under the current rules).
+For example, `-1` infers i64 but `0 - 1` uses u64 wrapping; write the
+type or an explicit conversion when signedness or width matters.
+
+The inferred type remains fixed for later assignments. Function parameters,
+return types and array element types stay explicit. Boolean locals, string
+locals, mixed-width coercion, new scoping rules and dynamic attribute names
+are NOT added. Ring3 numeric reports remain unsigned. This is initializer
+inference, not whole-program type inference or dynamic typing.
+
+The design is informed by [Rust let inference](https://doc.rust-lang.org/reference/statements.html#let-statements)
+and [Go short declarations and default constant types](https://go.dev/ref/spec#Short_variable_declarations),
+but retains HTMLK's existing fixed-width literal semantics rather than
+copying Rust/Go defaults or introducing a new parser. The existing compiler
+metadata automatically marks `type` optional; old explicit declarations
+generate the same C as equivalent inferred declarations.
+
+Try [inferred-let.html](../examples/inferred-let.html):
+
+```sh
+python3 scripts/htmlk.py run examples/inferred-let.html
+python3 -m unittest tests.test_inferred_let -v
+python3 scripts/test_inferred_let_qemu.py
+```
+
+Local native Linux output is 6, 0. Two kernel boots and two Ring3 ISO boots
+(with two app executions each) verify actual native output 6, 0 and edited
+source 10, 0 with frame reclamation. Explicit/inferred C equivalence and
+negative controls cover all three targets. CI, public browser deployment,
+physical hardware and external usability measurements are separate gates.
+
 ## Human-first validation
 
 ```sh

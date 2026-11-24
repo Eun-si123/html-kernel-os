@@ -81,7 +81,7 @@ Use matched environments and publish counts/methodology; avoid inventing percent
 ## Open design decisions
 
 - Standard-compatible HTML-like tags vs stricter dedicated grammar (browser parsing may silently normalize unexpected structures).
-- Explicit integer types vs limited type inference; expression representation.
+- Initializer-only local integer inference implemented on M2-UX8 development branch; broader type inference, expression representation and ergonomics evaluation remain open.
 - C as an intermediate representation vs direct LLVM/native codegen.
 - Ownership/borrow/checking/unsafe semantics and trusted runtime size.
 - Whether to separate kernel-mode and userspace syntax/libraries or have one language with capability-restricted APIs.

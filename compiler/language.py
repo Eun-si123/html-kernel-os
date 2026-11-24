@@ -55,7 +55,7 @@ ALLOWED = {"kernel": {"arch"}, "onboot": set(),
            "if": {"test"}, "repeat": {"times"}, "while": {"test", "max"}, "halt": {"code"},
            "function": {"name", "params", "returns"}, "return": {"value"},
            "else": set(), "break": set(), "continue": set()}
-REQUIRED = {"let": {"name", "type", "value"}, "set": {"name", "value"},
+REQUIRED = {"let": {"name", "value"}, "set": {"name", "value"},
             "array": {"name", "type", "length"}, "store": {"name", "index", "value"},
             "if": {"test"}, "repeat": {"times"}, "while": {"test", "max"},
             "function": {"name", "params", "returns"}, "return": {"value"}}
@@ -179,7 +179,7 @@ class KernelParser(HTMLParser):
                 fail(node, "only returns=u32/u64/i32/i64 is implemented")
         elif tag == "let":
             validate_name(node)
-            if pairs["type"] not in INT_TYPES:
+            if "type" in pairs and pairs["type"] not in INT_TYPES:
                 fail(node, "only type=u32/u64/i32/i64 is implemented")
         elif tag == "array":
             validate_name(node)
