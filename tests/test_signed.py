@@ -25,9 +25,9 @@ class SignedTests(unittest.TestCase):
             '<let name="minimum" type="i32" value="-2147483648"/>'
             '<let name="maximum" type="i32" value="2147483647"/>'
             '<print value="minimum"/><print value="maximum"/>'))
-        self.assertIn('int32_t htmlk_minimum = (-INT32_C(2147483647) - INT32_C(1));', c)
-        self.assertIn('int32_t htmlk_maximum = INT32_C(2147483647);', c)
-        self.assertIn('htmlk_print_i64((int64_t)(htmlk_minimum));', c)
+        self.assertIn('int32_t htmlk_v_minimum = (-INT32_C(2147483647) - INT32_C(1));', c)
+        self.assertIn('int32_t htmlk_v_maximum = INT32_C(2147483647);', c)
+        self.assertIn('htmlk_print_i64((int64_t)(htmlk_v_minimum));', c)
 
     def test_i64_boundaries(self):
         c = compile_html(program(
@@ -43,25 +43,25 @@ class SignedTests(unittest.TestCase):
             '<let name="x" type="i32" value="-2"/>'
             '<set name="x" value="x * 2147483647"/>'
             '<print value="x + 3"/><print value="x - 1"/>'))
-        self.assertIn('htmlk_mul_i32(htmlk_x, INT32_C(2147483647))', c)
-        self.assertIn('htmlk_add_i32(htmlk_x, INT32_C(3))', c)
-        self.assertIn('htmlk_sub_i32(htmlk_x, INT32_C(1))', c)
+        self.assertIn('htmlk_mul_i32(htmlk_v_x, INT32_C(2147483647))', c)
+        self.assertIn('htmlk_add_i32(htmlk_v_x, INT32_C(3))', c)
+        self.assertIn('htmlk_sub_i32(htmlk_v_x, INT32_C(1))', c)
         self.assertIn('htmlk_from_bits_i32((uint32_t)a * (uint32_t)b)', c)
-        self.assertNotIn('((int32_t)(htmlk_x *', c)
+        self.assertNotIn('((int32_t)(htmlk_v_x *', c)
 
     def test_sign_change_and_unary_plus(self):
         c = compile_html(program(
             '<let name="x" type="i64" value="-1"/>'
             '<print value="-x"/><print value="+x"/>'))
-        self.assertIn('htmlk_neg_i64(htmlk_x)', c)
-        self.assertIn('htmlk_print_i64((int64_t)(htmlk_x))', c)
+        self.assertIn('htmlk_neg_i64(htmlk_v_x)', c)
+        self.assertIn('htmlk_print_i64((int64_t)(htmlk_v_x))', c)
 
     def test_signed_comparison_and_boolean_branch(self):
         c = compile_html(program(
             '<let name="x" type="i32" value="-10"/>'
             '<if test="x &lt; 0 and x != 1"><print>yes</print></if>'))
-        self.assertIn('htmlk_x < INT32_C(0)', c)
-        self.assertIn('htmlk_x != INT32_C(1)', c)
+        self.assertIn('htmlk_v_x < INT32_C(0)', c)
+        self.assertIn('htmlk_v_x != INT32_C(1)', c)
 
     def test_nonimplicit_mixing_four_types(self):
         cases = [
@@ -95,9 +95,9 @@ class SignedTests(unittest.TestCase):
         code = compile_html(program(
             '<print value="negate(-1)"/>'
             '<print value="min32()"/>', f))
-        self.assertIn('int64_t htmlk_fn_negate(int64_t htmlk_n);', code)
+        self.assertIn('int64_t htmlk_fn_negate(int64_t htmlk_v_n);', code)
         self.assertIn('int32_t htmlk_fn_min32(void);', code)
-        self.assertIn('return htmlk_neg_i64(htmlk_n);', code)
+        self.assertIn('return htmlk_neg_i64(htmlk_v_n);', code)
         self.assertIn('htmlk_print_i64((int64_t)(htmlk_fn_min32()))', code)
 
     def test_all_four_conversion_functions(self):
@@ -107,8 +107,8 @@ class SignedTests(unittest.TestCase):
             '<print value="i64(x)"/>'
             '<print value="u32(i64(-1))"/>'
             '<print value="u64(i32(-1))"/>'))
-        self.assertIn('htmlk_from_bits_i32((uint32_t)(htmlk_x))', c)
-        self.assertIn('htmlk_from_bits_i64((uint64_t)(htmlk_x))', c)
+        self.assertIn('htmlk_from_bits_i32((uint32_t)(htmlk_v_x))', c)
+        self.assertIn('htmlk_from_bits_i64((uint64_t)(htmlk_v_x))', c)
         self.assertIn('((uint32_t)(', c)
         self.assertIn('((uint64_t)(', c)
 
@@ -147,8 +147,8 @@ class SignedTests(unittest.TestCase):
             '<let name="y" type="i64" value="i64(x)"/>'
             '<print value="y"/>'
             '<print value="u64(x)"/>'))
-        self.assertIn('htmlk_from_bits_i64((uint64_t)(htmlk_x))', c)
-        self.assertIn('((uint64_t)(htmlk_x))', c)
+        self.assertIn('htmlk_from_bits_i64((uint64_t)(htmlk_v_x))', c)
+        self.assertIn('((uint64_t)(htmlk_v_x))', c)
 
     def test_reject_signed_return_if_width_mismatch(self):
         f = function("wrong", "n:i64", "i32", '<return value="n"/>')
@@ -162,7 +162,7 @@ class SignedTests(unittest.TestCase):
         c = compile_html(program(
             '<let name="x" type="i64" value="9223372036854775807"/>'
             '<print value="x + 1"/>'))
-        self.assertIn('htmlk_add_i64(htmlk_x, INT64_C(1))', c)
+        self.assertIn('htmlk_add_i64(htmlk_v_x, INT64_C(1))', c)
         self.assertIn('htmlk_from_bits_i64((uint64_t)a + (uint64_t)b)', c)
 
     def test_no_boolean_to_integer_cast(self):

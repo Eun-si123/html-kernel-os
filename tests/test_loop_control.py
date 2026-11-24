@@ -51,7 +51,7 @@ class LoopControlTests(unittest.TestCase):
         code = compile_html(program('<print value="f(-2)"/>', functions))
         self.assertIn('break;', code)
         self.assertIn('continue;', code)
-        self.assertIn('int32_t htmlk_fn_f(int32_t htmlk_x)', code)
+        self.assertIn('int32_t htmlk_fn_f(int32_t htmlk_v_x)', code)
 
     def test_reject_break_outside_repeat(self):
         self.reject('<break/>', "not allowed|requires")

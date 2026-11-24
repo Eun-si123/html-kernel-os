@@ -38,7 +38,7 @@ class InferredLetTests(unittest.TestCase):
             '<let name="v"/>',
             '<let name="v" value="1"/><let name="v" value="2"/>',
             '<let name="v" value="1" typo="x"/>',
-            '<repeat times="1"><let name="v" value="1"/></repeat>',
+            '<repeat times="1"><let name="v" value="1"/></repeat><print value="v"/>',
         ):
             for target in ("kernel", "linux", "user"):
                 with self.subTest(body=body, target=target), self.assertRaises(CompileError):

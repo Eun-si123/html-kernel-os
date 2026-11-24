@@ -22,16 +22,16 @@ class LanguageTests(unittest.TestCase):
             '<if test="score == 20"><print>condition PASS</print></if><halt/>'
         )
         generated = compile_html(wrap(src))
-        self.assertIn('uint64_t htmlk_score =', generated)
-        self.assertIn('htmlk_score =', generated)
-        self.assertIn('htmlk_print_u64(htmlk_score);', generated)
+        self.assertIn('uint64_t htmlk_v_score =', generated)
+        self.assertIn('htmlk_v_score =', generated)
+        self.assertIn('htmlk_print_u64(htmlk_v_score);', generated)
         self.assertIn('for (uint64_t htmlk_loop_0', generated)
-        self.assertIn('if ((htmlk_score == UINT64_C(20)))', generated)
+        self.assertIn('if ((htmlk_v_score == UINT64_C(20)))', generated)
 
     def test_html_attribute_entity_and_boolean_comparison(self):
         source = '<let name="x" type="u64" value="2"/><if test="x &gt; 1 and x &lt; 5"><print>yes</print></if>'
         result = compile_html(wrap(source))
-        self.assertIn('htmlk_x > UINT64_C(1)', result)
+        self.assertIn('htmlk_v_x > UINT64_C(1)', result)
         self.assertIn('&&', result)
 
     def test_unicode_print_and_u64_boundary(self):
@@ -68,8 +68,8 @@ class LanguageTests(unittest.TestCase):
         self.assert_invalid(f'<print value="{UINT64_MAX + 1}"/>', "outside u64")
 
     def test_reject_bad_nesting_and_attributes(self):
-        self.assert_invalid('<repeat times="2"><let name="x" type="u64" value="1"/></repeat><print>x</print>',
-                            "only supported inside functions")
+        self.assert_invalid('<repeat times="2"><let name="x" type="u64" value="1"/></repeat><print value="x"/>',
+                            "undefined variable")
         self.assert_invalid('<let name="x" type="u64" value="1" extra="bad"/><print>x</print>',
                             "invalid attributes")
         self.assert_invalid('<let name="x" name="y" type="u64" value="1"/><print>x</print>',
@@ -100,7 +100,7 @@ class LanguageTests(unittest.TestCase):
 
     def test_unused_decl_is_valid_and_unknown_declarations_fail(self):
         compiled = compile_html(wrap('<let name="unused" type="u64" value="7"/><print>ok</print>'))
-        self.assertIn('(void)htmlk_unused;', compiled)
+        self.assertIn('(void)htmlk_v_unused;', compiled)
         with self.assertRaises(CompileError):
             compile_html(wrap('<print>x</print><!something>'))
 

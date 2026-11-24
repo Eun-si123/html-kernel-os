@@ -28,7 +28,7 @@ def compile_functions(functions: dict[str, FunctionDef]) -> tuple[list[str], dic
 
     for fn in functions.values():
         params = ", ".join(
-            f"{c_type(fn.param_types.get(arg, 'u64'))} htmlk_{arg}"
+            f"{c_type(fn.param_types.get(arg, 'u64'))} htmlk_v_{arg}"
             for arg in fn.params
         ) or "void"
         result_type = c_type(fn.return_type)
@@ -36,16 +36,16 @@ def compile_functions(functions: dict[str, FunctionDef]) -> tuple[list[str], dic
 
     for fn in functions.values():
         params = ", ".join(
-            f"{c_type(fn.param_types.get(arg, 'u64'))} htmlk_{arg}"
+            f"{c_type(fn.param_types.get(arg, 'u64'))} htmlk_v_{arg}"
             for arg in fn.params
         ) or "void"
         result_type = c_type(fn.return_type)
         code = [f"{result_type} htmlk_fn_{fn.name}({params}) {{"]
         # Unused parameters are legal, even when GCC uses -Wextra -Werror.
         for param in fn.params:
-            code.append(f"  (void)htmlk_{param};")
+            code.append(f"  (void)htmlk_v_{param};")
         scopes: list[dict[str, str]] = [
-            {arg: f"htmlk_{arg}" for arg in fn.params}
+            {arg: f"htmlk_v_{arg}" for arg in fn.params}
         ]
         type_scopes: list[dict[str, str]] = [
             {arg: fn.param_types.get(arg, "u64") for arg in fn.params}

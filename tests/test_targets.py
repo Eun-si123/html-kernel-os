@@ -38,8 +38,8 @@ class TargetTests(unittest.TestCase):
         for target in ("linux", "kernel"):
             with self.subTest(target=target):
                 generated = compile_html(PROGRAM, target=target)
-                self.assertIn('uint64_t htmlk_x = UINT64_C(3);', generated)
-                self.assertIn('htmlk_print_u64(((uint64_t)(htmlk_x + UINT64_C(1))));',
+                self.assertIn('uint64_t htmlk_v_x = UINT64_C(3);', generated)
+                self.assertIn('htmlk_print_u64(((uint64_t)(htmlk_v_x + UINT64_C(1))));',
                               generated)
 
 

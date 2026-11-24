@@ -29,8 +29,8 @@ class WhileTests(unittest.TestCase):
                 '</while>')
         for target in ("kernel", "linux"):
             code = compile_html(kernel(body), target=target)
-            self.assertIn("htmlk_loop_0 < UINT64_C(5) && ((htmlk_i < UINT64_C(3)))", code)
-            self.assertIn("htmlk_i =", code)
+            self.assertIn("htmlk_loop_0 < UINT64_C(5) && ((htmlk_v_i < UINT64_C(3)))", code)
+            self.assertIn("htmlk_v_i =", code)
 
     def test_zero_cap_still_validates_test_and_body(self):
         self.compile_both('<while test="1 == 1" max="0"><break/></while>')
@@ -72,8 +72,8 @@ class WhileTests(unittest.TestCase):
                     "invalid attributes")
         self.reject('<while test="42" max="2"><print>x</print></while>', "expected boolean")
         self.reject('<while test="1 == 1" max="2">'
-                    '<let name="local" type="u64" value="1"/></while>',
-                    "only supported inside functions")
+                    '<let name="local" type="u64" value="1"/></while><print value="local"/>',
+                    "undefined variable")
         self.reject('<break/>', "requires|not allowed")
 
     def test_static_work_and_output_budget(self):

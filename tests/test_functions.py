@@ -29,11 +29,11 @@ class FunctionTests(unittest.TestCase):
             with self.subTest(target=target):
                 c = compile_html(src(funcs, boot), target=target)
                 self.assertIn(
-                    'uint64_t htmlk_fn_sum(uint64_t htmlk_a, uint64_t htmlk_b);', c
+                    'uint64_t htmlk_fn_sum(uint64_t htmlk_v_a, uint64_t htmlk_v_b);', c
                 )
                 self.assertIn('uint64_t htmlk_fn_sum(', c)
                 self.assertIn('htmlk_print_u64(htmlk_fn_sum(', c)
-                self.assertIn('return ((uint64_t)(htmlk_a + htmlk_b));', c)
+                self.assertIn('return ((uint64_t)(htmlk_v_a + htmlk_v_b));', c)
 
     def test_forward_and_nested_calls_and_unused_function(self):
         funcs = (
@@ -43,7 +43,7 @@ class FunctionTests(unittest.TestCase):
             fn("unused", "", "999")
         )
         code = compile_html(src(funcs, '<print value="outer(2)"/>', after=True))
-        self.assertIn('htmlk_fn_inner(htmlk_x)', code)
+        self.assertIn('htmlk_fn_inner(htmlk_v_x)', code)
         self.assertIn('htmlk_fn_base()', code)
         self.assertIn('htmlk_fn_unused(void)', code)
 
@@ -53,8 +53,8 @@ class FunctionTests(unittest.TestCase):
             '<repeat times="3"><set name="n" value="f(n)"/>'
             '<if test="f(n) == 16"><print value="n"/></if></repeat>'
         ))
-        self.assertIn('htmlk_n = htmlk_fn_f(htmlk_n);', code)
-        self.assertIn('if ((htmlk_fn_f(htmlk_n) == UINT64_C(16)))', code)
+        self.assertIn('htmlk_v_n = htmlk_fn_f(htmlk_v_n);', code)
+        self.assertIn('if ((htmlk_fn_f(htmlk_v_n) == UINT64_C(16)))', code)
 
     def test_missing_and_wrong_parameters(self):
         self.invalid(fn(), '<print value="f()"/>', "expects 1 arguments")

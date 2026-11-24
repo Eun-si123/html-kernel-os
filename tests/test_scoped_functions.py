@@ -120,7 +120,7 @@ class ScopedFunctionTests(unittest.TestCase):
         generated = compile_html(source(
             '<let name="not_used" type="u64" value="5"/>'
             '<return value="7"/>'))
-        self.assertIn('(void)htmlk_n;', generated)
+        self.assertIn('(void)htmlk_v_n;', generated)
         self.assertIn('(void)htmlk_local_f_0;', generated)
 
     def test_function_body_budget_includes_loop_statements(self):

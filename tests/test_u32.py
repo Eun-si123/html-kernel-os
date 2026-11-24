@@ -27,17 +27,17 @@ class U32Tests(unittest.TestCase):
                        '<print value="x"/>')
         for target in ("kernel", "linux"):
             code = compile_html(html, target=target)
-            self.assertIn('uint32_t htmlk_x = UINT32_C(5);', code)
-            self.assertIn('htmlk_x = ((uint32_t)(htmlk_x + UINT32_C(3)));', code)
-            self.assertIn('htmlk_print_u64(htmlk_x);', code)
+            self.assertIn('uint32_t htmlk_v_x = UINT32_C(5);', code)
+            self.assertIn('htmlk_v_x = ((uint32_t)(htmlk_v_x + UINT32_C(3)));', code)
+            self.assertIn('htmlk_print_u64(htmlk_v_x);', code)
 
     def test_u32_max_and_modulo_wrap(self):
         code = compile_html(program(
             '<let name="max" type="u32" value="4294967295"/>'
             '<set name="max" value="max + 1"/>'
             '<print value="max"/>'))
-        self.assertIn('uint32_t htmlk_max = UINT32_C(4294967295);', code)
-        self.assertIn('((uint32_t)(htmlk_max + UINT32_C(1)))', code)
+        self.assertIn('uint32_t htmlk_v_max = UINT32_C(4294967295);', code)
+        self.assertIn('((uint32_t)(htmlk_v_max + UINT32_C(1)))', code)
 
     def test_u32_subtract_and_multiply_wrap(self):
         code = compile_html(program(
@@ -45,14 +45,14 @@ class U32Tests(unittest.TestCase):
             '<set name="x" value="x - 1"/>'
             '<set name="x" value="x * 2"/>'
             '<print value="x"/>'))
-        self.assertIn('((uint32_t)(htmlk_x - UINT32_C(1)))', code)
-        self.assertIn('((uint32_t)(htmlk_x * UINT32_C(2)))', code)
+        self.assertIn('((uint32_t)(htmlk_v_x - UINT32_C(1)))', code)
+        self.assertIn('((uint32_t)(htmlk_v_x * UINT32_C(2)))', code)
 
     def test_u32_literal_expression_uses_expected_type(self):
         code = compile_html(program(
             '<let name="a" type="u32" value="1 + 2 * 3"/>'
             '<print value="a"/>'))
-        self.assertIn('uint32_t htmlk_a = ((uint32_t)(', code)
+        self.assertIn('uint32_t htmlk_v_a = ((uint32_t)(', code)
         self.assertIn('UINT32_C(1)', code)
         self.assertIn('UINT32_C(2)', code)
         self.assertIn('UINT32_C(3)', code)
@@ -69,8 +69,8 @@ class U32Tests(unittest.TestCase):
             '<let name="low" type="u32" value="u32(wide)"/>'
             '<let name="restore" type="u64" value="u64(low)"/>'
             '<print value="restore"/>'))
-        self.assertIn('((uint32_t)(htmlk_wide))', code)
-        self.assertIn('((uint64_t)(htmlk_low))', code)
+        self.assertIn('((uint32_t)(htmlk_v_wide))', code)
+        self.assertIn('((uint64_t)(htmlk_v_low))', code)
 
     def test_casting_large_literal_to_u32_is_explicitly_allowed(self):
         code = compile_html(program(
@@ -110,7 +110,7 @@ class U32Tests(unittest.TestCase):
         code = compile_html(program(
             '<let name="x" type="u32" value="2"/>'
             '<if test="x &lt; 3"><print>yes</print></if>'))
-        self.assertIn('htmlk_x < UINT32_C(3)', code)
+        self.assertIn('htmlk_v_x < UINT32_C(3)', code)
         self.rejected('<let name="x" type="u32" value="1"/>'
                       '<if test="x &lt; 4294967296"><print>bad</print></if>',
                       'outside u32 range')
@@ -118,10 +118,10 @@ class U32Tests(unittest.TestCase):
     def test_u32_function_parameters_and_return_codegen(self):
         functions = fun("inc", "x:u32", "u32", '<return value="x + 1"/>')
         code = compile_html(program('<print value="inc(4)"/>', functions))
-        self.assertIn('uint32_t htmlk_fn_inc(uint32_t htmlk_x);', code)
-        self.assertIn('uint32_t htmlk_fn_inc(uint32_t htmlk_x) {', code)
+        self.assertIn('uint32_t htmlk_fn_inc(uint32_t htmlk_v_x);', code)
+        self.assertIn('uint32_t htmlk_fn_inc(uint32_t htmlk_v_x) {', code)
         self.assertIn('htmlk_print_u64(htmlk_fn_inc(UINT32_C(4)));', code)
-        self.assertIn('return ((uint32_t)(htmlk_x + UINT32_C(1)));', code)
+        self.assertIn('return ((uint32_t)(htmlk_v_x + UINT32_C(1)));', code)
 
     def test_u32_function_parameter_mismatch(self):
         functions = fun("inc", "x:u32", "u32", '<return value="x + 1"/>')
@@ -152,8 +152,8 @@ class U32Tests(unittest.TestCase):
             '<print value="narrow(wide)"/>'
             '<print value="widen(narrow(wide))"/>', funcs)
         code = compile_html(html)
-        self.assertIn('uint32_t htmlk_fn_narrow(uint64_t htmlk_x)', code)
-        self.assertIn('uint64_t htmlk_fn_widen(uint32_t htmlk_x)', code)
+        self.assertIn('uint32_t htmlk_fn_narrow(uint64_t htmlk_v_x)', code)
+        self.assertIn('uint64_t htmlk_fn_widen(uint32_t htmlk_v_x)', code)
 
     def test_scoped_shadowing_keeps_type_of_each_binding(self):
         functions = fun("shadow", "x:u32", "u32",
@@ -187,9 +187,9 @@ class U32Tests(unittest.TestCase):
             '<print value="score + 3"/>',
             fun("double", "v:u64", "u64", '<return value="v * 2"/>'))
         code = compile_html(original)
-        self.assertIn('uint64_t htmlk_score = UINT64_C(2);', code)
-        self.assertIn('htmlk_print_u64(((uint64_t)(htmlk_score + UINT64_C(3))));', code)
-        self.assertIn('uint64_t htmlk_fn_double(uint64_t htmlk_v);', code)
+        self.assertIn('uint64_t htmlk_v_score = UINT64_C(2);', code)
+        self.assertIn('htmlk_print_u64(((uint64_t)(htmlk_v_score + UINT64_C(3))));', code)
+        self.assertIn('uint64_t htmlk_fn_double(uint64_t htmlk_v_v);', code)
 
 
 if __name__ == "__main__":

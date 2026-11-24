@@ -130,6 +130,58 @@ source 10, 0 with frame reclamation. Explicit/inferred C equivalence and
 negative controls cover all three targets. CI, public browser deployment,
 physical hardware and external usability measurements are separate gates.
 
+## M2-UX9: entrypoint block locals and hygienic C names (development branch)
+
+```html
+<program>
+  <main>
+    <let name="total" value="0"/>
+    <repeat times="3">
+      <let name="increment" value="2"/>
+      <set name="total" value="total + increment"/>
+    </repeat>
+    <print value="total"/>
+    <halt/>
+  </main>
+</program>
+```
+
+The example prints 6. Variables and fixed-size arrays can now be declared
+inside entrypoint if/else/repeat/while blocks, as in functions. Each branch
+has a separate lexical scope; a loop body initializes its locals again on
+each iteration. A new initializer sees existing outer bindings; same-scope
+redeclaration and references to expired bindings are errors. `set` updates
+the closest visible binding. Zero-trip loops are still statically checked.
+See [Rust lexical scopes](https://doc.rust-lang.org/reference/names/scopes.html)
+and [Go blocks and scopes](https://go.dev/ref/spec#Declarations_and_scope).
+Same-scope shadowing is intentionally not adopted.
+
+The previous C lowering could accidentally shadow compiler internals:
+a legal variable named `loop_0` was printed as 10 instead of 12 after two
+increment iterations. This was reproduced with the previous Linux compiler.
+User variable/parameter C symbols now use a separate `htmlk_v_` namespace,
+nested entrypoint locals use generated `htmlk_block_` identifiers, and
+function internals retain their existing unique symbols. This intentionally
+changes generated-C spelling and hashes; recompile source with the matching
+compiler for source-attested HKEX use. Historical browser parity hashes are
+not claims about new versions. No source-level name restrictions were added.
+
+Local evidence: Linux GCC O0/O2 UBSan outputs 26/9/12 and modified 30/15/12,
+with two kernel QEMU boots and two Ring3 ISO boots (four app runs and frame
+reclamation), plus out-of-scope/mixed-type/duplicate-name/report-limit
+rejections. Run:
+
+```sh
+python3 scripts/htmlk.py run examples/block-locals.html
+python3 -m unittest tests.test_entry_block_locals -v
+python3 scripts/test_entry_block_qemu.py
+```
+
+Existing work/array/output bounds and target privilege checks remain.
+This is not dynamic memory allocation, arbitrary-code safety or a claim of
+native stack capacity for every allowed program. CI and browser parity for
+the new codegen are separate gates.
+
 ## Human-first validation
 
 ```sh

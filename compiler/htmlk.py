@@ -222,9 +222,31 @@ def compile_html(source: str, *, target: str = "kernel") -> str:
             "  if (htmlk_user_stack_probe != UINT64_C(0x1234)) htmlk_user_abort();",
             "  htmlk_user_call(UINT64_C(0), htmlk_user_stack_probe);",
         ]
-    variables: set[str] = set()
-    variable_types: dict[str, str] = {}
+    scopes: list[dict[str, str]] = [{}]
+    type_scopes: list[dict[str, str]] = [{}]
+    binding_id = 0
     loop_id = 0
+
+    def resolve(scopes: list[dict[str, str]]) -> dict[str, str]:
+        return {name: value for scope in scopes for name, value in scope.items()}
+
+    def bind(name: str, typ: str) -> str:
+        nonlocal binding_id
+        # User bindings and compiler helpers occupy disjoint C namespaces.
+        symbol = f"htmlk_v_{name}" if len(scopes) == 1 else f"htmlk_block_{binding_id}"
+        binding_id += 1
+        scopes[-1][name] = symbol
+        type_scopes[-1][name] = typ
+        return symbol
+
+    def block(nodes: list[Node], indent: int, multiplier: int) -> None:
+        scopes.append({})
+        type_scopes.append({})
+        try:
+            statements(nodes, indent, multiplier)
+        finally:
+            scopes.pop()
+            type_scopes.pop()
     work_done = 0
 
     def statements(nodes: list[Node], indent: int = 1, multiplier: int = 1) -> None:
@@ -241,9 +263,9 @@ def compile_html(source: str, *, target: str = "kernel") -> str:
                         evaluations: int = 1) -> str:
                 nonlocal work_done
                 called: list[str] = []
-                result = expression(source, node, variables,
+                result = expression(source, node, resolve(scopes),
                                     boolean=boolean, functions=functions, calls=called,
-                                    variable_types=variable_types, expected_type=expected_type,
+                                    variable_types=resolve(type_scopes), expected_type=expected_type,
                                     type_out=type_out)
                 work_done += multiplier * evaluations * sum(costs[name] for name in called)
                 if work_done > MAX_RUNTIME_STEPS:
@@ -280,33 +302,31 @@ def compile_html(source: str, *, target: str = "kernel") -> str:
                         ])
             elif tag == "let":
                 name = validate_name(node)
-                if name in variables:
-                    fail(node, f"variable {name!r} is already declared")
+                if name in scopes[-1]:
+                    fail(node, f"variable {name!r} is already declared in this scope")
                 detected: list[str] = []
                 value = checked(node.attrs["value"], expected_type=node.attrs.get("type"),
                                 type_out=detected)
                 typ = detected[0]
-                variables.add(name)
-                variable_types[name] = typ
+                symbol = bind(name, typ)
                 ctype = c_type(typ)
-                lines.append(f"{pad}{ctype} htmlk_{name} = {value};")
+                lines.append(f"{pad}{ctype} {symbol} = {value};")
                 # An unused declaration is legal source, not a C -Werror failure.
-                lines.append(f"{pad}(void)htmlk_{name};")
+                lines.append(f"{pad}(void){symbol};")
             elif tag == "array":
                 name = validate_name(node)
-                if name in variables:
-                    fail(node, f"variable {name!r} is already declared")
+                if name in scopes[-1]:
+                    fail(node, f"variable {name!r} is already declared in this scope")
                 typ = node.attrs["type"]
                 size = int(node.attrs["length"])
-                variables.add(name)
-                variable_types[name] = array_code(typ, size)
+                symbol = bind(name, array_code(typ, size))
                 lines.extend([
-                    f"{pad}{c_type(typ)} htmlk_{name}[{size}] = {{0}};",
-                    f"{pad}(void)htmlk_{name};",
+                    f"{pad}{c_type(typ)} {symbol}[{size}] = {{0}};",
+                    f"{pad}(void){symbol};",
                 ])
             elif tag == "store":
                 name = validate_name(node)
-                detail = array_details(variable_types.get(name, ""))
+                detail = array_details(resolve(type_scopes).get(name, ""))
                 if detail is None:
                     fail(node, f"undefined array {name!r}; declare <array> first")
                 element, _ = detail
@@ -315,22 +335,24 @@ def compile_html(source: str, *, target: str = "kernel") -> str:
                 lines.append(f"{pad}{location} = {value};")
             elif tag == "set":
                 name = validate_name(node)
-                if name not in variables:
+                symbols = resolve(scopes)
+                types = resolve(type_scopes)
+                if name not in symbols:
                     fail(node, f"undefined variable {name!r}")
-                if array_details(variable_types[name]) is not None:
+                if array_details(types[name]) is not None:
                     fail(node, f"array {name!r} requires an indexed element; use <store>")
-                value = checked(node.attrs["value"], expected_type=variable_types[name])
-                lines.append(f"{pad}htmlk_{name} = {value};")
+                value = checked(node.attrs["value"], expected_type=types[name])
+                lines.append(f"{pad}{symbols[name]} = {value};")
             elif tag == "if":
                 test = checked(node.attrs["test"], boolean=True)
                 alternate = (node.children[-1] if node.children and
                              node.children[-1].tag == "else" else None)
                 true_body = node.children[:-1] if alternate else node.children
                 lines.append(f"{pad}if ({test}) {{")
-                statements(true_body, indent + 1, multiplier)
+                block(true_body, indent + 1, multiplier)
                 if alternate is not None:
                     lines.append(f"{pad}}} else {{")
-                    statements(alternate.children, indent + 1, multiplier)
+                    block(alternate.children, indent + 1, multiplier)
                 lines.append(f"{pad}}}")
             elif tag == "repeat":
                 count = int(node.attrs["times"])
@@ -338,7 +360,7 @@ def compile_html(source: str, *, target: str = "kernel") -> str:
                 loop_id += 1
                 lines.append(f"{pad}for (uint64_t {temp} = 0;"
                              f" {temp} < UINT64_C({count}); ++{temp}) {{")
-                statements(node.children, indent + 1, multiplier * count)
+                block(node.children, indent + 1, multiplier * count)
                 lines.append(f"{pad}}}")
             elif tag == "while":
                 count = int(node.attrs["max"])
@@ -351,7 +373,7 @@ def compile_html(source: str, *, target: str = "kernel") -> str:
                 loop_id += 1
                 lines.append(f"{pad}for (uint64_t {temp} = 0;"
                              f" {temp} < UINT64_C({count}) && ({test}); ++{temp}) {{")
-                statements(node.children, indent + 1, multiplier * count)
+                block(node.children, indent + 1, multiplier * count)
                 lines.append(f"{pad}}}")
             elif tag == "break":
                 lines.append(f"{pad}break;")

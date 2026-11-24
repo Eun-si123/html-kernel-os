@@ -243,3 +243,7 @@ An explicitly selected Linux-side TinyCC 0.9.27-compatible compiler can convert 
 ## M2-UX8 optional local integer annotations (development branch)
 
 Local proof: 267 Python tests, four Node grammar tests, native Linux 6/0, two native kernel QEMU boots (6/0 and 10/0), two Ring3 QEMU boots with four total app executions and frame reclamation. Old explicit and equivalent inferred source produce identical C for all three targets. Exact PR-head CI, merge, public browser and hardware NOT yet verified. [Contract](LANGUAGE_HUMAN_AGENT.md#m2-ux8-optional-local-integer-type-annotations-development-branch).
+
+## M2-UX9 entrypoint lexical scopes and identifier hygiene (development branch)
+
+Native Linux reproduced an old incorrect loop-variable output 10 vs expected 12; fixed output 12. New source with nested inferred locals, arrays and formerly colliding names produces 26/9/12, edited source 30/15/12 in Linux GCC O0/O2 UBSan and real QEMU kernel and Ring3 (two boots each, four app runs with reclaim). Existing static bounds remain. CI, public browser parity and hardware not yet verified. Generated C hashes intentionally change, requiring source-attested artifacts to be rebuilt with the matching compiler.

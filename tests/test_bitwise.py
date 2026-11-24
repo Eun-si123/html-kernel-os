@@ -18,8 +18,8 @@ class BitwiseTests(unittest.TestCase):
         c = compile_html(program(
             '<let name="mask" type="u32" value="5"/>'
             '<print value="(mask &amp; 3) | (mask ^ 7)"/>'))
-        self.assertIn('htmlk_mask & UINT32_C(3)', c)
-        self.assertIn('htmlk_mask ^ UINT32_C(7)', c)
+        self.assertIn('htmlk_v_mask & UINT32_C(3)', c)
+        self.assertIn('htmlk_v_mask ^ UINT32_C(7)', c)
         self.assertIn(' | ', c)
 
     def test_u64_mask_and_invert(self):
@@ -27,8 +27,8 @@ class BitwiseTests(unittest.TestCase):
             '<let name="x" type="u64" value="4"/>'
             '<print value="~x"/>'
             '<print value="x ^ 2"/>'))
-        self.assertIn('((uint64_t)(~htmlk_x))', c)
-        self.assertIn('((uint64_t)(htmlk_x ^ UINT64_C(2)))', c)
+        self.assertIn('((uint64_t)(~htmlk_v_x))', c)
+        self.assertIn('((uint64_t)(htmlk_v_x ^ UINT64_C(2)))', c)
 
     def test_u32_shift_left_right_and_large_amount(self):
         c = compile_html(program(
@@ -36,9 +36,9 @@ class BitwiseTests(unittest.TestCase):
             '<print value="x &lt;&lt; 31"/>'
             '<print value="x &lt;&lt; 32"/>'
             '<print value="x &gt;&gt; 32"/>'))
-        self.assertIn('htmlk_shl_u32(htmlk_x, UINT32_C(31))', c)
-        self.assertIn('htmlk_shl_u32(htmlk_x, UINT32_C(32))', c)
-        self.assertIn('htmlk_shr_u32(htmlk_x, UINT32_C(32))', c)
+        self.assertIn('htmlk_shl_u32(htmlk_v_x, UINT32_C(31))', c)
+        self.assertIn('htmlk_shl_u32(htmlk_v_x, UINT32_C(32))', c)
+        self.assertIn('htmlk_shr_u32(htmlk_v_x, UINT32_C(32))', c)
         self.assertIn('shift >= 32 ? (uint32_t)0', c)
 
     def test_u64_shift_boundary_and_wrap(self):
@@ -46,7 +46,7 @@ class BitwiseTests(unittest.TestCase):
             '<let name="x" type="u64" value="1"/>'
             '<print value="x &lt;&lt; 63"/>'
             '<print value="x &lt;&lt; 64"/>'))
-        self.assertIn('htmlk_shl_u64(htmlk_x, UINT64_C(63))', c)
+        self.assertIn('htmlk_shl_u64(htmlk_v_x, UINT64_C(63))', c)
         self.assertIn('shift >= 64 ? (uint64_t)0', c)
 
     def test_shift_argument_must_be_matching_width_or_literal(self):
@@ -80,7 +80,7 @@ class BitwiseTests(unittest.TestCase):
             '<let name="x" type="i32" value="-1"/>'
             '<let name="mask" type="u32" value="u32(x) &amp; 255"/>'
             '<print value="mask"/>'))
-        self.assertIn('((uint32_t)(htmlk_x)) & UINT32_C(255)', c)
+        self.assertIn('((uint32_t)(htmlk_v_x)) & UINT32_C(255)', c)
 
     def test_shift_right_always_logical_on_unsigned(self):
         c = compile_html(program(

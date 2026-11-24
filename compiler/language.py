@@ -155,8 +155,6 @@ class KernelParser(HTMLParser):
             fail(node, "<return> is only allowed inside a <function>")
         if tag in {"break", "continue"} and not any(item.tag in {"repeat", "while"} for item in self.stack):
             fail(node, f"<{tag}> requires an enclosing <repeat> or <while>")
-        if tag in {"let", "array"} and parent in {"if", "repeat", "while", "else"} and not inside_function:
-            fail(node, "block-scoped <let> is only supported inside functions")
         if len(pairs) != len(attrs):
             fail(node, f"duplicate attributes on <{tag}>")
         unknown = set(pairs) - ALLOWED[tag]
