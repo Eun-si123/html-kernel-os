@@ -652,6 +652,22 @@
       ]
     },
     {
+      "id": "m2-browser-local-source-editor",
+      "source": [
+        "site/live/index.html",
+        "site/live/editor.mjs",
+        "site/live/live.css"
+      ],
+      "regressions": [
+        "tests/test_live_pages.py"
+      ],
+      "fieldEvidence": [
+        "scripts/test_live_editor.mjs",
+        "scripts/test_live_editor_native.py",
+        "docs/M2_WEB_EDITOR.md"
+      ]
+    },
+    {
       "id": "m2-editor-lsp-shared-compiler",
       "source": [
         "scripts/htmlk_lsp.py",

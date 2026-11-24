@@ -67,8 +67,12 @@ def build(out_dir: Path, *, source: Path | None = None) -> tuple[Path, Path]:
         "embedded_source_bytes": len(source_bytes),
         "user_timer": False, "test_exit": True,
         "user_command": "run /apps/hello.hke",
-        "expected_marker": "M5_RUN_EXIT_CODE=7",
     }
+    # The repository's published default fixture is known to return 7.
+    # User-supplied HTML may return *any* validated exit code; never falsely
+    # assert a hardcoded expected result in the generated provenance manifest.
+    if source is None:
+        metadata["expected_marker"] = "M5_RUN_EXIT_CODE=7"
     manifest.write_text(json.dumps(metadata, indent=2, sort_keys=True) + "\n",
                         encoding="utf-8")
     print("HTMLK_LIVE_ISO_SHA256=" + metadata["image_sha256"])

@@ -10,6 +10,7 @@ Start with [AGENTS.md](../AGENTS.md) for AI collaborators and [README.md](../REA
 | How can people and coding agents check, build and run native HTMLK programs, with verified ABI? | [LANGUAGE_HUMAN_AGENT.md](LANGUAGE_HUMAN_AGENT.md) |
 | How do IDEs obtain genuine compiler diagnostics and completion via LSP? | [M2_LANGUAGE_LSP.md](M2_LANGUAGE_LSP.md) |
 | How to write an app using `<program><main>` instead of `<kernel><onboot>`? | [LANGUAGE_HUMAN_AGENT.md](LANGUAGE_HUMAN_AGENT.md) |
+| How can I write HTML in the browser, download, compile, and boot a real ISO? | [M2_WEB_EDITOR.md](M2_WEB_EDITOR.md) |
 | Which M2 language features are actually implemented and what are the limits? | [M2_LANGUAGE_CONTRACT.md](M2_LANGUAGE_CONTRACT.md) |
 | How can we reach C++/Rust-class native speed? | [PERFORMANCE.md](PERFORMANCE.md) |
 | Which assumptions, hazards and unknowns matter? | [PROJECT_RISKS.md](PROJECT_RISKS.md) |

@@ -15,3 +15,16 @@
 
 .local-import{border:1px solid var(--line);background:var(--paper);padding:16px 18px;margin:0 0 16px;display:grid;grid-template-columns:minmax(0,1fr) minmax(250px,.8fr);gap:8px 22px}.local-import h3{margin:0 0 5px;font-size:15px;letter-spacing:-.03em}.local-import p{font-size:12px;line-height:1.8;color:var(--muted);margin:0}.local-import strong{color:var(--text)}.local-fields{display:flex;gap:9px;flex-wrap:wrap}.local-fields label{flex:1;min-width:130px;display:grid;gap:7px;font-size:11px;font-weight:650}.local-fields input{width:100%;min-width:0;font-size:11px;color:var(--muted)}.local-import .local-state{grid-column:1/-1;font:11px/1.6 ui-monospace,Consolas,monospace;color:var(--accent)}.local-import details{grid-column:1/-1;color:var(--muted);font-size:12px}.local-import summary{cursor:pointer;font-weight:650}.local-import details p{margin-top:10px;overflow-wrap:anywhere}.local-import code{overflow-wrap:anywhere}
 @media(max-width:780px){.local-import{grid-template-columns:minmax(0,1fr)}}
+
+/* M2-UX4: a real local-file authoring workflow, never a simulated compiler. */
+.editor-panel{margin-bottom:46px}.editor-intro{font-size:13px;line-height:1.85;color:var(--muted);max-width:870px}.editor-intro strong{color:var(--text)}
+.editor-grid{display:grid;grid-template-columns:minmax(0,1.18fr) minmax(0,.82fr);gap:14px}
+.editor-input,.editor-guide{min-width:0;background:var(--paper);border:1px solid var(--line);padding:16px}
+.editor-input>label{display:block;margin-bottom:10px;font:700 11px ui-monospace,Consolas,monospace;color:var(--accent);letter-spacing:.08em}
+#html-editor{width:100%;min-width:0;resize:vertical;min-height:242px;max-height:640px;background:var(--bg);border:1px solid var(--line);color:var(--text);padding:15px;font:13px/1.65 ui-monospace,Consolas,monospace;tab-size:2;white-space:pre;overflow:auto}
+#html-editor:focus-visible{outline:2px solid var(--accent);outline-offset:1px}.editor-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px}.editor-actions output{margin-right:auto;font:11px ui-monospace,Consolas,monospace;color:var(--muted)}
+.editor-actions button,.editor-guide button{border:1px solid var(--line);padding:10px 12px;background:var(--bg);color:var(--text);font-weight:650;font-size:12px;cursor:pointer}.editor-actions button:hover,.editor-guide button:hover{border-color:var(--accent)}.editor-actions button:disabled{opacity:.4;cursor:not-allowed}
+.editor-guide h3{margin:0 0 13px;font-size:17px}.editor-guide ol{padding-left:20px;margin:0 0 16px;font-size:12px;line-height:1.9;color:var(--muted)}.editor-guide li{padding-left:3px;margin-bottom:8px}.editor-guide b{color:var(--text)}
+.editor-command-caption{font:11px/1.7 ui-monospace,Consolas,monospace;color:var(--muted);margin:15px 0 5px}.editor-command{display:block;padding:12px;white-space:pre-wrap;overflow-wrap:anywhere;background:var(--bg);border:1px solid var(--line);font:12px/1.75 ui-monospace,Consolas,monospace}
+.editor-guide button{margin-top:10px}.editor-guide #editor-status{font:12px/1.75 ui-monospace,Consolas,monospace;color:var(--muted);margin:14px 0 0}
+@media(max-width:780px){.editor-grid{grid-template-columns:minmax(0,1fr)}#html-editor{min-height:220px}}

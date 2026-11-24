@@ -187,6 +187,11 @@ jobs:
         run: python scripts/test_m5_user_bad_pf_stack.py
       - name: M5-E3-I genuine CPL3 debug and breakpoint traps with poisoned user RSP and survivor
         run: python scripts/test_m5_user_bad_trap_stack.py
+      - name: M2-UX4 browser local HTML editor UTF-8 limit and native CPU execution parity
+        run: |
+          node --check site/live/editor.mjs
+          node --test scripts/test_live_editor.mjs
+          python scripts/test_live_editor_native.py
       - name: M5 web locally edited HTML CLI builds real Ring3 ISO and bounded source rejection
         run: python scripts/test_local_live_iso.py
       - name: Assemble standalone, non-test boot images

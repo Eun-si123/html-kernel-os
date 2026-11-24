@@ -52,6 +52,10 @@ The kernel backend **rejects** the aliases, rather than silently running
 a user app in ring 0. Actual Linux and QEMU Ring3 execution are locally
 verified; exact PR-head CI/merge are pending. See [user and agent guide](docs/LANGUAGE_HUMAN_AGENT.md).
 
+## Draft HTML code in the browser (M2-UX4 merged in PR #108)
+
+On the [Live Lab](https://eun-si123.github.io/html-kernel-os/live/) you can write HTML Kernel Language code in a simple source editor, see **UTF-8 byte limits**, download `htmlk-program.html`, and copy the genuine native ISO build command. GitHub Pages does **not** compile source by itself. Compile with the repository's local toolchain, choose the new ISO + exact HTML on Live Lab and boot **real native code** in the browser emulator. Local Chromium and independent QEMU proof demonstrate source edits changing actual guest CPU output. **PR #108 has passed exact-head CI and merged; public deployment verification is a separate gate.** [Step-by-step guide](docs/M2_WEB_EDITOR.md).
+
 ## Compiler-backed editor integration (M2-UX5 development)
 
 The bounded HTML Kernel Language LSP server connects IDEs and coding agents to the **same native typed compiler**. It publishes real source diagnostics, Unicode-safe editor locations, supported tag/attribute completions and metadata; it never runs or builds a program:
