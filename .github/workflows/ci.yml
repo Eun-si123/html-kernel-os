@@ -216,6 +216,8 @@ jobs:
         run: python scripts/test_m5_user_entry_context.py
       - name: M5-E3-L fresh legacy x87 context and cleanup
         run: python scripts/test_m5_user_x87_context.py
+      - name: M5-E3-O real SSE context and legacy CPU fallback
+        run: python scripts/test_m5_user_sse_context.py
       - name: M5-E3-I genuine CPL3 debug and breakpoint traps with poisoned user RSP and survivor
         run: python scripts/test_m5_user_bad_trap_stack.py
       - name: M5-E3-M fresh FS and GS selectors and bases

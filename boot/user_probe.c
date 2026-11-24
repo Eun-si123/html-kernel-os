@@ -32,30 +32,55 @@ static volatile bool syscall_seen;
 static volatile bool user_exited;
 #ifdef HTMLK_M5_USER_LOADER
 static volatile bool user_reported;
-/* Single active M5 app. The kernel and all its interrupt handlers are
- * compiled -mgeneral-regs-only. Preserve the supervisor's legacy x87
- * context and give each fresh task a clean one when x87 is available.
- * No CR0/CR4 feature enable, SSE/XSAVE state or concurrent task claim. */
+/* One active app; kernel and handlers use -mgeneral-regs-only.
+ * FXSAVE64 preserves full-width x87 pointers plus legacy XMM/MXCSR.
+ * The older x87 path remains for CPUs not advertising FXSR and SSE.
+ * Do not enable OSXSAVE or AVX, nor claim isolation of those states. */
+struct htmlk_fx_area { uint8_t bytes[512]; };
+static struct htmlk_fx_area saved_fx __attribute__((aligned(16)));
+static const struct htmlk_fx_area initial_fx __attribute__((aligned(16))) = {
+    .bytes = {[0]=0x7f,[1]=0x03,[24]=0x80,[25]=0x1f}
+};
 static struct { uint8_t bytes[108]; } saved_x87 __attribute__((aligned(16)));
-static bool x87_saved;
+static bool x87_saved, fx_saved;
+static uint64_t saved_fx_cr4;
 static void user_x87_begin(void) {
-    uint64_t cr0;
+    uint64_t cr0,cr4;
     __asm__ volatile("mov %%cr0,%0" : "=r"(cr0));
     x87_saved = (cr0 & (UINT64_C(1)<<2 | UINT64_C(1)<<3)) == 0;
-    if (!x87_saved) return; /* EM/TS: do not execute disabled x87 */
-    __asm__ volatile(
-        "fnsave %0\n\t"
-        /* FNSAVE initializes tags, not physical register contents.
-         * Fill all eight physical registers, then mark all empty again. */
+    fx_saved = false;
+    if (!x87_saved) return;
+    uint32_t a,b,c,d;
+    __asm__ volatile("cpuid" : "=a"(a),"=b"(b),"=c"(c),"=d"(d)
+                     : "a"(1U),"c"(0U));
+    if ((d & ((1U<<24)|(1U<<25))) == ((1U<<24)|(1U<<25))) {
+        __asm__ volatile("mov %%cr4,%0" : "=r"(cr4));
+        saved_fx_cr4 = cr4;
+        /* OSFXSR makes XMM/MXCSR save/restore defined. Keep #XM
+         * disabled (unmasked SIMD exceptions use #UD), and prevent
+         * AVX/XSAVE from accessing unsaved extended state. */
+        const uint64_t app_cr4 = (cr4 | (UINT64_C(1)<<9)) &
+                                 ~((UINT64_C(1)<<10)|(UINT64_C(1)<<18));
+        if (app_cr4 != cr4)
+            __asm__ volatile("mov %0,%%cr4" :: "r"(app_cr4) : "memory");
+        __asm__ volatile("fxsave64 %0" : "=m"(saved_fx) :: "memory");
+        __asm__ volatile("fnclex; fxrstor64 %0" :: "m"(initial_fx) : "memory");
+        fx_saved = true;
+        return;
+    }
+    __asm__ volatile("fnsave %0\n\t"
         "fldz; fldz; fldz; fldz; fldz; fldz; fldz; fldz; fninit"
         : "=m"(saved_x87) : : "memory");
 }
 static void user_x87_end(void) {
     if (!x87_saved) return;
-    /* FRSTOR replaces the entire legacy state, including control word,
-     * status, tags and physical register contents. Clear pending user
-     * exceptions with the non-waiting FNCLEX before FRSTOR. */
-    __asm__ volatile("fnclex; frstor %0" : : "m"(saved_x87) : "memory");
+    if (fx_saved) {
+        __asm__ volatile("fnclex; fxrstor64 %0" :: "m"(saved_fx) : "memory");
+        __asm__ volatile("mov %0,%%cr4" :: "r"(saved_fx_cr4) : "memory");
+        fx_saved = false;
+    } else {
+        __asm__ volatile("fnclex; frstor %0" : : "m"(saved_x87) : "memory");
+    }
     x87_saved = false;
 }
 
