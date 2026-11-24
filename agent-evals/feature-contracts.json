@@ -650,6 +650,22 @@
         "scripts/test_htmlk_program_main_qemu.py",
         "docs/LANGUAGE_HUMAN_AGENT.md"
       ]
+    },
+    {
+      "id": "m2-browser-local-source-editor",
+      "source": [
+        "site/live/index.html",
+        "site/live/editor.mjs",
+        "site/live/live.css"
+      ],
+      "regressions": [
+        "tests/test_live_pages.py"
+      ],
+      "fieldEvidence": [
+        "scripts/test_live_editor.mjs",
+        "scripts/test_live_editor_native.py",
+        "docs/M2_WEB_EDITOR.md"
+      ]
     }
   ]
 }

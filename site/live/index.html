@@ -8,6 +8,7 @@
 <title>Native HTML OS — Live</title>
 <link rel="stylesheet" href="./live.css">
 <script type="module" src="./live.js"></script>
+<script type="module" src="./editor.mjs"></script>
 </head>
 <body>
 <a class="skip" href="#machine">가상 PC로 이동</a>
@@ -20,6 +21,25 @@
 <h1>HTML로 작성하고.<br><em>실제 CPU에서 실행한다.</em></h1>
 <p class="sub">HTML 형태의 프로그래밍 언어가 네이티브 커널과 Ring 3 사용자 프로그램으로 컴파일돼. 이 페이지는 <strong>실제 x86-64 부팅 ISO를 브라우저 에뮬레이터에 넣고</strong> 명령을 가상 COM1로 전송하는 실행실이야.</p>
 <p class="caveat"><strong>정확한 의미:</strong> 표준 HTML 파일 자체를 CPU가 실행하는 건 아니야. 프로젝트의 HTML형 언어 → C/어셈블리 → ELF/HKEX → 실행 순서야. GitHub Pages는 정적 사이트라 원본을 수정해 즉시 재컴파일하는 기능은 아직 없어.</p>
+</section>
+<section id="author" class="editor-panel" aria-labelledby="editor-title">
+<div class="section-head"><div><span class="tag">00 / WRITE SOURCE</span><h2 id="editor-title">HTML 프로그램 작성</h2></div><a href="https://github.com/Eun-si123/html-kernel-os/blob/main/docs/LANGUAGE_HUMAN_AGENT.md">언어 문법 ↗</a></div>
+<p class="editor-intro">브라우저에서 HTML형 언어 코드를 작성하고 파일로 저장해. <strong>작성·저장은 실행이 아니야.</strong> ISO 빌드는 저장소를 내려받은 내 PC의 진짜 컴파일러에서 수행해.</p>
+<div class="editor-grid">
+<div class="editor-input"><label for="html-editor">SOURCE / HTML KERNEL LANGUAGE</label>
+<textarea id="html-editor" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" aria-describedby="editor-bytes editor-status" rows="12"></textarea>
+<div class="editor-actions"><output id="editor-bytes" for="html-editor">UTF-8 검사 전</output>
+<button id="editor-save" type="button">HTML 파일 저장</button>
+<button id="editor-reset" type="button">예제 초기화</button></div></div>
+<div class="editor-guide"><h3>실제 실행까지</h3>
+<ol><li>이 편집기에서 HTML형 프로그램 작성 후 <b>HTML 파일 저장</b></li>
+<li>GitHub 저장소를 받은 PC에서 아래 <b>진짜 네이티브 ISO 빌드</b> 명령 실행</li>
+<li>생성된 <code>build/my-html-os/html-kernel-live.iso</code>를 아래 <b>내 빌드 ISO</b>로 선택하고, 원본 HTML도 함께 선택</li>
+<li>실제 ISO 부팅 → <code>cat /source.html</code>로 원본 확인 → <code>run /apps/hello.hke</code>로 CPU 실행</li></ol>
+<p class="editor-command-caption">저장소 루트에서 실행하는 명령 (웹에서 실행되지 않음)</p>
+<code id="editor-command" class="editor-command">빌드 명령 불러오는 중…</code>
+<button id="editor-copy" type="button">빌드 명령 복사</button>
+<p id="editor-status" role="status" aria-live="polite">소스 편집 준비 중…</p></div></div>
 </section>
 <section id="machine" aria-label="실제 가상 PC" class="machine">
 <div class="section-head"><div><span class="tag">01 / LIVE HARDWARE</span><h2>Emulated x86-64 PC</h2></div><span class="state" id="state" role="status" aria-live="polite">NOT STARTED</span></div>

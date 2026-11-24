@@ -26,7 +26,9 @@ class LivePagesTests(unittest.TestCase):
         parser = Ids()
         parser.feed(html)
         self.assertEqual(len(parser.ids), len(set(parser.ids)))
-        for name in ('start','stop','fullscreen','terminal','source','source-hash',
+        for name in ('html-editor','editor-title','editor-bytes','editor-status',
+                     'editor-command','editor-copy','editor-save','editor-reset',
+                     'start','stop','fullscreen','terminal','source','source-hash',
                      'iso-hash','boot-event','romfs-match','screen_container','local-iso','local-html','command',
                      'command-form','send','message','state'):
             self.assertIn(name, parser.ids)
@@ -43,6 +45,17 @@ class LivePagesTests(unittest.TestCase):
         self.assertIn('(prefers-color-scheme:dark)', css)
         self.assertIn('max-width:520px', css)
         self.assertIn('data-command="cat /source.html"', html)
+        editor = (SITE/'editor.mjs').read_text()
+        self.assertIn('<script type="module" src="./editor.mjs"></script>', html)
+        self.assertIn('브라우저에서 HTML형 언어 코드를 작성', html)
+        for marker in ('SOURCE_LIMIT = 4096','sourceBytes','sourceState','TextEncoder',
+                       'EXPORT_FILENAME','URL.createObjectURL','anchor.download',
+                       'BUILD_COMMAND','M2-UX4', 'setupEditor'):
+            self.assertIn(marker, editor)
+        self.assertNotIn('fetch(', editor)
+        self.assertNotIn('eval(', editor)
+        self.assertNotIn('innerHTML', editor)
+        self.assertIn('max-width:780px', css)
         self.assertIn('브라우저 메모리에서만 실행', html)
         self.assertIn('html-kernel-live.iso', html)
         self.assertIn('--source 내프로그램.html', html)
@@ -72,6 +85,11 @@ class LivePagesTests(unittest.TestCase):
         self.assertNotIn('"--user-timeout"', builder)
         self.assertIn('source.html', builder)
         self.assertIn('shutil.copytree', builder)
+        self.assertIn('scripts/test_live_editor_native.py', ci)
+        self.assertIn('scripts/test_live_editor_native.py', pages)
+        self.assertIn('node --test scripts/test_live_editor.mjs', ci)
+        self.assertIn('node --test scripts/test_live_editor.mjs', pages)
+        self.assertIn('test -s public/live/editor.mjs', pages)
         self.assertIn('scripts/test_local_live_iso.py', ci)
         self.assertIn('scripts/test_local_live_iso.py', pages)
         self.assertIn('--source', builder)

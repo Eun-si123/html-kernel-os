@@ -58,6 +58,11 @@ jobs:
           python scripts/test_live_source_mutation.py --baseline-dir build/live-site
       - name: Verify local HTML source changes native ISO and actual CPU output before Pages
         run: python scripts/test_local_live_iso.py
+      - name: Verify browser editor generated HTML changes native BIOS ISO and actual CPU output
+        run: |
+          node --check site/live/editor.mjs
+          node --test scripts/test_live_editor.mjs
+          python scripts/test_live_editor_native.py
       - name: Assemble static Pages bundle with pinned x86-64 WebAssembly emulator
         run: |
           mkdir -p public/vendor
@@ -100,6 +105,7 @@ jobs:
           test -s public/html-kernel-live.json
           test -s public/live/index.html
           test -s public/live/live.js
+          test -s public/live/editor.mjs
           test -s public/live/live.css
           test -s public/examples/user-programs/html-u64-report.html
           test -s public/examples/kernel.html
