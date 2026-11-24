@@ -1,0 +1,15 @@
+<program>
+  <function name="negative" params="x:i32" returns="i32">
+    <return value="-x"/>
+  </function>
+  <main>
+    <let name="a" type="i32" value="-2147483648"/>
+    <print value="a"/>
+    <print value="negative(7)"/>
+    <print value="i64(-9223372036854775808)"/>
+    <print value="i64(9223372036854775807)"/>
+    <print value="i64(0)"/>
+    <print value="18446744073709551615"/>
+    <halt/>
+  </main>
+</program>

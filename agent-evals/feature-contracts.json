@@ -583,6 +583,8 @@
       ],
       "fieldEvidence": [
         "scripts/test_m5_html_u64_output.py",
+        "scripts/test_m5_html_i64_output.py",
+        "docs/M5_HTML_I64_OUTPUT.md",
         "docs/M5_HTML_U64_OUTPUT.md"
       ]
     },

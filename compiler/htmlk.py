@@ -276,9 +276,13 @@ def compile_html(source: str, *, target: str = "kernel") -> str:
                     detected: list[str] = []
                     value = checked(node.attrs["value"], type_out=detected)
                     if target == "user":
+                        # Signed values use the explicit signed-report ABI.
+                        # Conversion through int64_t sign-extends i32; unsigned
+                        # conversion preserves bits without signed overflow.
                         if detected[0] in {"i32", "i64"}:
-                            fail(node, "user numeric report must have unsigned u32/u64 type")
-                        lines.append(f"{pad}htmlk_user_call(UINT64_C(2), (uint64_t)({value}));")
+                            lines.append(f"{pad}htmlk_user_call(UINT64_C(4), (uint64_t)(int64_t)({value}));")
+                        else:
+                            lines.append(f"{pad}htmlk_user_call(UINT64_C(2), (uint64_t)({value}));")
                     elif detected[0] in {"i32", "i64"}:
                         lines.append(f"{pad}htmlk_print_i64((int64_t)({value}));")
                     else:
