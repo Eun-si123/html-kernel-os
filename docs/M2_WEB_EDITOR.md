@@ -8,7 +8,7 @@ CI, merge and public Pages deployment remain separate evidence gates.
 ## User workflow
 
 1. Open the static [Live Lab](https://eun-si123.github.io/html-kernel-os/live/).
-2. In **00 / WRITE SOURCE** edit the real HTML Kernel Language program in the
+2. In **00 / WRITE SOURCE** edit the real HTML Kernel Language `<program><main>` app in the
    textarea. The page counts **UTF-8 bytes**, rather than JavaScript UTF-16
    characters, against the kernel ROMFS per-file limit of 4096 bytes.
    Empty or >4096-byte sources cannot be downloaded through this editor.

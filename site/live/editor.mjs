@@ -4,13 +4,13 @@
 export const SOURCE_LIMIT = 4096;
 export const EXPORT_FILENAME = 'htmlk-program.html';
 export const TEMPLATE = `<!-- HTML Kernel Language: edit, save, then build a native ISO locally. -->
-<kernel arch="x86_64">
-  <onboot>
+<program>
+  <main>
     <let name="value" type="u64" value="2026"/>
     <print value="value"/>
     <halt/>
-  </onboot>
-</kernel>
+  </main>
+</program>
 `;
 export const BUILD_COMMAND = 'python3 scripts/build_live_site.py --source ' +
   EXPORT_FILENAME + ' --out-dir build/my-html-os';
