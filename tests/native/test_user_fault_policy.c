@@ -174,6 +174,26 @@ int main(void) {
         pf.error_code=bad_error;
         assert(!htmlk_m5_bad_pf_stack_owned(&pf));
     }
+    /* E3-J: exactly one unmapped page above the private stack, data only. */
+    pf.cr2=HTMLK_M4_USER_STACK;
+    for (unsigned err=0;err<128U;++err) {
+        pf.error_code=err;
+        assert(htmlk_m5_bad_pf_stack_owned(&pf)==(err==4U || err==6U));
+    }
+    for (unsigned err=4U;err<=6U;err+=2U) {
+        pf.error_code=err;
+        pf.cr2=HTMLK_M4_USER_STACK+4095U;assert(htmlk_m5_bad_pf_stack_owned(&pf));
+        pf.cr2=HTMLK_M4_USER_STACK+4096U;assert(!htmlk_m5_bad_pf_stack_owned(&pf));
+        pf.cr2=HTMLK_M4_USER_STACK-1U;assert(!htmlk_m5_bad_pf_stack_owned(&pf));
+        pf.cr2=HTMLK_M4_USER_STACK;
+        pf.frame.active_cr3=pf.frame.saved_cr3;assert(!htmlk_m5_bad_pf_stack_owned(&pf));
+        pf.frame.active_cr3=pf.frame.owned_cr3;
+        pf.frame.user_rsp=HTMLK_M4_USER_STACK-16U;assert(!htmlk_m5_bad_pf_stack_owned(&pf));
+        pf.frame.user_rsp=0U;
+        pf.frame.already_terminated=true;assert(!htmlk_m5_bad_pf_stack_owned(&pf));
+        pf.frame.already_terminated=false;
+        pf.error_word_address-=8U;assert(!htmlk_m5_bad_pf_stack_owned(&pf));pf.error_word_address+=8U;
+    }
     pf.error_code=5U;pf.cr2=user_base;
     assert(!htmlk_m5_bad_pf_stack_owned(&pf));
     pf.cr2=UINT64_C(0xffffffff80001000);

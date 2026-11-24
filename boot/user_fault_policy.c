@@ -113,9 +113,9 @@ bool htmlk_m5_bad_gp_stack_owned(const struct htmlk_m5_bad_gp_owner *ctx) {
     return bad_rsp_owner_valid(&ctx->frame);
 }
 
-/* Only user-origin, fault-class #PF error 5 (read supervisor memory) or 7
- * (write user read-only image). A #PF in the kernel or a fault delivered to
- * some other stack can never use this emergency user-process retirement. */
+/* Only scoped user-origin #PF: present-page 5/7 or nonpresent guard 4/6.
+ * A kernel fault or a fault delivered to some other stack can never use
+ * this emergency user-process retirement. */
 bool htmlk_m5_bad_pf_stack_owned(const struct htmlk_m5_bad_pf_owner *ctx) {
     if (!ctx || ctx->ist2_top == 0 ||
         ctx->frame.tss_rsp0 != ctx->ist2_top ||
@@ -131,6 +131,12 @@ bool htmlk_m5_bad_pf_stack_owned(const struct htmlk_m5_bad_pf_owner *ctx) {
         /* CPL3 attempted to write its private mapped RX user code page. */
         if (ctx->cr2 < HTMLK_M4_USER_BASE ||
             ctx->cr2 - HTMLK_M4_USER_BASE >= UINT64_C(4096)) return false;
+    } else if (ctx->error_code == 4U || ctx->error_code == 6U) {
+        /* Nonpresent user data access only to the immediately adjacent
+         * unmapped guard page. The private page table wires only entries
+         * 0 (code) and 1 (stack); no mapping or fault fixup is performed. */
+        if (ctx->cr2 < HTMLK_M4_USER_STACK ||
+            ctx->cr2 - HTMLK_M4_USER_STACK >= UINT64_C(4096)) return false;
     } else {
         return false;
     }

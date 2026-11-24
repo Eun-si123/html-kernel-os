@@ -208,6 +208,8 @@ jobs:
         run: python scripts/test_m5_user_bad_gp_stack.py
       - name: M5-E3-H genuine CPL3 PF on TSS IST2 after poisoned user RSP, safe owner isolation
         run: python scripts/test_m5_user_bad_pf_stack.py
+      - name: M5-E3-J genuine unmapped user guard-page fault and bad RSP isolation
+        run: python scripts/test_m5_user_guard_page.py
       - name: M5-E3-I genuine CPL3 debug and breakpoint traps with poisoned user RSP and survivor
         run: python scripts/test_m5_user_bad_trap_stack.py
       - name: M5-Web-D actual early BIOS VGA and live COM1 journal, bounded replay
