@@ -10,6 +10,7 @@
 <script type="module" src="./live.js"></script>
 <script type="module" src="./editor.mjs"></script>
 <script type="module" src="./grammar.mjs"></script>
+<script type="module" src="./compile.mjs"></script>
 </head>
 <body>
 <a class="skip" href="#machine">가상 PC로 이동</a>
@@ -21,11 +22,11 @@
 <p class="tag">M5 / NATIVE HTML EXPERIMENT</p>
 <h1>HTML로 작성하고.<br><em>실제 CPU에서 실행한다.</em></h1>
 <p class="sub">HTML 형태의 프로그래밍 언어가 네이티브 커널과 Ring 3 사용자 프로그램으로 컴파일돼. 이 페이지는 <strong>실제 x86-64 부팅 ISO를 브라우저 에뮬레이터에 넣고</strong> 명령을 가상 COM1로 전송하는 실행실이야.</p>
-<p class="caveat"><strong>정확한 의미:</strong> 표준 HTML 파일 자체를 CPU가 실행하는 건 아니야. 프로젝트의 HTML형 언어 → C/어셈블리 → ELF/HKEX → 실행 순서야. GitHub Pages는 정적 사이트라 원본을 수정해 즉시 재컴파일하는 기능은 아직 없어.</p>
+<p class="caveat"><strong>정확한 의미:</strong> 표준 HTML 파일 자체를 CPU가 실행하는 건 아니야. 프로젝트의 HTML형 언어 → C/어셈블리 → ELF/HKEX → 실행 순서야. GitHub Pages는 정적 사이트야. 웹에서는 실제 Python 컴파일러가 HTMLK를 C로 변환할 수 있지만, x86-64 HKEX·ISO 생성은 아직 PC의 네이티브 빌더가 필요해.</p>
 </section>
 <section id="author" class="editor-panel" aria-labelledby="editor-title">
 <div class="section-head"><div><span class="tag">00 / WRITE SOURCE</span><h2 id="editor-title">HTML 프로그램 작성</h2></div><a href="https://github.com/Eun-si123/html-kernel-os/blob/main/docs/LANGUAGE_HUMAN_AGENT.md">언어 문법 ↗</a></div>
-<p class="editor-intro">브라우저에서 HTML형 언어 코드를 작성하고 파일로 저장해. <strong>작성·저장은 실행이 아니야.</strong> ISO 빌드는 저장소를 내려받은 내 PC의 진짜 컴파일러에서 수행해.</p>
+<p class="editor-intro">브라우저에서 HTML형 언어 코드를 작성하고 파일로 저장해. <strong>작성·저장은 실행이 아니야.</strong> 아래 실험 기능으로 실제 HTMLK → C 생성은 웹에서 가능하지만, ISO 빌드는 저장소를 내려받은 PC에서 수행해.</p>
 <div class="editor-grid">
 <div class="editor-input"><label for="html-editor">SOURCE / HTML KERNEL LANGUAGE</label>
 <textarea id="html-editor" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" aria-describedby="editor-bytes editor-status" rows="12"></textarea>
@@ -49,6 +50,15 @@
 <ul id="grammar-list" class="grammar-list" aria-label="HTML Kernel 문법 참조"></ul>
 <p><a href="../htmlk-language.json">에이전트용 원본 JSON 열기</a> · <a href="https://github.com/Eun-si123/html-kernel-os/blob/main/docs/M2_LANGUAGE_CONTRACT.md">완전한 언어 규칙 및 제약</a></p></div>
 </details>
+<details id="browser-compiler" class="browser-compiler-panel">
+<summary>실제 Python 컴파일러로 브라우저에서 C 생성 (실험) <span>WebAssembly · ISO 생성 아님</span></summary>
+<div class="browser-compiler-body">
+<p>버튼을 누르면 고정 버전 외부 Pyodide 실행 파일을 받아 Web Worker 안에서 저장소의 <strong>동일한 Python 컴파일러</strong>를 실행해. 소스는 컴파일러에 데이터로만 전달하며 서버로 직접 업로드하지 않아. 하지만 외부 CDN 코드 의존성이 있으므로 민감한 원본에는 사용하지 않는 편이 안전해.</p>
+<div class="browser-compiler-actions"><button id="browser-compile" type="button">실제 HTMLK → C 컴파일</button><button id="browser-save-c" type="button" disabled>생성된 C 저장</button></div>
+<p id="browser-compile-status" role="status" aria-live="polite">컴파일러 준비 전</p>
+<pre id="browser-compiler-output" role="region" aria-label="실제 컴파일러 진단 또는 생성된 C 코드" tabindex="0"></pre>
+<p>이 단계는 실제 생성 C 코드와 해시·오류 진단만 제공해. <strong>GCC/x86-64 링커와 HKEX/ISO 생성은 아직 브라우저에서 지원하지 않아.</strong> 실제 CPU 부팅에는 위의 검증된 로컬 빌드 절차를 사용해.</p>
+</div></details>
 </section>
 <section id="machine" aria-label="실제 가상 PC" class="machine">
 <div class="section-head"><div><span class="tag">01 / LIVE HARDWARE</span><h2>Emulated x86-64 PC</h2></div><span class="state" id="state" role="status" aria-live="polite">NOT STARTED</span></div>

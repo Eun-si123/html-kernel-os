@@ -44,3 +44,11 @@
 .grammar-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));gap:9px;margin:12px 0;padding:0;list-style:none}
 .grammar-list li{display:flex;flex-direction:column;gap:5px;border:1px solid var(--line);background:var(--bg);padding:11px;min-width:0;overflow-wrap:anywhere;font:11px/1.65 ui-monospace,Consolas,monospace}
 .grammar-list li strong{color:var(--accent);font-size:13px}.grammar-list li span{color:var(--muted)}
+
+/* M2-UX7-A: opt-in real typed browser Python → C, NOT native ISO generation. */
+.browser-compiler-panel{margin:14px 0 0;border:1px solid var(--line);background:var(--paper)}
+.browser-compiler-panel summary{cursor:pointer;padding:14px 16px;font-weight:700;font-size:13px}.browser-compiler-panel summary span{font-size:11px;color:var(--muted);font-weight:400;margin-left:8px}
+.browser-compiler-body{padding:12px 16px 16px;border-top:1px solid var(--line)}.browser-compiler-body p{font-size:12px;line-height:1.85;color:var(--muted)}
+.browser-compiler-actions{display:flex;gap:8px;flex-wrap:wrap}.browser-compiler-actions button{padding:9px 12px;border:1px solid var(--line);background:var(--bg);color:var(--text);cursor:pointer;font-size:12px;font-weight:650}
+#browser-compile-status{overflow-wrap:anywhere;font:11px/1.7 ui-monospace,Consolas,monospace}
+#browser-compiler-output{max-height:320px;min-height:60px;background:var(--bg);color:var(--text);white-space:pre-wrap;overflow:auto;overflow-wrap:anywhere;border:1px solid var(--line);padding:12px;font:11px/1.6 ui-monospace,Consolas,monospace}

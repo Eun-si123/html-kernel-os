@@ -29,6 +29,8 @@ class LivePagesTests(unittest.TestCase):
         for name in ('journal-output','journal-title','journal-position','journal-speed',
                      'journal-play','journal-pause','journal-step','journal-status',
                      'grammar-guide','grammar-list','grammar-search','grammar-status',
+                     'browser-compiler','browser-compile','browser-save-c',
+                     'browser-compile-status','browser-compiler-output',
                      'html-editor','editor-title','editor-bytes','editor-status',
                      'editor-command','editor-copy','editor-save','editor-reset',
                      'start','stop','fullscreen','terminal','source','source-hash',
@@ -80,6 +82,21 @@ class LivePagesTests(unittest.TestCase):
             self.assertIn(marker,guide)
         self.assertNotIn('innerHTML',guide)
         self.assertNotIn('eval(',guide)
+        self.assertIn('<script type="module" src="./compile.mjs"></script>', html)
+        self.assertIn('실제 HTMLK → C 컴파일', html)
+        self.assertIn('ISO 생성 아님', html)
+        browser_compiler = (SITE/'compile.mjs').read_text()
+        wasm_worker = (SITE/'compiler-worker.mjs').read_text()
+        for marker in ('new Worker(', 'worker.terminate()', 'formatDiagnostics',
+                       'generated_c_sha256', 'sourceState', 'textContent'):
+            self.assertIn(marker, browser_compiler)
+        for marker in ('loadPyodide', 'compile_html(_htmlk_source',
+                       'compiler-source-verifying', 'await digest(bytes)',
+                       'generated_c_sha256'):
+            self.assertIn(marker, wasm_worker)
+        self.assertNotIn('M5_C_USER_VALUE=', wasm_worker)
+        self.assertNotIn('innerHTML', browser_compiler)
+
         self.assertIn('브라우저 메모리에서만 실행', html)
         self.assertIn('html-kernel-live.iso', html)
         self.assertIn('--source 내프로그램.html', html)
@@ -120,6 +137,12 @@ class LivePagesTests(unittest.TestCase):
         self.assertIn('node --test scripts/test_live_grammar.mjs',pages)
         self.assertIn('test -s public/htmlk-language.json',pages)
         self.assertIn('test -s public/live/grammar.mjs',pages)
+        self.assertIn('scripts/build_public_browser_compiler.py',ci)
+        self.assertIn('scripts/build_public_browser_compiler.py',pages)
+        self.assertIn('node --test scripts/test_browser_compiler.mjs',ci)
+        self.assertIn('node --test scripts/test_browser_compiler.mjs',pages)
+        self.assertIn('test -s public/compiler/manifest.json',pages)
+        self.assertIn('test -s public/live/compiler-worker.mjs',pages)
         self.assertIn('node --test scripts/test_live_boot_journal.mjs', ci)
         self.assertIn('node --test scripts/test_live_boot_journal.mjs', pages)
         self.assertIn('test -s public/live/journal.mjs', pages)

@@ -712,6 +712,23 @@
         "scripts/test_live_grammar.mjs",
         "docs/M2_PUBLIC_LANGUAGE_GRAMMAR.md"
       ]
+    },
+    {
+      "id": "m2-browser-canonical-python-c",
+      "source": [
+        "site/live/compiler-worker.mjs",
+        "site/live/compile.mjs",
+        "scripts/build_public_browser_compiler.py",
+        "compiler/htmlk.py"
+      ],
+      "regressions": [
+        "tests/test_public_browser_compiler.py",
+        "tests/test_live_pages.py"
+      ],
+      "fieldEvidence": [
+        "scripts/test_browser_compiler.mjs",
+        "docs/M2_BROWSER_COMPILER_C.md"
+      ]
     }
   ]
 }
