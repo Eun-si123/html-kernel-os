@@ -650,6 +650,20 @@
         "scripts/test_htmlk_program_main_qemu.py",
         "docs/LANGUAGE_HUMAN_AGENT.md"
       ]
+    },
+    {
+      "id": "m2-editor-lsp-shared-compiler",
+      "source": [
+        "scripts/htmlk_lsp.py",
+        "compiler/diagnostics.py"
+      ],
+      "regressions": [
+        "tests/test_htmlk_lsp.py",
+        "tests/test_htmlk_check_cli.py"
+      ],
+      "fieldEvidence": [
+        "docs/M2_LANGUAGE_LSP.md"
+      ]
     }
   ]
 }

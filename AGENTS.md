@@ -61,6 +61,8 @@ Use this **compiler-derived**, deterministic grammar/diagnostic response instead
 
 For actual native Linux execution or checked Ring3 packaging, use `python3 scripts/htmlk.py run examples/human-agent-hello.html` or `python3 scripts/htmlk.py build ... --target user --out ...`; the latter requires `--user-app-html-proof` for the HTML-only ABI when embedded as a prebuilt image. Validation is not runtime execution; do not run untrusted code on your host or claim compiler checks prove a QEMU/physical boot. [Native CLI scope](docs/LANGUAGE_HUMAN_AGENT.md).
 
+The [bounded editor LSP](docs/M2_LANGUAGE_LSP.md) uses the single canonical compiler, giving IDE and agent clients actual UTF-16 source locations and tag metadata. `htmlk.describe` returns schema, not shell execution. A one-shot agent can still call `scripts/htmlk_check.py --json`; LSP diagnostics alone do not prove a native boot.
+
 ## Minimal validation
 
 ```sh

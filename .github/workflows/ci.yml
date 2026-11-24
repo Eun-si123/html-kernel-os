@@ -34,6 +34,8 @@ jobs:
           python scripts/htmlk_check.py examples/human-agent-hello.html --target kernel
           python scripts/htmlk_check.py examples/human-agent-hello.html --target linux
           python scripts/htmlk_check.py examples/human-agent-hello.html --target user --json
+      - name: M2-UX5 real bounded stdio Language Server Protocol and canonical diagnostics
+        run: python -m unittest tests.test_htmlk_lsp -v
       - name: Generate freestanding C
         run: python compiler/htmlk.py examples/kernel.html --out build/kernel.c
       - name: Compile x86-64 object (not a boot image)

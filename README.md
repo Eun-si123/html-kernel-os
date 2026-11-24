@@ -52,6 +52,17 @@ The kernel backend **rejects** the aliases, rather than silently running
 a user app in ring 0. Actual Linux and QEMU Ring3 execution are locally
 verified; exact PR-head CI/merge are pending. See [user and agent guide](docs/LANGUAGE_HUMAN_AGENT.md).
 
+## Compiler-backed editor integration (M2-UX5 development)
+
+The bounded HTML Kernel Language LSP server connects IDEs and coding agents to the **same native typed compiler**. It publishes real source diagnostics, Unicode-safe editor locations, supported tag/attribute completions and metadata; it never runs or builds a program:
+
+```sh
+python3 scripts/htmlk_lsp.py  # connect through a configured stdio LSP client
+python3 -m unittest tests.test_htmlk_lsp -v
+```
+
+An LSP client must be configured separately; no self-installing VS Code extension or browser compiler is implied. [LSP setup, limits and tests](docs/M2_LANGUAGE_LSP.md). Local evidence only; CI/merge pending.
+
 ## Agent and contributor entry points
 
 AI agents and external contributors: start at **[AGENTS.md](AGENTS.md)**, then follow **[CODEMAP.md](CODEMAP.md)** and the [documentation hub](docs/README.md). The repository uses TeamForge/BetterNet-style instructions for task ownership, public-safe commit attribution, current status, durable memory and advisory [feature-to-regression mapping](agent-evals/README.md). The instructions do not start a background agent or imply automatic deployment.
