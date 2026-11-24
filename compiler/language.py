@@ -33,6 +33,7 @@ MAX_FUNCTION_ARGS = 4
 MAX_FUNCTION_DEPTH = 8
 NAME = re.compile(r"[a-zA-Z_][a-zA-Z_0-9]*\Z")
 CHILDREN = {"kernel": {None}, "onboot": {"kernel"},
+            "program": {None}, "main": {"program"},
             "print": {"onboot", "if", "repeat", "while", "else"},
             "let": {"onboot", "function", "if", "repeat", "while", "else"},
             "array": {"onboot", "function", "if", "repeat", "while", "else"},
@@ -42,12 +43,13 @@ CHILDREN = {"kernel": {None}, "onboot": {"kernel"},
             "repeat": {"onboot", "function", "if", "repeat", "while", "else"},
             "while": {"onboot", "function", "if", "repeat", "while", "else"},
             "halt": {"onboot"},
-            "function": {"kernel"},
+            "function": {"kernel", "program"},
             "return": {"function", "if", "repeat", "while", "else"},
             "else": {"if"},
             "break": {"repeat", "while", "if", "else"},
             "continue": {"repeat", "while", "if", "else"}}
-ALLOWED = {"kernel": {"arch"}, "onboot": set(), "print": {"value"},
+ALLOWED = {"kernel": {"arch"}, "onboot": set(),
+           "program": {"arch"}, "main": set(), "print": {"value"},
            "let": {"name", "type", "value"}, "set": {"name", "value"},
            "array": {"name", "type", "length"}, "store": {"name", "index", "value"},
            "if": {"test"}, "repeat": {"times"}, "while": {"test", "max"}, "halt": {"code"},
@@ -71,6 +73,7 @@ class Node:
     col: int
     children: list["Node"] = field(default_factory=list)
     text: list[str] = field(default_factory=list)
+    source_tag: str = ""  # preserve original closing-tag spelling for aliases
 
 
 def fail(node: Node, message: str) -> None:
@@ -99,6 +102,7 @@ class FunctionDef:
 class Program:
     statements: list[Node]
     functions: dict[str, FunctionDef]
+    root_form: str = "kernel"  # syntax form, not target executable semantics
 
 
 def array_code(kind: str, length: int) -> str:
@@ -126,14 +130,24 @@ class KernelParser(HTMLParser):
         self.saw_print = False
         self.array_declarations = 0
         self.source_lines: list[str] = []
+        self.root_form = "kernel"
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         line, col = self.getpos()
         pairs = {k: v for k, v in attrs}
-        node = Node(tag, pairs, line, col)
+        # Only the two OUTER syntax tags are aliases. Every inner statement
+        # continues through the original typed parser and code generator.
+        canonical = {"program": "kernel", "main": "onboot"}.get(tag, tag)
+        node = Node(canonical, pairs, line, col, source_tag=tag)
         parent = self.stack[-1].tag if self.stack else None
-        if tag not in CHILDREN or parent not in CHILDREN[tag]:
-            fail(node, f"<{tag}> is not allowed under <{parent}>")
+        source_parent = self.stack[-1].source_tag if self.stack else None
+        if tag in {"program", "main"}:
+            if not ((tag == "program" and source_parent is None) or
+                    (tag == "main" and source_parent == "program")):
+                fail(node, f"<{tag}> is not allowed under <{source_parent}>")
+        elif (tag == "onboot" and source_parent == "program") or (
+                tag not in CHILDREN or parent not in CHILDREN[tag]):
+            fail(node, f"<{tag}> is not allowed under <{source_parent}>")
         inside_function = any(item.tag == "function" for item in self.stack)
         if self.halted and any(item.tag == "onboot" for item in self.stack):
             fail(node, "no statements are allowed after <halt/>")
@@ -149,11 +163,12 @@ class KernelParser(HTMLParser):
         missing = REQUIRED.get(tag, set()) - set(pairs)
         if unknown or missing or any(value is None for value in pairs.values()):
             fail(node, f"invalid attributes on <{tag}>; unknown={sorted(unknown)}, missing={sorted(missing)}")
-        if tag == "kernel":
+        if canonical == "kernel":
             if self.root_seen or pairs.get("arch", "x86_64") != "x86_64":
-                fail(node, "only one <kernel arch=\"x86_64\"> is supported")
+                fail(node, "only one x86_64 <kernel> or <program> root is supported")
             self.root_seen = True
-        elif tag == "onboot":
+            self.root_form = tag
+        elif canonical == "onboot":
             if self.boot_seen:
                 fail(node, "only one <onboot> is allowed")
             self.boot_seen = True
@@ -202,7 +217,7 @@ class KernelParser(HTMLParser):
         self.handle_endtag(tag)
 
     def handle_endtag(self, tag: str) -> None:
-        if not self.stack or self.stack[-1].tag != tag:
+        if not self.stack or self.stack[-1].source_tag != tag:
             line, col = self.getpos()
             raise CompileError(f"line {line}, column {col + 1}: unexpected closing tag </{tag}>")
         node = self.stack.pop()
@@ -223,7 +238,7 @@ class KernelParser(HTMLParser):
                 fail(node, "<if> may contain at most one <else>")
             if else_positions and else_positions[0] != len(node.children) - 1:
                 fail(node, "<else> must be the final child of <if>")
-        if tag == "onboot":
+        if node.tag == "onboot":
             self.program = node.children
         elif tag == "function":
             if not node.children or node.children[-1].tag != "return":
@@ -329,7 +344,7 @@ class KernelParser(HTMLParser):
             check_return_order(fn.children)
             funcs[name] = FunctionDef(name, tuple(params), fn.children[-1], fn,
                                       fn.children, types, fn.attrs["returns"])
-        return Program(self.program, funcs)
+        return Program(self.program, funcs, self.root_form)
 
 
 def parse(source: str) -> Program:

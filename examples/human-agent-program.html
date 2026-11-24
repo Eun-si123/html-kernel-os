@@ -1,0 +1,14 @@
+<!-- Native HTML-shaped user app: compile to Linux or Ring3, not a kernel. -->
+<program>
+  <function name="double" params="x:u64" returns="u64">
+    <return value="x * 2"/>
+  </function>
+  <main>
+    <let name="count" type="u64" value="3"/>
+    <repeat times="3">
+      <print value="double(count)"/>
+    </repeat>
+    <print value="4294967296"/>
+    <halt/>
+  </main>
+</program>

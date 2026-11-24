@@ -634,6 +634,24 @@
       ]
     },
     {
+      "id": "m2-program-main-nonkernel-syntax",
+      "source": [
+        "compiler/language.py",
+        "compiler/htmlk.py",
+        "compiler/diagnostics.py",
+        "examples/human-agent-program.html"
+      ],
+      "regressions": [
+        "tests/test_program_root_alias.py",
+        "tests/test_compiler.py",
+        "tests/test_targets.py"
+      ],
+      "fieldEvidence": [
+        "scripts/test_htmlk_program_main_qemu.py",
+        "docs/LANGUAGE_HUMAN_AGENT.md"
+      ]
+    },
+    {
       "id": "m2-browser-local-source-editor",
       "source": [
         "site/live/index.html",
