@@ -1,0 +1,15 @@
+<program>
+  <function name="double" params="x:u32" returns="u32">
+    <let name="result" value="x * 2"/>
+    <return value="result"/>
+  </function>
+  <main>
+    <let name="count" value="3"/>
+    <let name="small" value="u32(count)"/>
+    <let name="signed" value="-4"/>
+    <let name="answer" value="double(small)"/>
+    <print value="answer"/>
+    <print value="u64(signed + 4)"/>
+    <halt/>
+  </main>
+</program>

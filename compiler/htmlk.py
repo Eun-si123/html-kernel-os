@@ -282,8 +282,10 @@ def compile_html(source: str, *, target: str = "kernel") -> str:
                 name = validate_name(node)
                 if name in variables:
                     fail(node, f"variable {name!r} is already declared")
-                typ = node.attrs["type"]
-                value = checked(node.attrs["value"], expected_type=typ)
+                detected: list[str] = []
+                value = checked(node.attrs["value"], expected_type=node.attrs.get("type"),
+                                type_out=detected)
+                typ = detected[0]
                 variables.add(name)
                 variable_types[name] = typ
                 ctype = c_type(typ)

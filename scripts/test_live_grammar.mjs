@@ -20,7 +20,8 @@ test('public grammar is produced from the exact compiler, not a JS second parser
   assert.ok(schema.tags.print.parents.includes('main'));
   assert.ok(schema.tags.halt.parents.includes('main'));
   assert.ok(schema.tags.print.attributes.includes('value'));
-  assert.ok(schema.tags.let.required_attributes.includes('type'));
+  assert.ok(schema.tags.let.attributes.includes('type'));
+  assert.deepEqual(schema.tags.let.required_attributes,['name','value']);
   assert.equal(SCHEMA_URL,'../htmlk-language.json');
   assert.ok(Buffer.byteLength(source)<MAX_SCHEMA_BYTES);
 });

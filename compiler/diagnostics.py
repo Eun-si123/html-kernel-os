@@ -138,6 +138,7 @@ def describe() -> dict[str, Any]:
         },
         "notes": [
             "Use quoted attribute expressions and HTML &lt; for < in conditions.",
+            "A let type is optional: infer from the initializer; literal-only expressions default to u64 or i64 when a negative literal is present. Assignments do not change the inferred type.",
             "Native Ring3 user output is bounded and requires a final print then halt.",
             "Only supported tags and attributes compile; no DOM scripting, JS, or browser HTML semantics.",
             "For native Linux/Ring3 apps, <program><main> aliases <kernel><onboot> with identical typed semantics; kernel target requires <kernel>.",

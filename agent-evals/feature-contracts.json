@@ -61,7 +61,8 @@
         "tests/test_loop_control.py",
         "tests/test_while.py",
         "tests/test_division.py",
-        "tests/test_arrays.py"
+        "tests/test_arrays.py",
+        "tests/test_inferred_let.py"
       ],
       "fieldEvidence": [
         "docs/VALIDATION.md",
@@ -78,7 +79,8 @@
         "scripts/test_division.py",
         "scripts/test_division_oracle.py",
         "scripts/test_arrays.py",
-        "scripts/test_m2_gate.py"
+        "scripts/test_m2_gate.py",
+        "scripts/test_inferred_let_qemu.py"
       ]
     },
     {
