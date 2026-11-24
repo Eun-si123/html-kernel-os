@@ -1,5 +1,20 @@
 /* Opt-in true CPL3 entry / int 0x80 interrupt / one-shot return. */
 .section .text
+#ifdef HTMLK_M5_USER_LOADER
+/* M5's single-app supervisor has no FS/GS-relative TLS/per-CPU ABI.
+ * Clear selectors AND long-mode bases: loading null alone does not
+ * portably clear the hidden base. No SWAPGS or FSGSBASE enable. */
+.macro htmlk_m5_clear_segments
+    xorl %eax,%eax
+    movw %ax,%fs
+    movw %ax,%gs
+    xorl %edx,%edx
+    movl $0xc0000100,%ecx /* IA32_FS_BASE */
+    wrmsr
+    incl %ecx            /* IA32_GS_BASE */
+    wrmsr
+.endm
+#endif
 .global htmlk_m4_user_enter
 .type htmlk_m4_user_enter, @function
 htmlk_m4_user_enter:
@@ -21,6 +36,9 @@ htmlk_m4_user_enter:
 #endif
     pushq %rdx      /* user CS */
     pushq %rdi      /* user RIP */
+#ifdef HTMLK_M5_USER_LOADER
+    htmlk_m5_clear_segments
+#endif
     /* Entry arguments and caller/callee registers may contain supervisor
      * values. The IRET frame and saved kernel context are complete now.
      * RSP is restored from that frame; clear every other integer register. */
@@ -88,6 +106,9 @@ htmlk_m4_syscall_entry:
 .type htmlk_m4_user_return, @function
 htmlk_m4_user_return:
     cli
+#ifdef HTMLK_M5_USER_LOADER
+    htmlk_m5_clear_segments
+#endif
     movq htmlk_m4_saved_cr3(%rip), %rax
     movq %rax, %cr3
     movq htmlk_m4_saved_main_rsp(%rip), %rsp
