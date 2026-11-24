@@ -42,3 +42,27 @@ test('HTML editor reset notifies compiler controller to revoke stale C',()=>{
   assert.ok(fs.readFileSync('site/live/index.html','utf8').includes('id="browser-compiler"'));
   assert.ok(fs.readFileSync('site/live/index.html','utf8').includes('ISO 생성 아님'));
 });
+
+
+test('real Worker reader stops oversized network responses before allocation',async()=>{
+  const oldSelf = globalThis.self;
+  globalThis.self = {postMessage:()=>{}};
+  try {
+    const {boundedResponseBytes} = await import('../site/live/compiler-worker.mjs');
+    const okay=new Response(new Uint8Array([1,2,3]));
+    assert.deepEqual([...await boundedResponseBytes(okay,3)],[1,2,3]);
+    await assert.rejects(boundedResponseBytes(new Response(new Uint8Array([1,2,3])),2),
+                         /응답 크기 제한 초과/);
+    const overflow = new ReadableStream({
+      start(controller) {
+        controller.enqueue(new Uint8Array([1,2]));
+        controller.enqueue(new Uint8Array([3,4]));
+        controller.close();
+      }
+    });
+    await assert.rejects(boundedResponseBytes(new Response(overflow),3),
+                         /응답 크기 제한 초과/);
+    await assert.rejects(boundedResponseBytes(new Response('nope'),-1),
+                         /잘못된 브라우저 컴파일러 다운로드 제한/);
+  } finally { globalThis.self = oldSelf; }
+});

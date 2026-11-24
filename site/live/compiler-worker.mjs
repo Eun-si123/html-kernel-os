@@ -14,11 +14,45 @@ const hex = bytes => Array.from(bytes, n => n.toString(16).padStart(2,'0')).join
 async function digest(bytes) { return hex(new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))); }
 function report(requestId, stage) { self.postMessage({type:'progress',requestId,stage}); }
 
+// Enforce bounded network downloads BEFORE a large response is held in memory.
+// This matters especially on low-RAM phones and for malformed same-origin files.
+export async function boundedResponseBytes(response, limit) {
+  if (!Number.isInteger(limit) || limit < 0 || limit > MAX_COMPILER_FILE_BYTES)
+    throw Error('잘못된 브라우저 컴파일러 다운로드 제한');
+  const sizeHeader = response.headers?.get('content-length');
+  if (sizeHeader !== null && sizeHeader !== undefined) {
+    if (!/^[0-9]+$/.test(sizeHeader) || Number(sizeHeader) > limit)
+      throw Error('컴파일러 네트워크 응답 크기 제한 초과');
+  }
+  if (!response.body?.getReader) throw Error('브라우저 응답 스트리밍 미지원');
+  const reader = response.body.getReader();
+  let total = 0;
+  const parts = [];
+  try {
+    while (true) {
+      const {done,value} = await reader.read();
+      if (done) break;
+      if (!(value instanceof Uint8Array)) throw Error('잘못된 다운로드 바이트');
+      total += value.byteLength;
+      if (total > limit) {
+        await reader.cancel();
+        throw Error('컴파일러 네트워크 응답 크기 제한 초과');
+      }
+      parts.push(value);
+    }
+  } finally { reader.releaseLock(); }
+  const all = new Uint8Array(total);
+  let offset = 0;
+  for (const part of parts) { all.set(part, offset); offset += part.byteLength; }
+  return all;
+}
+
 async function actualCompiler(py, requestId) {
   const manifestUrl = new URL('../compiler/manifest.json', import.meta.url);
   const response = await fetch(manifestUrl, {credentials:'omit', cache:'no-store'});
   if (!response.ok) throw Error('컴파일러 파일 명세를 불러올 수 없음 (HTTP '+response.status+')');
-  const meta = await response.json();
+  const rawManifest = await boundedResponseBytes(response, 8192);
+  const meta = JSON.parse(new TextDecoder('utf-8', {fatal:true}).decode(rawManifest));
   if (meta.schema_version !== 1 || meta.target !== 'user' ||
       meta.pyodide_version !== '0.29.5' ||
       Object.keys(meta.files||{}).length !== FILES.length ||
@@ -34,10 +68,10 @@ async function actualCompiler(py, requestId) {
     const url = new URL('../compiler/' + name, import.meta.url);
     const file = await fetch(url,{credentials:'omit',cache:'no-store'});
     if (!file.ok) throw Error('컴파일러 소스 누락: '+name);
-    const bytes = await file.arrayBuffer();
+    const bytes = await boundedResponseBytes(file, info.bytes);
     if (bytes.byteLength !== info.bytes || await digest(bytes) !== info.sha256)
       throw Error('컴파일러 소스 해시/길이가 일치하지 않음: '+name);
-    py.FS.writeFile('/htmlk/compiler/' + name, new Uint8Array(bytes));
+    py.FS.writeFile('/htmlk/compiler/' + name, bytes);
   }
   // This is fixed Python glue code; user-provided input is passed via globals
   // as a DATA STRING. Never interpolate visitor HTML into executed Python.
