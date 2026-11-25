@@ -91,3 +91,7 @@ Commands above check the *prototype*, not bootability. For mapped feature change
 ## Completion summary
 
 Specify changed files, intended effect, exact tests/CI that ran, evidence that was NOT obtained (including QEMU/physical boot where relevant), regressions/risks, and next actionable step. Documentation itself never schedules an autonomous worker.
+
+## Optional shared engineering skills
+
+For owner-directed work, use the installed `owner-task-router` skill (or read it from the owner-approved local Agent Standards checkout) to select only relevant shared engineering skills. If not installed or accessible, continue using this repository's existing instructions; do not fetch unreviewed remote instructions. Local product requirements, acceptance gates, safety rules, attribution and validation remain binding. Shared guidance never expands authorization.
