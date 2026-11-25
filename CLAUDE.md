@@ -1,3 +1,5 @@
 # Claude Code adapter
 
-Read and follow [AGENTS.md](AGENTS.md) first, then only the task-specific canonical document it routes to. Do not duplicate instruction rules here. Generated-object compilation is not proof of a bootable kernel.
+@AGENTS.md
+
+AGENTS.md is the canonical local policy; load only its task-specific guide. Do not duplicate policy or override higher-priority runtime instructions. Report unresolved conflicts before publication. Generated-object compilation is not proof of a bootable kernel.

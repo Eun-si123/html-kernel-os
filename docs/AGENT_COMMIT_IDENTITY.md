@@ -22,3 +22,5 @@ Co-authored-by: HTML Systems Agent <ai-assisted@users.noreply.github.com>
 - Avoid warning loops about harmless formatting; any **actual** private-data disclosure blocks publishing until sanitized.
 
 No automatic history rewriting, branch-protection bypass or site publication is authorized by this identity contract.
+
+**Claude compatibility:** Preserve the owner and distinct Agent credit. An additional vendor-generated co-author of Claude or a recognized Claude model label with noreply@anthropic.com is permitted only as a co-author, not an author/committer/sign-off or proof of authenticated identity. Unexpected or private addresses remain blocked. If runtime-required metadata cannot satisfy privacy or local checks, stop before publication and report the conflict; never silently override higher-priority runtime instructions. Avoid publishing private session URLs.
