@@ -4,6 +4,32 @@
 
 HTML is normally a document language. This repository explores a dedicated compiler that interprets a restricted set of HTML-style elements as *systems-programming instructions*. The long-term goal is a self-booting OS whose kernel logic is written in that language.
 
+## New here? 60-second version
+
+- **What it is:** you write a small program in HTML-like tags (below), and a real compiler turns it into native x86-64 code — as a Linux program or as a tiny bootable kernel.
+- **What it is not:** an OS you can use day to day. It is a verified demo kernel (QEMU + browser), not tested on real PC hardware.
+- **Try it, nothing to install:** [open the browser demo](https://eun-si123.github.io/html-kernel-os/play.html) and click boot.
+- **Try it locally (needs only Python 3):**
+
+```sh
+python3 scripts/htmlk_check.py examples/human-agent-hello.html --target linux
+```
+
+- **The whole program** (`examples/human-agent-hello.html`) prints `3` three times, then `4294967296`:
+
+```html
+<kernel arch="x86_64">
+  <onboot>
+    <let name="count" type="u64" value="3"/>
+    <repeat times="3"><print value="count"/></repeat>
+    <print value="4294967296"/>
+    <halt/>
+  </onboot>
+</kernel>
+```
+
+- **Where to go next:** [language guide](docs/LANGUAGE_HUMAN_AGENT.md) · [what works today](docs/STATUS.md) · [where things live in the code](CODEMAP.md)
+
 > **Current status: VERIFIED BOOTABLE DEMO KERNEL (QEMU BIOS + browser), NOT A USABLE OS.** A restricted HTML dialect compiles to freestanding x86-64 C; Limine starts the generated kernel. Real QEMU source-mutation/negative controls passed locally and on GitHub CI. The same boot ISO was independently booted in Chromium using the v64 WebAssembly x86-64 emulator: [try the browser demo](https://eun-si123.github.io/html-kernel-os/play.html). UEFI, mobile-browser compatibility and physical hardware remain unverified. No general-purpose memory manager, writable/disk filesystem, production task scheduler or general hardware drivers; bounded opt-in M3/M4 experiments and M5 immutable ROMFS + real QEMU UART terminal now exist. **M4-C1/C2** prove native CPL3 entry, syscalls and sequential fault isolation; the later bounded **M4-D** opt-in experiment also proves true x2APIC preemption and survivor fault cleanup in QEMU. **M5-A/B/C1/D1** provide an embedded read-only filesystem, real UART command input and a restricted, build-time embedded CPL3 user program launched with `run`; this does not constitute a production process manager or general-purpose filesystem.
 
 ## Write one HTML-like program — for humans and agents (M2-UX1 merged #103)
