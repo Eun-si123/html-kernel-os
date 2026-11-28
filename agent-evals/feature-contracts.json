@@ -448,6 +448,8 @@
         "docs/M5_USER_GUARD_PAGE.md",
         "docs/M5_USER_BAD_PF.md",
         "scripts/test_m5_user_x87_context.py",
+        "scripts/test_m5_user_sse_context.py",
+        "docs/M5_USER_SSE_CONTEXT.md",
         "docs/M5_USER_X87_CONTEXT.md",
         "scripts/test_m5_user_bad_trap_stack.py",
         "scripts/test_m5_user_segment_context.py",
